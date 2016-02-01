@@ -28,24 +28,6 @@ public static ContactItem GetContactUsingProcedure(int ContactID)
     return AdventureWorks.Instance.ExecuteSingle<ContactItem>("sp_GetContact", "ContactID", ContactID);
 }
 
-public static int DoSaveUsingProcedure(ContactItem item)
-{
-    var args = new object[]{
-    "ContactID",item.ContactID
-    ,"FirstName",item.FirstName
-    ,"LastName",item.LastName
-    ,"EmailAddress",item.EmailAddress
-    ,"EmailPromotion",item.EmailPromotion
-    ,"Phone",item.Phone
-    ,"NameStyle",item.NameStyle
-    ,"ModifiedDate",item.ModifiedDate
-    };
-    var parameters = DataParameter.GetSql(args);
-    parameters[0].Direction = System.Data.ParameterDirection.InputOutput;
-    int res = AdventureWorks.Instance.ExecuteNonQuery("sp_AddContact", parameters, System.Data.CommandType.StoredProcedure);
-    item.ContactID = Types.ToInt(parameters[0].Value);
-    return item.ContactID;
-}
 
 Example - Using Entity Context
 
