@@ -96,12 +96,12 @@ namespace Nistec.Data
 
         public static string ToJson(this DataTable dt)
         {
-            return JsonSerializer.ToJson(dt);
+            return JsonSerializer.Serialize(dt);
         }
 
         public static string ToJson(this DataRow row)
         {
-            return JsonSerializer.ToJson(row);
+            return JsonSerializer.Serialize(row);
         }
 
     }

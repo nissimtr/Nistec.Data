@@ -456,6 +456,19 @@ namespace Nistec.Data.Factory
             return this.GetCommand(cmdText).ExecuteReader(behavior);
         }
 
+        /// <summary>
+        /// Execute Reader
+        /// </summary>
+        /// <param name="cmdText"></param>
+        /// <param name="behavior"></param>
+        /// <param name="parameters">SqlParameter array key value.</param>
+        /// <returns></returns>
+        public IDataReader ExecuteReader(string cmdText, CommandBehavior behavior, IDbDataParameter[] parameters)
+        {
+            IDbCommand cmd = CreateCommand(cmdText, this.Connection, parameters);
+            return cmd.ExecuteReader(behavior);
+        }
+
         #endregion
 
         #region Execute none query

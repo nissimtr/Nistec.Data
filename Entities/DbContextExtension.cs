@@ -172,6 +172,29 @@ namespace Nistec.Data.Entities
         }
 
         /// <summary>
+        /// Convert data row to dictionary
+        /// </summary>
+        /// <param name="dr"></param>
+        /// <returns></returns>
+        public static IDictionary<string, object> ToDictionary(this DataRow dr)
+        {
+            if (dr == null)
+                return null;
+            DataTable dt = dr.Table;
+            if (dt == null)
+                return null;
+            IDictionary<string, object> hash = new Dictionary<string, object>();
+
+            for (int i = 0; i < dt.Columns.Count; i++)
+            {
+                string colName = dt.Columns[i].ColumnName;
+                hash[colName] = dr[colName];
+            }
+
+            return hash;
+        }
+
+        /// <summary>
         /// Create Entity collection from <see cref="DataTable"/>
         /// </summary>
         /// <param name="dt"></param>

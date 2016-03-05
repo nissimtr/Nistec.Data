@@ -556,7 +556,7 @@ namespace Nistec.Data.Entities
             {
                 throw new CustomAttributeFormatException("QueryEntity.key");
             }
-            string commandText = SqlFormatter.GetCommandText(mappingName,keyValueParameters);
+            string commandText = SqlFormatter.GetCommandText(mappingName, keyValueParameters);
             return QuerySingle<T>(commandText, keyValueParameters);
         }
         /// <summary>
@@ -571,7 +571,7 @@ namespace Nistec.Data.Entities
             ValidateConnection();
             if (mappingName == null)
             {
-                throw new ArgumentNullException("QueryEntity.mappingName");
+                throw new ArgumentNullException("QueryEntityList.mappingName");
             }
 
             string commandText = SqlFormatter.GetCommandText(mappingName, keyValueParameters);
@@ -590,7 +590,7 @@ namespace Nistec.Data.Entities
             ValidateConnection();
             if (mappingName == null)
             {
-                throw new ArgumentNullException("GetEntityList.mappingName");
+                throw new ArgumentNullException("EntityGetList.mappingName");
             }
             T instance = ActivatorUtil.CreateInstance<T>();//Activator.CreateInstance<T>();
             EntityDbContext edb = GetEntityDb(instance, mappingName);
@@ -612,11 +612,11 @@ namespace Nistec.Data.Entities
             ValidateConnection();
             if (string.IsNullOrEmpty(mappingName))
             {
-                throw new ArgumentNullException("InsertEntity.mappingName");
+                throw new ArgumentNullException("EntityInsert.mappingName");
             }
             if (entity == null)
             {
-                throw new ArgumentNullException("InsertEntity.entity");
+                throw new ArgumentNullException("EntityInsert.entity");
             }
             T instance = ActivatorUtil.CreateInstance<T>();
             EntityDbContext edb = GetEntityDb(instance, mappingName);
@@ -639,15 +639,15 @@ namespace Nistec.Data.Entities
             ValidateConnection();
             if (string.IsNullOrEmpty(mappingName))
             {
-                throw new ArgumentNullException("UpdateEntity.mappingName");
+                throw new ArgumentNullException("EntityUpdate.mappingName");
             }
             if (originalEntity == null)
             {
-                throw new ArgumentNullException("UpdateEntity.originalEntity");
+                throw new ArgumentNullException("EntityUpdate.originalEntity");
             }
             if (newEntity == null)
             {
-                throw new ArgumentNullException("UpdateEntity.newEntity");
+                throw new ArgumentNullException("EntityUpdate.newEntity");
             }
 
             EntityDbContext edb = GetEntityDb(originalEntity, mappingName);
@@ -669,7 +669,7 @@ namespace Nistec.Data.Entities
             ValidateConnection();
             if (string.IsNullOrEmpty(mappingName))
             {
-                throw new ArgumentNullException("DeleteEntity.mappingName");
+                throw new ArgumentNullException("EntityDelete.mappingName");
             }
             if (entity == null)
             {
@@ -689,7 +689,7 @@ namespace Nistec.Data.Entities
         {
             if (commandText == null)
             {
-                throw new ArgumentNullException("QueryValue.commandText");
+                throw new ArgumentNullException("ExecuteNonQuery.commandText");
             }
             using (IDbCmd cmd = DbCmd())
             {
@@ -708,7 +708,7 @@ namespace Nistec.Data.Entities
         {
             if (commandText == null)
             {
-                throw new ArgumentNullException("QueryValue.commandText");
+                throw new ArgumentNullException("ExecuteScalar.commandText");
             }
             using (IDbCmd cmd = DbCmd())
             {
@@ -727,7 +727,7 @@ namespace Nistec.Data.Entities
         {
             if (commandText == null)
             {
-                throw new ArgumentNullException("DoCommand.commandText");
+                throw new ArgumentNullException("ExecuteSingle.commandText");
             }
             using (IDbCmd cmd = DbCmd())
             {
@@ -747,7 +747,7 @@ namespace Nistec.Data.Entities
         {
             if (commandText == null)
             {
-                throw new ArgumentNullException("DoCommand.commandText");
+                throw new ArgumentNullException("ExecuteQuery.commandText");
             }
             using (IDbCmd cmd = DbCmd())
             {
@@ -764,27 +764,27 @@ namespace Nistec.Data.Entities
         {
             if (commandText == null)
             {
-                throw new ArgumentNullException("QueryValue.commandText");
+                throw new ArgumentNullException("ExecuteCommand.commandText");
             }
             using (IDbCmd cmd = DbCmd())
             {
                 return cmd.ExecuteNonQuery(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text);
             }
         }
-       /// <summary>
-       /// Execute Command and returns T value such as (DataSet|DataTable|DataRow) or any entity class or scalar.
-       /// </summary>
-       /// <typeparam name="T"></typeparam>
-       /// <param name="commandText"></param>
-       /// <param name="parameters"></param>
-       /// <param name="commandType"></param>
-       /// <param name="commandTimeout"></param>
-       /// <returns></returns>
-        public T ExecuteCommand<T>(string commandText, IDbDataParameter[] parameters, CommandType commandType= CommandType.Text,int commandTimeout=0)
+        /// <summary>
+        /// Execute Command and returns T value such as (DataSet|DataTable|DataRow) or any entity class or scalar.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="commandText"></param>
+        /// <param name="parameters"></param>
+        /// <param name="commandType"></param>
+        /// <param name="commandTimeout"></param>
+        /// <returns></returns>
+        public T ExecuteCommand<T>(string commandText, IDbDataParameter[] parameters, CommandType commandType = CommandType.Text, int commandTimeout = 0)
         {
             if (commandText == null)
             {
-                throw new ArgumentNullException("QueryValue.commandText");
+                throw new ArgumentNullException("ExecuteCommand.commandText");
             }
             using (IDbCmd cmd = DbCmd())
             {
@@ -803,7 +803,7 @@ namespace Nistec.Data.Entities
         {
             if (commandText == null)
             {
-                throw new ArgumentNullException("QueryValue.commandText");
+                throw new ArgumentNullException("ExecuteNonQuery.commandText");
             }
             using (IDbCmd cmd = DbCmd())
             {
@@ -822,7 +822,7 @@ namespace Nistec.Data.Entities
         {
             if (commandText == null)
             {
-                throw new ArgumentNullException("QueryValue.commandText");
+                throw new ArgumentNullException("QueryScalar.commandText");
             }
             using (IDbCmd cmd = DbCmd())
             {
@@ -841,7 +841,7 @@ namespace Nistec.Data.Entities
         {
             if (commandText == null)
             {
-                throw new ArgumentNullException("DoCommand.commandText");
+                throw new ArgumentNullException("QuerySingle.commandText");
             }
             using (IDbCmd cmd = DbCmd())
             {
@@ -861,7 +861,7 @@ namespace Nistec.Data.Entities
         {
             if (commandText == null)
             {
-                throw new ArgumentNullException("DoCommand.commandText");
+                throw new ArgumentNullException("Query.commandText");
             }
             using (IDbCmd cmd = DbCmd())
             {
@@ -886,7 +886,7 @@ namespace Nistec.Data.Entities
             DataTable dt = null;
             using (IDbCmd cmd = DbCmd())
             {
-                dt= cmd.ExecuteCommand<DataTable>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text);
+                dt = cmd.ExecuteCommand<DataTable>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text);
             }
             if (dt == null)
                 return null;
@@ -915,7 +915,7 @@ namespace Nistec.Data.Entities
             return dt.ToListDictionary();//DataUtil.DatatableToDictionary(dt, Pk);
         }
 
-       
+
         /// <summary>
         /// Executes Command and returns Json.
         /// </summary>
@@ -938,7 +938,7 @@ namespace Nistec.Data.Entities
             }
             if (dt == null)
                 return null;
-            return JsonSerializer.ToJson(dt);
+            return JsonSerializer.Serialize(dt);
             //return dt.ToJson();
         }
         /// <summary>
@@ -951,7 +951,7 @@ namespace Nistec.Data.Entities
         {
             if (mappingName == null)
             {
-                throw new ArgumentNullException("ExecuteDictionary.mappingName");
+                throw new ArgumentNullException("ExecuteJson.mappingName");
             }
             DataTable dt = null;
             using (IDbCmd cmd = DbCmd())
@@ -961,10 +961,10 @@ namespace Nistec.Data.Entities
             if (dt == null)
                 return null;
             //return dt.ToJson();
-            return JsonSerializer.ToJson(dt);
+            return JsonSerializer.Serialize(dt);
         }
 
-       
+
 
         /// <summary>
         /// Executes Command and returns Json.
@@ -976,7 +976,7 @@ namespace Nistec.Data.Entities
         {
             if (commandText == null)
             {
-                throw new ArgumentNullException("QueryJson.commandText");
+                throw new ArgumentNullException("QueryJsonRecord.commandText");
             }
             string cmdText = (commandText.TrimStart().ToLower().StartsWith("select")) ? commandText :
                 SqlFormatter.GetCommandText(commandText, nameValueParameters);
@@ -988,7 +988,7 @@ namespace Nistec.Data.Entities
             }
             if (dt == null || dt.Rows.Count == 0)
                 return null;
-            return JsonSerializer.ToJson(dt.Rows[0]);
+            return JsonSerializer.Serialize(dt.Rows[0]);
             //return dt.ToJson();
         }
 
@@ -1002,7 +1002,7 @@ namespace Nistec.Data.Entities
         {
             if (mappingName == null)
             {
-                throw new ArgumentNullException("ExecuteDictionary.mappingName");
+                throw new ArgumentNullException("ExecuteJsonRecord.mappingName");
             }
             DataTable dt = null;
             using (IDbCmd cmd = DbCmd())
@@ -1012,7 +1012,111 @@ namespace Nistec.Data.Entities
             if (dt == null || dt.Rows.Count == 0)
                 return null;
             //return dt.ToJson();
-            return JsonSerializer.ToJson(dt.Rows[0]);
+            return JsonSerializer.Serialize(dt.Rows[0]);
+        }
+
+        /// <summary>
+        /// Executes Command and returns Dictionary.
+        /// </summary>
+        /// <param name="mappingName"></param>
+        /// <param name="nameValueParameters"></param>
+        /// <returns></returns>
+        public IDictionary<string, object> QueryDictionaryRecord(string mappingName, params object[] nameValueParameters)
+        {
+            if (mappingName == null)
+            {
+                throw new ArgumentNullException("QueryDictionaryRecord.mappingName");
+            }
+            string commandText = SqlFormatter.GetCommandText(mappingName, nameValueParameters);
+
+            DataRow dr = null;
+            using (IDbCmd cmd = DbCmd())
+            {
+                dr = cmd.ExecuteCommand<DataRow>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text);
+            }
+            if (dr == null)
+                return null;
+            return dr.ToDictionary();
+        }
+
+        /// <summary>
+        /// Executes StoredProcedure and returns Dictionary.
+        /// </summary>
+        /// <param name="mappingName"></param>
+        /// <param name="nameValueParameters"></param>
+        /// <returns></returns>
+        public IDictionary<string, object> ExecuteDictionaryRecord(string mappingName, params object[] nameValueParameters)
+        {
+            if (mappingName == null)
+            {
+                throw new ArgumentNullException("ExecuteDictionaryRecord.mappingName");
+            }
+            DataRow dr = null;
+            using (IDbCmd cmd = DbCmd())
+            {
+                dr = cmd.ExecuteCommand<DataRow>(mappingName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure);
+            }
+            if (dr == null)
+                return null;
+            return dr.ToDictionary();
+        }
+
+        /// <summary>
+        /// Executes Command and returns DataTable.
+        /// </summary>
+        /// <param name="mappingName"></param>
+        /// <param name="nameValueParameters"></param>
+        /// <returns></returns>
+        public DataTable QueryDataTable(string mappingName, params object[] nameValueParameters)
+        {
+            if (mappingName == null)
+            {
+                throw new ArgumentNullException("ExecuteDataTable.mappingName");
+            }
+            string commandText = SqlFormatter.GetCommandText(mappingName, nameValueParameters);
+
+            using (IDbCmd cmd = DbCmd())
+            {
+                return cmd.ExecuteCommand<DataTable>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text);
+            }
+        }
+
+        /// <summary>
+        /// Executes StoredProcedure and returns DataTable.
+        /// </summary>
+        /// <param name="mappingName"></param>
+        /// <param name="nameValueParameters"></param>
+        /// <returns></returns>
+        public DataTable ExecuteDataTable(string mappingName, params object[] nameValueParameters)
+        {
+            if (mappingName == null)
+            {
+                throw new ArgumentNullException("ExecuteDataTable.mappingName");
+            }
+            using (IDbCmd cmd = DbCmd())
+            {
+                return cmd.ExecuteCommand<DataTable>(mappingName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure);
+            }
+        }
+
+        /// <summary>
+        /// Executes Command and returns IDataReader.
+        /// </summary>
+        /// <param name="commandText"></param>
+        /// /// <param name="behavior"></param>
+        /// <param name="nameValueParameters"></param>
+        /// <returns></returns>
+        public IDataReader QueryReader(string commandText, CommandBehavior behavior, params object[] nameValueParameters)
+        {
+            if (commandText == null)
+            {
+                throw new ArgumentNullException("QueryReader.commandText");
+            }
+
+            using (IDbCmd cmd = DbCmd())
+            {
+                return cmd.ExecuteReader(commandText, behavior, DataParameter.GetSql(nameValueParameters));
+            }
         }
 
         #endregion

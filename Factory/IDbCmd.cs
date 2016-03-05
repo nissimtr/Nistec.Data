@@ -196,6 +196,15 @@ namespace Nistec.Data.Factory
         /// <param name="behavior"></param>
         /// <returns></returns>
         IDataReader ExecuteReader(string cmdText, CommandBehavior behavior);
+
+        /// <summary>
+        /// Create Reader
+        /// </summary>
+        /// <param name="cmdText"></param>
+        /// <param name="behavior"></param>
+        /// <param name="parameters">SqlParameter array key value.</param>
+        /// <returns></returns>
+        IDataReader ExecuteReader(string cmdText, CommandBehavior behavior, IDbDataParameter[] parameters);
         #endregion
 
         #region LookupQuery

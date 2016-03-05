@@ -67,9 +67,8 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Nistec.Lib, Version=4.0.2.0, Culture=neutral, PublicKeyToken=734a739868a76423, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Nistec.Bin-4.0.2.2\Nistec.Lib.dll</HintPath>
+    <Reference Include="Nistec.Lib">
+      <HintPath>..\Nistec.Bin-4.0.2.0\Nistec.Lib.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
