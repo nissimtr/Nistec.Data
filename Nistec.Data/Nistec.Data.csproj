@@ -103,11 +103,9 @@
     <Compile Include="Entities\Active\ActiveEntity.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Entities\DbContextCommand.cs" />
     <Compile Include="Entities\EntityListItem.cs" />
     <Compile Include="Entities\EntityMappingAttribute.cs" />
-    <Compile Include="Entities\DbContextCommand.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Entities\EntityDbContext.cs">
       <SubType>Code</SubType>
     </Compile>
