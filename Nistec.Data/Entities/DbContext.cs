@@ -1241,6 +1241,11 @@ namespace Nistec.Data.Entities
             }
         }
 
+        /// <summary>
+        /// Save entity to db update or insert using <see cref="GenericEntity"/>.
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <returns></returns>
         public int EntityUpsert(GenericEntity entity)
         {
             if (entity == null)
@@ -1504,14 +1509,14 @@ namespace Nistec.Data.Entities
         /// <param name="mappingName"></param>
         /// <param name="nameValueParameters"></param>
         /// <returns></returns>
-        public int EntityItemDelete(string mappingName, object[] nameValueParameters)
+        public int EntityItemDelete(string mappingName, params object[] nameValueParameters)
         {
             ValidateConnectionSettings();
             if (string.IsNullOrEmpty(mappingName))
             {
                 throw new ArgumentNullException("EntityDelete.mappingName");
             }
-            if (nameValueParameters == null)
+            if (nameValueParameters == null || nameValueParameters.Length == 0)
             {
                 throw new ArgumentNullException("EntityDelete.nameValueParameters");
             }
@@ -1526,7 +1531,6 @@ namespace Nistec.Data.Entities
         /// Entity delete command by mapping name and name value parameters.
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="mappingName"></param>
         /// <param name="nameValueParameters"></param>
         /// <returns></returns>
         public int EntityDelete<T>(params object[] nameValueParameters)where T : IEntityItem
@@ -1538,7 +1542,7 @@ namespace Nistec.Data.Entities
             {
                 throw new ArgumentNullException("EntityDelete.mappingName");
             }
-            if (nameValueParameters == null)
+            if (nameValueParameters == null || nameValueParameters.Length==0)
             {
                 throw new ArgumentNullException("EntityDelete.nameValueParameters");
             }
