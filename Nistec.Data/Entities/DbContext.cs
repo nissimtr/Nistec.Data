@@ -1647,24 +1647,25 @@ namespace Nistec.Data.Entities
 
         #region Execute Command
 
-        /// <summary>
-        /// Executes sql as NonQuery Command  and returns effective records..
-        /// </summary>
-        /// <param name="procName"></param>
-        /// <param name="commandType"></param>
-        /// <param name="nameValueParameters"></param>
-        /// <returns></returns>
-        public T ExecuteCommand<T>(string procName, CommandType commandType, object[] nameValueParameters)
+       /// <summary>
+       /// Executes sql as NonQuery Command  and returns T value.
+       /// </summary>
+       /// <typeparam name="T"></typeparam>
+       /// <param name="commandText"></param>
+       /// <param name="commandType"></param>
+       /// <param name="nameValueParameters"></param>
+       /// <returns></returns>
+        public T ExecuteCommand<T>(string commandText, CommandType commandType, object[] nameValueParameters)
         {
-            if (procName == null)
+            if (commandText == null)
             {
                 throw new ArgumentNullException("ExecuteCommand.commandText");
             }
 
-            return ExecuteCommand<T>(procName, DataParameter.GetSql(nameValueParameters), commandType);
+            return ExecuteCommand<T>(commandText, DataParameter.GetSql(nameValueParameters), commandType);
         }
 
-        /*
+       
         /// <summary>
         /// Executes sql as NonQuery Command  and returns effective records..
         /// </summary>
@@ -1678,52 +1679,55 @@ namespace Nistec.Data.Entities
             {
                 throw new ArgumentNullException("ExecuteCommand.commandText");
             }
+
+            return ExecuteCommandNonQuery(commandText, DataParameter.GetSql(nameValueParameters), commandType);
+
             //using (IDbCmd cmd = DbCmd())
             //{
-            return ExecuteNonQuery(commandText, DataParameter.GetSql(nameValueParameters), commandType);
+            //return ExecuteNonQuery(commandText, DataParameter.GetSql(nameValueParameters), commandType);
             //}
         }
-        
-        /// <summary>
-        /// Execute Command and returns T value such as (DataSet|DataTable|DataRow) or any entity class or scalar.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="commandText"></param>
-        /// <param name="parameters"></param>
-        /// <param name="commandType"></param>
-        /// <param name="commandTimeout"></param>
-        /// <returns></returns>
-        public T ExecuteCommand<T>(string commandText, IDbDataParameter[] parameters, CommandType commandType = CommandType.Text, int commandTimeout = 0)
-        {
-            if (commandText == null)
-            {
-                throw new ArgumentNullException("ExecuteCommand.commandText");
-            }
-            //using (IDbCmd cmd = DbCmd())
-            //{
-            return Command.ExecuteCommand<T>(commandText, parameters, commandType, commandTimeout);
-            //}
-        }
-        /// <summary>
-        /// Execute as NonQuery Command  and returns effective records.
-        /// </summary>
-        /// <param name="commandText"></param>
-        /// <param name="parameters"></param>
-        /// <param name="commandType"></param>
-        /// <param name="commandTimeout"></param>
-        /// <returns></returns>
-        public int ExecuteNonQuery(string commandText, IDbDataParameter[] parameters, CommandType commandType = CommandType.Text, int commandTimeout = 0)
-        {
-            if (commandText == null)
-            {
-                throw new ArgumentNullException("ExecuteNonQuery.commandText");
-            }
-            //using (IDbCmd cmd = DbCmd())
-            //{
-            return Command.ExecuteNonQuery(commandText, parameters, commandType, commandTimeout);
-           // }
-        }
-        */
+        /*
+       /// <summary>
+       /// Execute Command and returns T value such as (DataSet|DataTable|DataRow) or any entity class or scalar.
+       /// </summary>
+       /// <typeparam name="T"></typeparam>
+       /// <param name="commandText"></param>
+       /// <param name="parameters"></param>
+       /// <param name="commandType"></param>
+       /// <param name="commandTimeout"></param>
+       /// <returns></returns>
+       public T ExecuteCommand<T>(string commandText, IDbDataParameter[] parameters, CommandType commandType = CommandType.Text, int commandTimeout = 0)
+       {
+           if (commandText == null)
+           {
+               throw new ArgumentNullException("ExecuteCommand.commandText");
+           }
+           //using (IDbCmd cmd = DbCmd())
+           //{
+           return Command.ExecuteCommand<T>(commandText, parameters, commandType, commandTimeout);
+           //}
+       }
+       /// <summary>
+       /// Execute as NonQuery Command  and returns effective records.
+       /// </summary>
+       /// <param name="commandText"></param>
+       /// <param name="parameters"></param>
+       /// <param name="commandType"></param>
+       /// <param name="commandTimeout"></param>
+       /// <returns></returns>
+       public int ExecuteNonQuery(string commandText, IDbDataParameter[] parameters, CommandType commandType = CommandType.Text, int commandTimeout = 0)
+       {
+           if (commandText == null)
+           {
+               throw new ArgumentNullException("ExecuteNonQuery.commandText");
+           }
+           //using (IDbCmd cmd = DbCmd())
+           //{
+           return Command.ExecuteNonQuery(commandText, parameters, commandType, commandTimeout);
+          // }
+       }
+       */
         #endregion
 
         #region Query
