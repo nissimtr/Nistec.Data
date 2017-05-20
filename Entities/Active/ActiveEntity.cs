@@ -198,7 +198,7 @@ namespace Nistec.Data.Entities
         /// <returns></returns>
         public static EntityDbContext CreateEntityDb<Dbc>(string entityName, string mappingName, EntitySourceType sourceType, EntityKeys keys) where Dbc : IDbContext
         {
-            IDbContext dbc = DbContext.Get<Dbc>();
+            IDbContext dbc = DbContext.Create<Dbc>();
             return new EntityDbContext(dbc, entityName, mappingName, sourceType, keys);
         }
 
@@ -334,10 +334,10 @@ namespace Nistec.Data.Entities
             return _Data==null ?null: _Data.EntityDictionary(); 
         }
 
-       
-        public Type EntityType()
+       [EntityProperty(EntityPropertyType.NA)]
+        public Type EntityType
         {
-            return typeof(ActiveEntity); 
+            get { return typeof(ActiveEntity); }
         }
 
 

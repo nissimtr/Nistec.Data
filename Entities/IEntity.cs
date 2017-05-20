@@ -105,6 +105,11 @@ namespace Nistec.Data.Entities
 
     }
 
+    public interface IEntityData : IEntityItem
+    {
+        [EntityProperty(EntityPropertyType.NA)]
+        string MappingName { get; set; }
+    }
     public interface IEntityDb : IEntityItem
     {
         EntityDbContext EntityDb { get; set; }
@@ -112,7 +117,7 @@ namespace Nistec.Data.Entities
 
     public interface IEntityFields : IEntityDb
     {
-        GenericRecord EntityRecord { get; set; }//rcd
+        GenericRecord EntityRecord { get; set; }
         EntityProperties EntityProperties { get; }
         EntityFieldsChanges GetFieldsChanged();
     }

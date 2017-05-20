@@ -42,7 +42,7 @@ namespace Nistec.Data.Entities
     {
       
 
-         #region Constructors
+        #region Constructors
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DbContextAttribute"/> class
@@ -149,22 +149,50 @@ namespace Nistec.Data.Entities
         {
             DbContext db =null;
             if (IsConnectionStringDefined)
-                db = new DbContext(ConnectionKey, ConnectionString, Provider);
+                db = new DbContext(ConnectionString, Provider);
             else if (IsConnectionKeyDefined)
                 db = new DbContext(ConnectionKey);
             return db;
         }
+        public static DbContextAttribute Get<Dbc>() where Dbc : IDbContext
+        {
+            DbContextAttribute[] attributes = typeof(Dbc).GetCustomAttributes<DbContextAttribute>();
+            if (attributes == null || attributes.Length == 0)
+                return null;
+            return attributes[0];
+        }
+        public static DbContext Create<Dbc>() where Dbc : IDbContext
+        {
+            DbContextAttribute attrib = Get<Dbc>();
+            if (attrib == null)
+                return null;
+            if (attrib.IsConnectionStringDefined)
+                return new DbContext(attrib.ConnectionString, attrib.Provider);
+            else if (attrib.IsConnectionKeyDefined)
+                return new DbContext(attrib.ConnectionKey);
+            throw new EntityException("DbContextAttribute.Connection not defined");
+            //return new DbContext(attrib.ConnectionKey);
+        }
 
-        public static void BuildDbContext(DbContext instance)
+        public static void BuildDbContext(DbContext instance, bool forceSettings=false)
         {
             DbContextAttribute[] attributes = instance.GetType().GetCustomAttributes<DbContextAttribute>();
-            if (attributes == null || attributes.Length==0)
-                return;
-            foreach (var attribute in attributes)
+            if (attributes == null || attributes.Length == 0)
             {
-                //DbContext db = attribute.Create();
-                instance.SetConnectionInternal(attribute.ConnectionKey, attribute.ConnectionString, attribute.Provider,false);
+                if (forceSettings)
+                    throw new EntityException("DbContextAttribute not defined");
+                else
+                    return;
             }
+            var attribute=attributes[0];
+
+            instance.SetConnectionInternal(attribute.ConnectionKey, attribute.ConnectionString, attribute.Provider, false);
+
+
+            //foreach (var attribute in attributes)
+            //{
+            //    instance.SetConnectionInternal(attribute.ConnectionKey, attribute.ConnectionString, attribute.Provider, false);
+            //}
         }
 
 	}

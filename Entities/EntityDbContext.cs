@@ -33,26 +33,28 @@ using System.Xml.Serialization;
 
 namespace Nistec.Data.Entities
 {
+
+   
     /// <summary>
     /// Represent db context for entities.
     /// </summary>
-    public class EntityDbContext 
+    public class EntityDbContext :IDisposable
     {
 
         #region static
 
-        /// <summary>
-        /// Get EntityDbContext using current instance of  <see cref="DbContext"/>
-        /// </summary>
-        /// <typeparam name="Dbc"></typeparam>
-        /// <param name="mappingName"></param>
-        /// <param name="sourceType"></param>
-        /// <returns></returns>
-        public static EntityDbContext Get<Dbc>(string mappingName, EntitySourceType sourceType) where Dbc : IDbContext
-        {
-            IDbContext db = DbContext.Get<Dbc>();
-            return new EntityDbContext();//db, mappingName, sourceType);
-        }
+        ///// <summary>
+        ///// Get EntityDbContext using current instance of  <see cref="DbContext"/>
+        ///// </summary>
+        ///// <typeparam name="Dbc"></typeparam>
+        ///// <param name="mappingName"></param>
+        ///// <param name="sourceType"></param>
+        ///// <returns></returns>
+        //public static EntityDbContext Get<Dbc>(string mappingName, EntitySourceType sourceType) where Dbc : IDbContext
+        //{
+        //    IDbContext db = DbContext.Get<Dbc>();
+        //    return new EntityDbContext();//db, mappingName, sourceType);
+        //}
 
         /// <summary>
         /// Create EntityDbContext using new instance of  <see cref="DbContext"/>
@@ -66,7 +68,7 @@ namespace Nistec.Data.Entities
         public static EntityDbContext Get<Dbc>(string entityName, string mappingName, EntitySourceType sourceType, EntityKeys keys) where Dbc : IDbContext
         {
             IDbContext db = DbContext.Create<Dbc>();
-            return new EntityDbContext();//db, entityName, mappingName, sourceType, keys);
+            return new EntityDbContext(db, entityName, mappingName, sourceType, keys);
         }
 
         /// <summary>
@@ -79,7 +81,7 @@ namespace Nistec.Data.Entities
         public static EntityDbContext Get<Dbc>(string mappingName, EntityKeys keys) where Dbc : IDbContext
         {
             IDbContext db = DbContext.Create<Dbc>();
-            return new EntityDbContext();//db, mappingName, mappingName, EntitySourceType.Table, keys);
+            return new EntityDbContext(db, mappingName, mappingName, EntitySourceType.Table, keys);
         }
         /// <summary>
         /// Create EntityDbContext using entity object and culture.
@@ -199,6 +201,65 @@ namespace Nistec.Data.Entities
              this.Keys = keys.ToArray();
              
          }
+        /// <summary>
+        ///  Crate a new instance of <see cref="EntityDbContext"/>
+        /// </summary>
+        /// <param name="db"></param>
+        /// <param name="mappingName"></param>
+        /// <param name="keys"></param>
+        public EntityDbContext(IDbContext db, string mappingName, KeySet keys)
+            : this()
+        {
+            this.MappingName = mappingName;
+            this.EntityName = mappingName;
+            this._Db = db;
+            this.ConnectionKey = db.ConnectionName;
+            this.Keys = keys.ToArray();
+
+        }
+        #endregion
+
+        #region Dispose
+
+        private bool disposed = false;
+
+        protected void Dispose(bool disposing)
+        {
+            if (!disposed)
+            {
+                if (disposing)
+                {
+                    if (_Db != null)
+                    {
+                        _Db.Dispose();
+                        _Db = null;
+                    }
+                    EntityName = null;
+                    MappingName = null;
+                    ConnectionKey = null;
+                    Keys = null;
+                    m_EntityKeys = null;
+                }
+                disposed = true;
+            }
+        }
+      
+        /// <summary>
+        /// This object will be cleaned up by the Dispose method. 
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+
+            // take this object off the finalization queue     
+            GC.SuppressFinalize(this);
+        }
+
+        //~DbContext()
+        //{
+        //    Dispose(false);
+        //}
+
         #endregion
 
         #region properties
@@ -212,7 +273,7 @@ namespace Nistec.Data.Entities
         {
             if (_Db == null)
             {
-                _Db = DbContext.Get(ConnectionKey);
+                _Db = DbContext.Create(ConnectionKey);
             }
             return _Db;
         }
@@ -301,7 +362,7 @@ namespace Nistec.Data.Entities
         internal IDbConnection DbConnection()
         {
             ValidateContext();
-            return _Db.Connection();
+            return _Db.Connection;//.Connection();
         }
 
         internal string DbConnectionName()
@@ -475,7 +536,7 @@ namespace Nistec.Data.Entities
                 var cmd = Context();
                 if (SourceType == EntitySourceType.Procedure)
                 {
-                    return cmd.ExecuteQuery<T>(MappingName, keyValueParameters);
+                    return cmd.ExecuteList<T>(MappingName, keyValueParameters);
                 }
                 else
                 {
@@ -497,7 +558,8 @@ namespace Nistec.Data.Entities
                 var context = Context();
                 string commandText = filter == null ? SqlFormatter.SelectString(MappingName) : filter.Select(MappingName);
                 IDbDataParameter[] parameters = filter == null ? null : filter.Parameters;
-                using (var cmd = context.DbCmd())
+                //return context.ExecuteCommand<T>(commandText, parameters, CmdType());
+                using (var cmd = context.NewCmd())
                 {
                     return cmd.ExecuteCommand<T>(commandText, parameters, CmdType());
                 }
@@ -507,13 +569,15 @@ namespace Nistec.Data.Entities
                 throw new EntityException(ex.Message);
             }
         }
+
         public T DoCommand<T>(string commandText, IDbDataParameter[] parameters, CommandType cmdType, int commandTimeout = 0)
         {
             ValidateContext();
             try
             {
                 var context = Context();
-                using (var cmd = context.DbCmd())
+
+                using (var cmd = context.NewCmd())
                 {
                     return cmd.ExecuteCommand<T>(commandText, parameters, cmdType, commandTimeout, true);
                 }
@@ -529,7 +593,7 @@ namespace Nistec.Data.Entities
             try
             {
                 var context = Context();
-                using (var cmd = context.DbCmd())
+                using (var cmd = context.NewCmd())
                 {
                     return cmd.ExecuteCommand<TItem, TResult>(commandText, parameters, cmdType, commandTimeout, true);
                 }
@@ -545,7 +609,7 @@ namespace Nistec.Data.Entities
             try
             {
                 var context = Context();
-                using (var cmd = context.DbCmd())
+                using (var cmd = context.NewCmd())
                 {
                     return cmd.ExecuteNonQuery(commandText, parameters, cmdType, commandTimeout);
                 }
@@ -559,7 +623,7 @@ namespace Nistec.Data.Entities
         public DataTable ExecuteDataTable()
         {
             var context = Context();
-            using (var cmd = context.DbCmd())
+            using (var cmd = context.NewCmd())
             {
                 return cmd.ExecuteDataTable(MappingName, true);
             }
@@ -567,7 +631,7 @@ namespace Nistec.Data.Entities
         internal DataTable ExecuteDataTable(string sql)
         {
            var context = Context();
-           using (var cmd = context.DbCmd())
+           using (var cmd = context.NewCmd())
            {
                return cmd.ExecuteDataTable(EntityName, sql, true);
            }
@@ -580,7 +644,7 @@ namespace Nistec.Data.Entities
             try
             {
                 var context = Context();
-                using (var cmd = context.DbCmd())
+                using (var cmd = context.NewCmd())
                 {
                     string commandText = GetCommandText(top);
                     DataParameter[] prm = null;
@@ -607,7 +671,7 @@ namespace Nistec.Data.Entities
             }
             if (_Db == null)
             {
-                _Db = DbContext.Get(ConnectionKey);
+                _Db = DbContext.Create(ConnectionKey);
             }
 
         }

@@ -112,13 +112,13 @@ namespace Nistec.Data
 
             string updateString = SqlFormatter.UpdateString(TableName, Update, Where);
 
-            return string.Format("if not exists(select * from {0} where {1}) begin {2} end else begin {3} end", TableName, Where, insertString, updateString);
+            return string.Format("if not exists(select 1 from {0} where {1}) begin {2} end else begin {3} end", TableName, Where, insertString, updateString);
         }
         public static string InsertNotExistsString(string TableName, string Insert, string Values, string Where)
         {
             string insertString = SqlFormatter.InsertString(TableName, Insert, Values);
 
-            return string.Format("if not exists(select * from {0} where {1}) begin {2} end", TableName, Where, insertString);
+            return string.Format("if not exists(select 1 from {0} where {1}) begin {2} end", TableName, Where, insertString);
         }
         public static string ExistsString(string From, string Fields, string Where)
         {
@@ -246,18 +246,52 @@ namespace Nistec.Data
             return SelectString(sb.ToString(), From, Where);
         }
 
-         public static string GetCommandText(string mappingName, object[] keyValueParameters)
+        public static string DeleteCommand(string mappingName, object[] keyValueParameters)
+        {
+            string where=CommandWhere(keyValueParameters);
+            return DeleteString(mappingName,where);
+        }
+        public static string CreateCommandText(string fields, string mappingName, object[] keyValueParameters)
+        {
+            return CreateCommandText(0, fields, mappingName, keyValueParameters);
+        }
+        public static string CreateCommandText(int top, string fields, string mappingName, object[] keyValueParameters)
         {
             if (string.IsNullOrEmpty(mappingName))
             {
-                throw new DataException("Invalid MappingName");
+                throw new ArgumentNullException("Invalid MappingName CommandText");
+            }
+            if (string.IsNullOrEmpty(fields))
+            {
+                throw new ArgumentNullException("Invalid Fields CommandText");
             }
             string where = "";
             if (keyValueParameters != null)
             {
                 where = SqlFormatter.CommandWhere(keyValueParameters);
             }
-            return SqlFormatter.SelectString("*", mappingName, where);
+            return SqlFormatter.SelectString(top,fields, mappingName, where);
+        }
+
+        public static string GetCommandText(string mappingName, object[] keyValueParameters)
+        {
+            if (string.IsNullOrEmpty(mappingName))
+            {
+                throw new ArgumentNullException("Invalid MappingName CommandText");
+            }
+            if (mappingName.TrimStart().ToLower().StartsWith("select"))
+            {
+                return mappingName;
+            }
+            else
+            {
+                string where = "";
+                if (keyValueParameters != null)
+                {
+                    where = SqlFormatter.CommandWhere(keyValueParameters);
+                }
+                return SqlFormatter.SelectString("*", mappingName, where);
+            }
         }
 
 
@@ -383,22 +417,22 @@ namespace Nistec.Data
         /// <summary>
         /// Validate Sql, not allowed (drop|create|alter).
         /// </summary>
-        /// <param name="sql"></param>
+        /// <param name="commandText"></param>
         /// <param name="excludeWords">drop|create|alter</param>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="SyntaxErrorException"></exception>
-        public static void ValidateSql(string sql, string excludeWords)
+        public static void ValidateSql(string commandText, string excludeWords)
         {
-            if (string.IsNullOrEmpty(sql))
+            if (string.IsNullOrEmpty(commandText))
             {
-                throw new ArgumentNullException("ValidateSql.sql");
+                throw new ArgumentNullException("ValidateSql.commandText");
             }
-            sql = sql.Replace("'", "''");
+            commandText = commandText.Replace("'", "''");
             if (excludeWords == null || excludeWords == "")
                 return;
 
             string pattern = string.Format(@"(\s|)({0})\s.*", excludeWords);
-            if (Regx.RegexValidateIgnoreCase(pattern, sql))
+            if (Regx.RegexValidateIgnoreCase(pattern, commandText))
             {
                 throw new SyntaxErrorException("ValidateSql SyntaxErrorException: Invalid sql format");
             }
@@ -406,18 +440,18 @@ namespace Nistec.Data
         /// <summary>
         /// Validate Sql, not allowed (drop|create|alter|delete|insert|update).
         /// </summary>
-        /// <param name="sql"></param>
+        /// <param name="commandText"></param>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="SyntaxErrorException"></exception>
-        public static void ValidateSqlSelect(string sql)
+        public static void ValidateSqlSelect(string commandText)
         {
-            if (string.IsNullOrEmpty(sql))
+            if (string.IsNullOrEmpty(commandText))
             {
-                throw new ArgumentNullException("ValidateSql.sql");
+                throw new ArgumentNullException("ValidateSql.commandText");
             }
-            sql = sql.Replace("'", "''");
+            commandText = commandText.Replace("'", "''");
             string pattern = @"(\s|)(drop|create|alter|delete|insert|update)\s.*";
-            if (Regx.RegexValidateIgnoreCase(pattern, sql))
+            if (Regx.RegexValidateIgnoreCase(pattern, commandText))
             {
                 throw new SyntaxErrorException("ValidateSql SyntaxErrorException: Invalid sql format");
             }

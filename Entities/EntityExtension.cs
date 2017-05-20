@@ -39,6 +39,20 @@ namespace Nistec.Data.Entities
 
     public static class EntityExtension
     {
+
+        public static string EntityName<T>(this IEntityItem item)
+        {
+            return EntityMappingAttribute.Name<T>();
+        }
+        public static string EntityMapping<T>(this IEntityItem item)
+        {
+            return EntityMappingAttribute.Mapping<T>();
+        }
+        public static string EntityViewName<T>(this IEntityItem item)
+        {
+            return EntityMappingAttribute.View<T>();
+        }
+
  
         #region update / insert / delete
 
@@ -225,7 +239,6 @@ namespace Nistec.Data.Entities
         }
 
         #endregion
-
     
         #region EntityDictionary
 
@@ -326,6 +339,56 @@ namespace Nistec.Data.Entities
             }
         }
         #endregion
+
+        public static T Create<T>(this System.Collections.Specialized.NameValueCollection form)
+        {
+
+            T instance = ActivatorUtil.CreateInstance<T>();
+
+            var props = DataProperties.GetEntityProperties(typeof(T), true);
+            foreach (var pa in props)
+            {
+                PropertyInfo property = pa.Property;
+                EntityPropertyAttribute attr = pa.Attribute;
+
+                if (!property.CanRead)
+                {
+                    continue;
+                }
+
+                if (attr != null)
+                {
+                    if (attr.ParameterType == EntityPropertyType.NA)
+                    {
+                        continue;
+                    }
+                    if (attr.ParameterType == EntityPropertyType.View)
+                    {
+                        continue;
+                    }
+                    if (property.CanWrite)
+                    {
+                        string field = attr.GetColumn(property.Name);
+                        //if (attr.ParameterType == EntityPropertyType.Optional)
+                        //{
+                        //    Console.WriteLine("Optional");
+                        //}
+
+                        object value = form[field];
+                        if (value == null)
+                        {
+                            if (attr.ParameterType == EntityPropertyType.Optional)
+                                continue;
+                            value = attr.AsNull;
+                        }
+                        property.SetValue(instance, Types.ChangeType(value, property.PropertyType), null);
+                    }
+                }
+            }
+
+
+            return instance;
+        }
 
         public static IDictionary EntityAsDictionary(object context)
         {

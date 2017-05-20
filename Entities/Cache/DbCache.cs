@@ -135,10 +135,16 @@ namespace Nistec.Data.Entities.Cache
             this[tableName] = new EntityDbContext(this.context, tableName, mappingName, EntitySourceType.Table, keys);
         }
 
-        public void RemoveEntity(EntityDbContext entity)
+        public void RemoveEntity(EntityDbContext entity, bool dispose)
         {
             if (this.ContainsKey(entity.EntityName))
+            {
                 this.Remove(entity.EntityName);
+                if (entity != null && dispose)
+                {
+                    entity.Dispose();
+                }
+            }
         }
 
     }

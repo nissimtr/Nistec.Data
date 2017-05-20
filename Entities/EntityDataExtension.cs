@@ -148,7 +148,6 @@ namespace Nistec.Data.Entities
         }
         #endregion
 
-
         #region Dictionary xml Serialization
 
         public static string DictionaryToXml(IDictionary gr,string entityName)
@@ -222,6 +221,20 @@ namespace Nistec.Data.Entities
             return item;
         }
 
+        public static List<T> DataTableToEntityList<T>(DataTable dt)
+        {
+            if (dt == null)
+            {
+                throw new ArgumentNullException("DataTableToEntityList.dt");
+            }
+            List<T> list=new List<T>();
+            for(int i=0;i<dt.Rows.Count;i++)
+            {
+                list.Add(DataRowToEntity<T>(dt.Rows[i]));
+            }
+            return list;
+        }
+
         /// <summary>
         /// Display EntityFields as DataTable schema 
         /// </summary>
@@ -243,6 +256,75 @@ namespace Nistec.Data.Entities
             return dt.Clone();
         }
 
+        public static void EntityResolveJsonFields(IEntityItem entity)
+        {
+            PropertyInfo[] props = DataProperties.GetProperties(entity.GetType());
+
+            foreach (var property in props)
+            {
+                if (!property.CanWrite)
+                    continue;
+                string field = property.Name;
+                if (property.PropertyType == typeof(string))
+                {
+                    object fieldValue = property.GetValue(entity, null);
+                    if(fieldValue!=null)
+                    {
+                        fieldValue=fieldValue.ToString().Replace("\"", "\\\"");
+                         property.SetValue(entity, fieldValue, null);
+                    }
+                }
+            }
+        }
+        public static Dictionary<string, object> EntityToDictionary(IEntityItem entity, bool canWrite, bool disableIdentity)
+        {
+            Dictionary<string, object> dt = new Dictionary<string, object>();
+
+            //PropertyInfo[] properties = EntityExtension.GetEntityProperties(entity, true, canWrite, disableIdentity);
+
+            var props = DataProperties.GetEntityProperties(entity.GetType());
+
+            foreach (var pa in props)
+            {
+                //dt.Add(field.Name, field.PropertyType);
+                PropertyInfo property = pa.Property;
+                if (!property.CanRead)
+                {
+                    continue;
+                }
+                string field = property.Name;
+                EntityPropertyAttribute attr = pa.Attribute;
+                if (attr == null)
+                {
+                    dt.Add(property.Name, property.GetValue(entity, null));
+                }
+
+                else if (attr.ParameterType != EntityPropertyType.NA)
+                {
+
+                    if (attr.ParameterType == EntityPropertyType.View)
+                    {
+                        continue;
+                    }
+
+                    if (attr.ParameterType == EntityPropertyType.Optional)
+                    {
+                        if (attr.IsColumnDefined)
+                        {
+                            field = attr.Column;
+                        }
+                    }
+                    else
+                    {
+                        field = attr.IsColumnDefined ? attr.Column : property.Name;
+                    }
+
+                    object fieldValue = property.GetValue(entity, null);
+                    dt.Add(field, fieldValue);
+                }
+            }
+            return dt;
+        }
         public static DataTable EntityToDataTable<TMap,T>(IEntityItem[] entities, string tableName, bool writeAbleOnly, bool disableIdentity) where T : IEntityItem
         {
             if (entities == null)

@@ -30,6 +30,43 @@ using System.Collections.Generic;
 namespace Nistec.Data
 {
   
+    //public class Args: Dictionary<string,object>
+    //{
+
+    //    public static Args Get(params object[] keyValueParameters)
+    //    {
+    //        int count = keyValueParameters.Length;
+    //        if (count % 2 != 0)
+    //        {
+    //            throw new ArgumentException("values parameter not correct, Not match key value arguments");
+    //        }
+    //        Args a = new Args();
+    //        for (int i = 0; i < count; i++)
+    //        {
+    //            a.Add(keyValueParameters[i].ToString(), keyValueParameters[++i]);
+    //        }
+    //        return a;
+    //    }
+
+    //    public static IDbDataParameter[] Get(params object[] keyValueParameters)
+    //    {
+
+    //        int count = keyValueParameters.Length;
+    //        if (count % 2 != 0)
+    //        {
+    //            throw new ArgumentException("values parameter not correct, Not match key value arguments");
+    //        }
+    //        List<IDbDataParameter> list = new List<IDbDataParameter>();
+    //        for (int i = 0; i < count; i++)
+    //        {
+    //            list.Add(new DataParameter(keyValueParameters[i].ToString(), keyValueParameters[++i]));
+    //        }
+
+    //        return list.ToArray();
+    //    }
+    //}
+
+   
     [StructLayout(LayoutKind.Sequential)]
     public struct KeyValueItem
     {
@@ -71,8 +108,8 @@ namespace Nistec.Data
                 object val = keyValueArgs[i];
                 string name = (string)keyValueArgs[++i];
 
-                T id = GenericTypes.Convert<T>(val);
-                var entity = new KeyValueItem<T>() { Id = id, Name = name };
+                T value = GenericTypes.Convert<T>(val);
+                var entity = new KeyValueItem<T>() { Value = value, Key = name };
                 list.Add(entity);
             }
             return list;
@@ -90,13 +127,13 @@ namespace Nistec.Data
             }
             object val = keyValueArgs[0];
             string name = (string)keyValueArgs[1];
-            T id = GenericTypes.Convert<T>(val);
-            var entity = new KeyValueItem<T>() { Id = id, Name = name };
+            T value = GenericTypes.Convert<T>(val);
+            var entity = new KeyValueItem<T>() { Value = value, Key = name };
             return entity;
         }
 
-        public T Id { get; set; }
-        public string Name { get; set; }
+        public T Value { get; set; }
+        public string Key { get; set; }
     }
 
 

@@ -603,12 +603,17 @@ namespace Nistec.Data
             return prm.ToArray();
         }
 
+        public static object[] ToArgs(params object[] keyValueParameters)
+        {
+            return keyValueParameters;
+        }
+
         /// <summary>
         /// Create KeyValueParameters
         /// </summary>
         /// <param name="keyValueParameters"></param>
         /// <returns></returns>
-        public static DataParameter[] Get(params object[] keyValueParameters)
+        public static IDbDataParameter[] Get(params object[] keyValueParameters)
         {
 
             int count = keyValueParameters.Length;
@@ -616,7 +621,7 @@ namespace Nistec.Data
             {
                 throw new ArgumentException("values parameter not correct, Not match key value arguments");
             }
-            List<DataParameter> list = new List<DataParameter>();
+            List<IDbDataParameter> list = new List<IDbDataParameter>();
             for (int i = 0; i < count; i++)
             {
                 list.Add(new DataParameter(keyValueParameters[i].ToString(), keyValueParameters[++i]));
@@ -624,6 +629,28 @@ namespace Nistec.Data
 
             return list.ToArray();
         }
+
+        ///// <summary>
+        ///// Create KeyValueParameters
+        ///// </summary>
+        ///// <param name="keyValueParameters"></param>
+        ///// <returns></returns>
+        //public static IDbDataParameter[] GetIdb(params object[] keyValueParameters)
+        //{
+
+        //    int count = keyValueParameters.Length;
+        //    if (count % 2 != 0)
+        //    {
+        //        throw new ArgumentException("values parameter not correct, Not match key value arguments");
+        //    }
+        //    List<IDbDataParameter> list = new List<IDbDataParameter>();
+        //    for (int i = 0; i < count; i++)
+        //    {
+        //        list.Add(new DataParameter(keyValueParameters[i].ToString(), keyValueParameters[++i]));
+        //    }
+
+        //    return list.ToArray();
+        //}
 
        /// <summary>
         /// Create sql parameter from <see cref="GenericRecord"/>
@@ -688,6 +715,45 @@ namespace Nistec.Data
             return list.ToArray();
         }
 
+        public static SqlParameter[] GetSqlWithDirection(params object[] keyValueDirectionParameters)
+        {
+            if (keyValueDirectionParameters == null)
+                return null;
+            int count = keyValueDirectionParameters.Length;
+            if (count % 3 != 0)
+            {
+                throw new ArgumentException("values parameter not correct, Not match key value arguments");
+            }
+            List<SqlParameter> list = new List<SqlParameter>();
+            for (int i = 0; i < count; i++)
+            {
+                var p = new SqlParameter(keyValueDirectionParameters[i].ToString(), keyValueDirectionParameters[++i]);
+                switch ((int)keyValueDirectionParameters[++i])
+                 {
+                     case 2://Output
+                         p.Direction = System.Data.ParameterDirection.Output;
+                         break;
+                     case 3://InputOutput
+                         p.Direction = System.Data.ParameterDirection.InputOutput;break;
+                     case 6://ReturnValue
+                         p.Direction = System.Data.ParameterDirection.ReturnValue;
+                         break;
+                     default://Input = 1,
+                         break;
+                 }
+                list.Add(p);
+            }
+
+            return list.ToArray();
+        }
+
+        public static SqlParameter[] GetSqlWithReturnValue(params object[] keyValueParameters)
+        {
+            List<SqlParameter> list=GetSqlList(keyValueParameters);
+            AddReturnValueParameter(list, "ReturnVal");
+            return list.ToArray();
+        }
+
         public static List<SqlParameter> GetSqlList(params object[] keyValueParameters)
         {
             if (keyValueParameters == null)
@@ -713,7 +779,12 @@ namespace Nistec.Data
             p.Direction = ParameterDirection.Output;
             list.Add(p);
         }
-
+        public static void AddReturnValueParameter(List<SqlParameter> list, string name)
+        {
+            SqlParameter p = new SqlParameter(name, SqlDbType.Int);
+            p.Direction = ParameterDirection.ReturnValue;
+            list.Add(p);
+        }
         public static SqlParameter[] GetSqlWithType(params string[] keyValueTypeParameters)
         {
             if (keyValueTypeParameters == null)
@@ -742,7 +813,34 @@ namespace Nistec.Data
             return list.ToArray();
         }
 
-    
+        public static string ToQueryString(object[] keyValueParameters, string excludeKeys=null)
+        {
+            if (keyValueParameters == null || keyValueParameters.Length == 0)
+            {
+                throw new ArgumentNullException("keyValueParameters");
+            }
+            StringBuilder sb = new StringBuilder();
+            int count = keyValueParameters.Length;
+            if (count % 2 != 0)
+            {
+                throw new ArgumentException("values parameter not correct, Not match key value arguments");
+            }
+            if (excludeKeys != null)
+                excludeKeys = excludeKeys.ToLower();
+            List<DataParameter> list = new List<DataParameter>();
+            for (int i = 0; i < count; i++)
+            {
+                string key = keyValueParameters[i].ToString().ToLower();
+                if (excludeKeys != null)
+                {
+                    if (excludeKeys.Contains(key))
+                        continue;
+                }
+                sb.AppendFormat("{0}={1}&", key, keyValueParameters[++i]);
+            }
+            sb.Remove(sb.Length - 1, 1);
+            return sb.ToString();
+        }
         public static string ToQueryString(IDbDataParameter[] parameters)
         {
             if (parameters == null || parameters.Length == 0)

@@ -34,6 +34,7 @@ using System.Reflection;
 using Nistec.IO;
 using Nistec.Xml;
 using Nistec.Serialization;
+using System.Collections.Specialized;
 
 namespace Nistec.Data.Entities
 {
@@ -221,6 +222,45 @@ namespace Nistec.Data.Entities
         #endregion
 
         #region static
+       
+
+        /// <summary>
+        /// Initialize a new instance of GenericEntity
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="keyValue"></param>
+        /// <returns></returns>
+        public static GenericEntity Get<T>(params object[] keyValue) where T : IEntityItem
+        {
+            var gr = GenericRecord.ParseKeyValue(keyValue);
+            var keyset = EntityPropertyBuilder.GetEntityKeySet<T>(gr);
+            if (keyset == null || keyset.Count == 0)
+            {
+                throw new ArgumentNullException("GenericEntity.KeySet");
+            }
+            var ge = new GenericEntity();
+            ge.m_Type = typeof(T);
+            ge.SetRecord(gr, keyset);
+            ge.MappingName = EntityMappingAttribute.Mapping<T>();
+            return ge;
+        }
+
+        public static GenericEntity Create<T>(NameValueCollection keyValue) where T : IEntityItem
+        {
+            GenericRecord gr=EntityPropertyBuilder.CreateGenericRecord<T>(keyValue,false);
+            
+            var keyset = EntityPropertyBuilder.GetEntityKeySet<T>(gr);
+            if (keyset == null || keyset.Count == 0)
+            {
+                throw new ArgumentNullException("GenericEntity.KeySet");
+            }
+            var ge = new GenericEntity();
+            ge.m_Type = typeof(T);
+            ge.SetRecord(gr, keyset);
+            ge.MappingName = EntityMappingAttribute.Mapping<T>();
+            return ge;
+        }
+        
 
         /// <summary>
         /// Initialize a new instance of GenericEntity
@@ -261,14 +301,15 @@ namespace Nistec.Data.Entities
         /// <returns></returns>
         public static GenericEntity Create<Dbc>(string cmdText, IDbDataParameter[] parameters, CommandType cmdType) where Dbc : IDbContext
         {
-            IDbContext db = DbContext.Get<Dbc>();
-
-            DataRow row = null;
-            using (IDbCmd cmd = db.DbCmd())
+            using (IDbContext db = DbContext.Create<Dbc>())
             {
-                row = cmd.ExecuteCommand<DataRow>(cmdText, parameters, cmdType, 0, true);
+                DataRow row = db.ExecuteCommand<DataRow>(cmdText, parameters, cmdType, 0, true);
+                //using (IDbCmd cmd = db.Command)//.DbCmd())
+                //{
+                //    row = cmd.ExecuteCommand<DataRow>(cmdText, parameters, cmdType, 0, true);
+                //}
+                return new GenericEntity(row);
             }
-            return new GenericEntity(row);
         }
 
 
@@ -547,17 +588,32 @@ namespace Nistec.Data.Entities
                 return;
             this[field.ToString()] = value;
         }
+
+        internal void SetRecord(GenericRecord value, KeySet keyset)
+        {
+            ClearChanges();
+            m_data = value;
+            ValidateData();
+            m_allowNew = false;
+            foreach(var entry in m_data)
+            {
+                FieldsChanged[entry.Key] = entry.Value;
+            }
+            this._PrimaryKey = keyset;
+
+        }
         #endregion
 
         #region Properties
 
         bool _IsReadOnly = false;
+        [EntityProperty(EntityPropertyType.NA)]
         public bool IsReadOnly
         {
             get { return _IsReadOnly; }
             internal set { _IsReadOnly = value; }
         }
-
+        [EntityProperty(EntityPropertyType.NA)]
         private Dictionary<string, object> iData
         {
             get
@@ -583,6 +639,7 @@ namespace Nistec.Data.Entities
         /// <summary>
         /// Get PrimaryKey as EntityKeys
         /// </summary>
+        [EntityProperty(EntityPropertyType.NA)]
         public KeySet PrimaryKey
         {
             get
@@ -649,6 +706,7 @@ namespace Nistec.Data.Entities
         /// </summary>
         /// <param name="field"></param>
         /// <returns></returns>
+        [EntityProperty(EntityPropertyType.NA)]
         public object this[string field]
         {
             get { return GetValue(field); }
@@ -675,6 +733,12 @@ namespace Nistec.Data.Entities
                 m_data[field] = value;
             }
         }
+        [EntityProperty(EntityPropertyType.NA)]
+        public string MappingName
+        {
+            get;set;
+        }
+
         #endregion
 
         #region FieldsChanged
@@ -781,8 +845,33 @@ namespace Nistec.Data.Entities
 
         #region SaveChanges
 
-       
+        public int Upsert<Dbc>()
+             where Dbc : IDbContext
+        {
+            ValidateReadOnly();
+            using (var db = DbContext.Create<Dbc>())
+            {
+                return db.EntityUpsert(this);
+            }
+        }
 
+        /// <summary>
+        /// Save all Changes by <see cref="UpdateCommandType"/> specific command to DB and return number of AffectedRecords
+        /// If not <see cref="IsDirty"/> which mean no changed has been made return 0
+        /// </summary>
+        /// <param name="commandType"></param>
+        /// <param name="db"></param>
+        /// <returns></returns>
+        /// <exception cref="EntityException"></exception>
+        /// <exception cref="DalException"></exception>
+        public virtual int SaveChanges<T>(UpdateCommandType commandType, EntityDbContext db) where T : IEntityItem
+        {
+            ValidateReadOnly();
+
+            int res = EntityFieldsChanges.SaveChanges<T>(commandType, this, db);
+
+            return res;
+        }
         /// <summary>
         /// Save all Changes by <see cref="UpdateCommandType"/> specific command to DB and return number of AffectedRecords
         /// If not <see cref="IsDirty"/> which mean no changed has been made return 0
@@ -795,12 +884,11 @@ namespace Nistec.Data.Entities
         public virtual int SaveChanges(UpdateCommandType commandType, EntityDbContext db)
         {
             ValidateReadOnly();
-            
-            int res = EntityFieldsChanges.SaveChanges(commandType,this,db);
-           
+
+            int res = EntityFieldsChanges.SaveChanges(commandType, this, db);
+
             return res;
         }
-
         #endregion
 
         #region compare
@@ -1091,9 +1179,11 @@ namespace Nistec.Data.Entities
             return m_data;
         }
 
-        public virtual Type EntityType()
+        Type m_Type;
+        [EntityProperty(EntityPropertyType.NA)]
+        public virtual Type EntityType
         {
-            return typeof(GenericEntity);
+            get { return m_Type ?? typeof(GenericEntity); }
         }
 
        

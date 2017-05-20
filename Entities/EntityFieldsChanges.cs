@@ -36,19 +36,20 @@ using Nistec.Runtime;
 namespace Nistec.Data.Entities
 {
     
-     public class EntityFieldsChanges
+    public class EntityFieldsChanges
     {
          //rcd
         GenericRecord _Data;
         IEntityFields _entity;
         object _instance;
         UpdateCommandType _commandType;
-  
+        EntityDbContext _EntityDb;
 
         public EntityFieldsChanges(IEntityFields entity, object instace, UpdateCommandType commandType,bool initChanges = true)
         {
             _Data = entity.EntityRecord;
             _entity = entity;
+            _EntityDb = entity.EntityDb;
             _instance = instace;
             _commandType = commandType;
 
@@ -61,6 +62,54 @@ namespace Nistec.Data.Entities
                 SetChanges();
             }
         }
+
+        public EntityFieldsChanges(EntityDbContext db, IEntityItem newEntity)
+        {
+            _Data = EntityPropertyBuilder.CreateGenericRecord(newEntity, false);
+            _EntityDb = db;
+            _instance = newEntity;
+            _commandType = UpdateCommandType.Insert;
+            FieldsChanged.Clear();
+            foreach (var entry in _Data)
+            {
+                SetChanges(entry.Key, entry.Value);
+            }
+        }
+        public EntityFieldsChanges(EntityDbContext db, IEntityItem originalEntity, IEntityItem newEntity)
+        {
+            _Data = EntityPropertyBuilder.CreateGenericRecord(originalEntity, false);
+            _EntityDb=db;
+            _instance = newEntity;
+            _commandType = UpdateCommandType.Update;
+
+            if (newEntity == null)
+            {
+                _instance = originalEntity;
+            }
+            SetChanges();
+        }
+
+        //public EntityFieldsChanges(EntityDbContext db, IEntityItem entity, object[] keyValue, UpdateCommandType commandType = UpdateCommandType.Upsert)
+        //{
+        //    if (entity == null)
+        //    {
+        //        throw new ArgumentNullException("EntityFieldsChanges.entity");
+        //    }
+
+        //    //if (keyValue == null || keyValue.Length == 0)
+        //    //{
+        //    //    keyValue = EntityPropertyBuilder.GetEntityKeyValueParameters(entity);
+        //    //}
+        //    if (keyValue == null)
+        //    {
+        //        throw new ArgumentNullException("EntityFieldsChanges.EntityKeys");
+        //    }
+        //    _Data = GenericRecord.ParseKeyValue(keyValue);//( EntityPropertyBuilder.CreateGenericRecord(entity, false);
+        //    _EntityDb = db;
+        //    _instance = entity;
+        //    _commandType = commandType;// UpdateCommandType.Upsert;
+        //    SetChanges();
+        //}
 
         public GenericRecord Data
         {
@@ -82,7 +131,6 @@ namespace Nistec.Data.Entities
         /// </summary>
         /// <param name="field">the column name in data row</param>
         /// <param name="value">the value to insert</param>
-        /// <param name="isInsert">indicate if the value should be inserted</param>
         void SetChanges(string field, object value)
         {
             if (_Data == null)
@@ -91,24 +139,34 @@ namespace Nistec.Data.Entities
             }
             if (!_Data.ContainsKey(field))
             {
-                AddNewField(field);
+                _FieldsChanged[field] = value;
+                //AddNewField(field);
             }
             else if (_commandType== UpdateCommandType.Insert)
             {
-                AddChanges(field);
+                _FieldsChanged[field] = value;
+                //AddChanges(field);
             }
             else if (!_Data.CompareValues(field, value))
             {
-                AddChanges(field);
+                _FieldsChanged[field] = value;
+                //AddChanges(field);
             }
             _Data.SetValue(field, value);
         }
 
-        public int SaveChanges()
-        {
-            EntityDbContext db = _entity.EntityDb;
 
-            if (db == null)
+        public EntityCommandResult SaveChanges()
+        {
+           
+            //if (_entity == null)
+            //{
+            //    throw new EntityException("Invalid EntityFields");
+            //}
+
+            //EntityDbContext db = _entity.EntityDb;
+
+            if (_EntityDb == null)
             {
                 throw new EntityException("Invalid MappingName or ConnectionContext");
             }
@@ -116,18 +174,25 @@ namespace Nistec.Data.Entities
             {
                 throw new ArgumentException("Invalid Entity Data ");
             }
-            db.ValidateContext();
+            _EntityDb.ValidateContext();
 
             if (!IsDirty())
-                return 0;
+                return EntityCommandResult.Empty;
             
             EntityCommandResult res = null;
 
+            if (_entity != null)
+                using (EntityCommandBuilder ac = new EntityCommandBuilder(_entity, _instance, _EntityDb.DbConnection(), _EntityDb.MappingName))
+                {
+                    res = ac.ExecuteCommand(_commandType);
+                }
+            else
+                using (EntityCommandBuilder ac = new EntityCommandBuilder(_instance, _EntityDb ,FieldsChanged))
+                {
+                    res = ac.ExecuteCommand(_commandType);
+                }
 
-            using (EntityCommandBuilder ac = new EntityCommandBuilder(_entity,_instance, db.DbConnection(), db.MappingName))
-            {
-                res = ac.ExecuteCommand(_commandType);
-            }
+
             if (res == null)
             {
                 throw new EntityException("SaveChanges was not succeed.");
@@ -146,6 +211,42 @@ namespace Nistec.Data.Entities
                 }
             }
             CommitChanges();
+            return res ?? EntityCommandResult.Empty;//.AffectedRecords;
+        }
+
+        public static int SaveChanges<T>(UpdateCommandType commandType, GenericEntity entity, EntityDbContext db) where T : IEntityItem
+        {
+            if (db == null)
+            {
+                throw new EntityException("Invalid MappingName or ConnectionContext");
+            }
+            if (entity == null)
+            {
+                throw new ArgumentException("Invalid Entity Data ");
+            }
+            db.ValidateContext();
+
+            if (!entity.IsDirty)
+                return 0;
+
+            EntityCommandResult res = null;
+
+            using (EntityCommandBuilder ac = new EntityCommandBuilder(entity, typeof(T), db.DbConnection(), db.MappingName))
+            {
+                res = ac.ExecuteCommand(commandType);
+            }
+            if (res == null)
+            {
+                throw new EntityException("SaveChanges was not succeed.");
+            }
+            if (commandType == UpdateCommandType.Insert || commandType == UpdateCommandType.Upsert)
+            {
+                foreach (KeyValuePair<string, object> p in res.OutputValues)
+                {
+                    entity.SetValue(p.Key, p.Value);
+                }
+            }
+            entity.CommitChanges();
             return res.AffectedRecords;
         }
 
@@ -166,7 +267,7 @@ namespace Nistec.Data.Entities
 
             EntityCommandResult res = null;
 
-            using (EntityCommandBuilder ac = new EntityCommandBuilder(entity, db.DbConnection(), db.MappingName))
+            using (EntityCommandBuilder ac = new EntityCommandBuilder(entity, entity.EntityType, db.DbConnection(), db.MappingName))
             {
                 res = ac.ExecuteCommand(commandType);
             }
@@ -174,7 +275,7 @@ namespace Nistec.Data.Entities
             {
                 throw new EntityException("SaveChanges was not succeed.");
             }
-            if (commandType == UpdateCommandType.Insert)
+            if (commandType == UpdateCommandType.Insert || commandType == UpdateCommandType.Upsert)
             {
                 foreach (KeyValuePair<string, object> p in res.OutputValues)
                 {
@@ -202,27 +303,27 @@ namespace Nistec.Data.Entities
         }
 
 
-        /// <summary>
-        /// Set Value in specified field
-        /// </summary>
-        /// <param name="field">the column name in data row</param>
-        /// <param name="value">the value to insert</param>
-        void SetValue(string field, object value)
-        {
-            if (_Data == null)
-            {
-                throw new ArgumentException("Invalid Data ", field);
-            }
-            if (!_Data.ContainsKey(field))
-            {
-                AddNewField(field);
-            }
-            else if (!_Data.CompareValues(field, value))
-            {
-                AddChanges(field);
-            }
-            _Data.SetValue(field, value);
-        }
+        ///// <summary>
+        ///// Set Value in specified field
+        ///// </summary>
+        ///// <param name="field">the column name in data row</param>
+        ///// <param name="value">the value to insert</param>
+        //void SetValue(string field, object value)
+        //{
+        //    if (_Data == null)
+        //    {
+        //        throw new ArgumentException("Invalid Data ", field);
+        //    }
+        //    if (!_Data.ContainsKey(field))
+        //    {
+        //        AddNewField(field);
+        //    }
+        //    else if (!_Data.CompareValues(field, value))
+        //    {
+        //        AddChanges(field);
+        //    }
+        //    _Data.SetValue(field, value);
+        //}
 
         #region FieldsChanged
 
@@ -243,15 +344,15 @@ namespace Nistec.Data.Entities
             }
         }
 
-        void AddNewField(string field)
-        {
-            FieldsChanged.Add(field, EntityNewField);
-        }
+        //void AddNewField(string field)
+        //{
+        //    FieldsChanged.Add(field, EntityNewField);
+        //}
 
-        void AddChanges(string field)
-        {
-            FieldsChanged[field] = _Data[field];
-        }
+        //void AddChanges(string field)
+        //{
+        //    FieldsChanged[field] = _Data[field];
+        //}
 
         /// <summary>
         /// Clear all changes

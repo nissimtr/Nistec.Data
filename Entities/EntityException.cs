@@ -27,7 +27,7 @@ namespace Nistec.Data.Entities
 {
     public class EntityException:ApplicationException 
     {
-
+        
         public EntityException(string message)
             : base(message)
         {

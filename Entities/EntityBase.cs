@@ -57,7 +57,7 @@ namespace Nistec.Data.Entities
             {
                 if (disposing)
                 {
-
+                    m_EntityDb.Dispose();
                     m_EntityDb = null;
                     m_ControlAttributes = null;
 

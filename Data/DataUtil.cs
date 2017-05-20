@@ -30,6 +30,8 @@ using Nistec.Data.Entities;
 using Nistec.Generic;
 using System.Reflection;
 using System.Linq;
+using System.Data.SqlClient;
+
 
 namespace Nistec.Data
 {
@@ -90,8 +92,9 @@ namespace Nistec.Data
                 cloneDataTable.ImportRow(dt.Rows[i]);
             }
             return new DataView(cloneDataTable);
-        } 
+        }
 
+        
  
         public static string[] ColumnsFromDataTable(DataTable dt)
         {
@@ -598,6 +601,21 @@ namespace Nistec.Data
                 dt.Rows.Add(rowx);
             }
         }
+        public static T GetParameterValue<T>(this IEnumerable<SqlParameter> parameters, string parameterName)
+        {
+            var parameter = parameters.Where(p => p.ParameterName == parameterName).FirstOrDefault();
+            if (parameter == null)
+                return default(T);
+            return GenericTypes.Convert<T>(parameter.Value);
+        }
+
+        public static SqlParameter GetParameter(this IEnumerable<SqlParameter> parameters, string parameterName)
+        {
+            var parameter = parameters.Where(p => p.ParameterName == parameterName).FirstOrDefault();
+            return parameter;
+        }
+
+
 
 	}
 }

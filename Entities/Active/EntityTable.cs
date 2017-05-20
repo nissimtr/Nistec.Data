@@ -576,10 +576,10 @@ namespace Nistec.Data.Entities
             return gr.EntityDictionary();
             //return _Data == null ? null : _Data.EntityDictionary();
         }
-
-        public Type EntityType()
+        [EntityProperty(EntityPropertyType.NA)]
+        public Type EntityType
         {
-            return typeof(ActiveEntity);
+            get { return typeof(ActiveEntity); }
         }
 
   

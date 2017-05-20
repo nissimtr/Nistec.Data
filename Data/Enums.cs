@@ -130,6 +130,37 @@ namespace Nistec.Data
     public enum UpdateCommandType
     {
         /// <summary>
+        /// The command implements if not exists, insert operation else update for a table specified.
+        /// </summary>
+        Upsert=0,
+        /// <summary>
+        /// The command implements insert operation for a table specified.
+        /// </summary>
+        Insert=1,
+        /// <summary>
+        /// The command implements update operation for a table specified.
+        /// </summary>
+        Update=2,
+        /// <summary>
+        /// The command implements Delete operation for a table specified.
+        /// </summary>
+        Delete=3,
+        /// <summary>
+        /// Equals to <b>CommandType.StoredProcedure</b> value. 
+        /// </summary>
+        StoredProcedure=4
+    }
+
+    /// <summary>
+    /// Command type enumeration for ActiveCommandBuilder property
+    /// </summary>
+    public enum UpsertType
+    {
+        /// <summary>
+        /// The command implements if not exists, insert operation else update for a table specified.
+        /// </summary>
+        Upsert,
+        /// <summary>
         /// The command implements insert operation for a table specified.
         /// </summary>
         Insert,
@@ -137,16 +168,12 @@ namespace Nistec.Data
         /// The command implements update operation for a table specified.
         /// </summary>
         Update,
-        /// <summary>
-        /// The command implements Delete operation for a table specified.
-        /// </summary>
-        Delete,
-        /// <summary>
-        /// Equals to <b>CommandType.StoredProcedure</b> value. 
-        /// </summary>
-        StoredProcedure
     }
-
+    public enum ReturnValueType
+    {
+        ReturnValue = 0,
+        OutputParameters = 1
+    }
 
     /// <summary>
     /// Parameter type enumeration for <see cref="Sql.DbFieldAttribute.ParameterType"/> property
@@ -291,7 +318,15 @@ namespace Nistec.Data
         /// <summary>
         /// DB2
         /// </summary>
-        DB2
+        DB2,
+        /// <summary>
+        /// SQLite
+        /// </summary>
+        SQLite,
+        /// <summary>
+        /// SqlCe
+        /// </summary>
+        SqlCe
     }
 
     public enum DataResult

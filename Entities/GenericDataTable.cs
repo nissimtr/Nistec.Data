@@ -1020,14 +1020,17 @@ namespace Nistec.Data.Entities
         /// <returns></returns>
         public static GenericDataTable Create<Dbc>(string cmdText, IDbDataParameter[] parameters, CommandType cmdType) where Dbc : IDbContext
         {
-            IDbContext db = DbContext.Get<Dbc>();
-
-            GenericDataTable dt = null;
-            using (IDbCmd cmd = db.DbCmd())
+            using (IDbContext db = DbContext.Create<Dbc>())
             {
-                dt = cmd.ExecuteCommand<GenericDataTable>(cmdText, parameters, cmdType, 0, true);
+                return db.ExecuteCommand<GenericDataTable>(cmdText, parameters, cmdType, 0, true);
             }
-            return dt;
+
+            //GenericDataTable dt = null;
+            //using (IDbCmd cmd = db.Command.DbCmd())
+            //{
+            //    dt = cmd.ExecuteCommand<GenericDataTable>(cmdText, parameters, cmdType, 0, true);
+            //}
+            //return dt;
         }
 
         #endregion

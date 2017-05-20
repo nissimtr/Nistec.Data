@@ -5,7 +5,7 @@ VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nistec.Data", "Nistec.Data.csproj", "{D5FD6C68-86EA-48BF-8F6D-29CE57419500}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataDemo", "..\DataDemo\DataDemo.csproj", "{A4E0D9C9-C832-40BB-88B2-8BEC627E698B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataDemo", "..\_Demo\DataDemo\DataDemo.csproj", "{A4E0D9C9-C832-40BB-88B2-8BEC627E698B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

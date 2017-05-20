@@ -237,6 +237,49 @@ namespace Nistec.Data.Entities
 
         #region methods
 
+        public KeyValueItem<object> ToInsertParameters(string tableName)
+        {
+            if (this.Fields == null || this.Fields.Count == 0)
+                return null;
+
+            List<object> prm = new List<object>();
+            List<string> keys = new List<string>();
+            List<string> values = new List<string>();
+            StringBuilder sbKeys = new StringBuilder();
+            StringBuilder sbValue = new StringBuilder();
+            foreach (var p in OrderFields)
+            {
+                if (p.Attributes.IsValidInsertParameter)
+                {
+                    prm.Add(p.Column);
+                    prm.Add(p.Value);
+                    keys.Add(p.Column);
+                    values.Add("@" + p.Column);
+
+                }
+            }
+            string sql = string.Format("insert into [{0}] ({1}) values({2})", tableName, string.Join(",", keys), string.Join(",", values));
+            return new KeyValueItem<object>() { Key = sql, Value = prm.ToArray() };
+        }
+
+        public object[] ToKeyValueParameters()
+        {
+            if (this.Fields == null || this.Fields.Count == 0)
+                return null;
+
+            List<object> prm = new List<object>();
+
+            foreach (var p in OrderFields)
+            {
+                if (p.Attributes.IsValidInsertParameter)
+                {
+                    prm.Add(p.Column);
+                    prm.Add(p.Value);
+                }
+            }
+            return prm.ToArray();
+        }
+
         public DataParameter[] ToInsertParameters()
         {
             if (this.Fields == null || this.Fields.Count == 0)

@@ -32,7 +32,7 @@ namespace Nistec.Data.Entities
 {
 
     /// <summary>
-    /// Parameter type enumeration for <see cref="EntityPropertyType.ParameterType"/> property
+    /// Parameter type enumeration for <see cref="EntityPropertyAttribute.ParameterType"/> property
     /// of <see cref="EntityPropertyType"/> attribute.
     /// </summary>
     public enum EntityPropertyType
@@ -59,8 +59,11 @@ namespace Nistec.Data.Entities
        /// <summary>
         /// The parameter is a part of a table but for view only.
         /// </summary>
-        View
-
+        View,
+        /// <summary>
+        /// The parameter is an optional part of a table but for view only.
+        /// </summary>
+        Optional
     }
 
 	/// <summary>
@@ -285,7 +288,7 @@ namespace Nistec.Data.Entities
         }
 
         /// <summary>
-        /// Get or Set The order of properties. 
+        /// Get or Set The order of properties (Must be greater then zero). 
         /// </summary>
         public int Order
         {

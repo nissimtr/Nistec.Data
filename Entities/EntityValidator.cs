@@ -103,6 +103,7 @@ namespace Nistec.Data.Entities
         bool m_Required = false;
         private object m_MinValue;
         private object m_MaxValue;
+        //bool m_Exists  = false;
 
         #endregion
 
@@ -256,6 +257,12 @@ namespace Nistec.Data.Entities
             get { return m_MinValue != null && m_MaxValue!=null; }
         }
 
+        //public bool IsExistsDefined
+        //{
+        //    get { return m_MinValue != null && m_MaxValue != null; }
+        //}
+
+
         #endregion
 
         public string GetName(string lang)
@@ -308,6 +315,50 @@ namespace Nistec.Data.Entities
             CrLf = "";
         }
 
+        Dictionary<string, string> _langTitle = new Dictionary<string, string>();
+        public Dictionary<string, string> LangTitle
+        {
+            get { return _langTitle; }
+        }
+       
+        internal void FillLangTitle(string entityName, string mappingName)
+        {
+
+            LangTitle["he_RequieredFormat"] = "חובה לציין {0}";
+            LangTitle["he_RangeFormat"] = "מחוץ לטווח {0}";
+            LangTitle["he_Title"] = entityName;
+
+            LangTitle["en_RequieredFormat"] = "{0} Is Required.";
+            LangTitle["en_RangeFormat"] = "{0} Is out of range.";
+            LangTitle["en_Title"] = mappingName;
+
+            string[] args = entityName.Split(';', ',');
+            foreach (string s in args)
+            {
+                string[] arg = s.Split(':');
+                if (arg.Length == 2)
+                    LangTitle[arg[0] + "_Title"] = arg[1];
+            }
+        }
+
+        internal string ParseTitle(string title, string lang = "en")
+        {
+            string val=title;
+            Dictionary<string, string> langTitle = new Dictionary<string, string>();
+            string[] args = title.Split(';', ',');
+            foreach (string s in args)
+            {
+                string[] arg = s.Split(':');
+                if (arg.Length == 2)
+                    langTitle[arg[0]] = arg[1];
+            }
+            if(langTitle.TryGetValue(lang,out val))
+            {
+                return val;
+            }
+            return title;
+        }
+
         public EntityValidator(string title, string lang = "en")
         {
             Lang = lang;
@@ -323,7 +374,7 @@ namespace Nistec.Data.Entities
                     break;
             }
             CrLf = "\r\n";
-            Title = title;
+            Title = title;// ParseTitle(title, lang);
         }
 
         public void Append(string message)
@@ -432,7 +483,7 @@ namespace Nistec.Data.Entities
                 return;
             Type type = value.GetType();
             if (type == typeof(DateTime))
-                ValidateField((DateTime)value, (DateTime)min, (DateTime)max, field);
+                ValidateField((DateTime)value, Types.ToDateTime(min), Types.ToDateTime(max), field);
             if (type == typeof(int))
                 ValidateField((int)value, (int)min, (int)max, field);
             if (type == typeof(Int16))
@@ -458,7 +509,7 @@ namespace Nistec.Data.Entities
             string field= attr.GetName(Lang);
             Type type = value.GetType();
             if (type == typeof(DateTime))
-                ValidateField((DateTime)value, (DateTime)min, (DateTime)max, field);
+                ValidateField((DateTime)value, Types.ToDateTime(min), Types.ToDateTime(max), field);
             if (type == typeof(int))
                 ValidateField((int)value, (int)min, (int)max, field);
             if (type == typeof(Int16))
@@ -477,6 +528,56 @@ namespace Nistec.Data.Entities
                 ValidateField((string)value, (int)min, (int)max, field);
         }
 
+        public void ValidateMin(object value, object min, ValidatorAttribute attr)
+        {
+            if (value == null || min == null)
+                return;
+            string field = attr.GetName(Lang);
+            Type type = value.GetType();
+            if (type == typeof(DateTime))
+                ValidateField((DateTime)value, Types.ToDateTime(min), DateTime.MaxValue, field);
+            if (type == typeof(int))
+                ValidateField((int)value, (int)min, int.MaxValue, field);
+            if (type == typeof(Int16))
+                ValidateField((Int16)value, (Int16)min, Int16.MaxValue, field);
+            if (type == typeof(long))
+                ValidateField((long)value, (long)min, long.MaxValue, field);
+            if (type == typeof(decimal))
+                ValidateField((decimal)value, (decimal)min, decimal.MaxValue, field);
+            if (type == typeof(float))
+                ValidateField((float)value, (float)min, float.MaxValue, field);
+            if (type == typeof(double))
+                ValidateField((double)value, (double)min, double.MaxValue, field);
+            if (type == typeof(byte))
+                ValidateField((byte)value, (byte)min, byte.MaxValue, field);
+            if (type == typeof(string))
+                ValidateField((string)value, (int)min, int.MaxValue, field);
+        }
+        public void ValidateMax(object value, object max, ValidatorAttribute attr)
+        {
+            if (value == null || max == null)
+                return;
+            string field = attr.GetName(Lang);
+            Type type = value.GetType();
+            if (type == typeof(DateTime))
+                ValidateField((DateTime)value, Types.MinDate, Types.ToDateTime(max), field);
+            if (type == typeof(int))
+                ValidateField((int)value, int.MinValue, (int)max, field);
+            if (type == typeof(Int16))
+                ValidateField((Int16)value, Int16.MinValue, (Int16)max, field);
+            if (type == typeof(long))
+                ValidateField((long)value, long.MinValue, (long)max, field);
+            if (type == typeof(decimal))
+                ValidateField((decimal)value, decimal.MinValue, (decimal)max, field);
+            if (type == typeof(float))
+                ValidateField((float)value, float.MinValue, (float)max, field);
+            if (type == typeof(double))
+                ValidateField((double)value, double.MinValue, (double)max, field);
+            if (type == typeof(byte))
+                ValidateField((byte)value, byte.MinValue, (byte)max, field);
+            if (type == typeof(string))
+                ValidateField((string)value, int.MinValue, (int)max, field);
+        }
         public void ValidateEntity(object entity)
         {
             if (entity == null)
@@ -510,6 +611,19 @@ namespace Nistec.Data.Entities
                     {
                         this.ValidateRange(val, attr.MinValue, attr.MaxValue, attr);
                     }
+                    else if (attr.IsMinValueDefined)
+                    {
+                        this.ValidateMin(val, attr.MinValue, attr);
+                    }
+                    else if (attr.IsMaxValueDefined)
+                    {
+                        this.ValidateMax(val, attr.MaxValue, attr);
+                    }
+
+                    if (attr.IsRangeDefined)
+                    {
+                        this.ValidateRange(val, attr.MinValue, attr.MaxValue, attr);
+                    }
                 }
             }
             
@@ -524,6 +638,10 @@ namespace Nistec.Data.Entities
         /// <exception cref="EntityException"></exception>
         public static void Validate(object Entity, string title, string lang)
         {
+            if (Entity == null)
+            {
+                throw new EntityException("EntityValidator.Error Invalid Entity");
+            }
             EntityValidator validator = new EntityValidator(title, lang);
             validator.ValidateEntity(Entity);
             if (!validator.IsValid)
@@ -532,12 +650,46 @@ namespace Nistec.Data.Entities
             }
         }
 
+        public static void Validate<T>(T Entity)where T:IEntityItem
+        {
+            if (Entity==null)
+            {
+                throw new EntityException("EntityValidator.Error Invalid Entity");
+            }
+            if(Entity is GenericEntity)
+            {
+                return;
+            }
+            var map= EntityMappingAttribute.Get<T>();
+            string title = map.EntityName;// ?? map.MappingName;
+            EntityValidator validator = new EntityValidator(title, map.Lang);
+            validator.ValidateEntity(Entity);
+            if (!validator.IsValid)
+            {
+                throw new EntityException(validator.Result);
+            }
+        }
         public static EntityValidator ValidateEntity(object Entity, string title, string lang)
         {
+            if (Entity == null)
+            {
+                throw new EntityException("EntityValidator.Error Invalid Entity");
+            }
             EntityValidator validator = new EntityValidator(title, lang);
             validator.ValidateEntity(Entity);
             return validator;
         }
-
+        public static EntityValidator ValidateEntityItem<T>(T Entity) where T : IEntityItem
+        {
+            if (Entity == null)
+            {
+                throw new EntityException("EntityValidator.Error Invalid Entity");
+            }
+            var map = EntityMappingAttribute.Get<T>();
+            string title = map.EntityName ?? map.MappingName;
+            EntityValidator validator = new EntityValidator(title, map.Lang);
+            validator.ValidateEntity(Entity);
+            return validator;
+        }
     }
 }

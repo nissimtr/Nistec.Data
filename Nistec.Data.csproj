@@ -67,9 +67,6 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Nistec.Lib">
-      <HintPath>..\Nistec.Bin-4.0.2.0\Nistec.Lib.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Core">
@@ -104,6 +101,11 @@
     <Compile Include="Data\SqlFormatter.cs" />
     <Compile Include="Data\Struct.cs" />
     <Compile Include="Entities\Active\ActiveEntity.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Entities\EntityListItem.cs" />
+    <Compile Include="Entities\EntityMappingAttribute.cs" />
+    <Compile Include="Entities\DbContextCommand.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Entities\EntityDbContext.cs">
@@ -191,7 +193,12 @@
   <ItemGroup>
     <None Include="MControl.pfx" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\Nistec.Lib\Nistec.Lib.csproj">
+      <Project>{54f52ed5-aecd-47c6-93d8-7b3358ba7f8c}</Project>
+      <Name>Nistec.Lib</Name>
+    </ProjectReference>
+  </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
       <Visible>False</Visible>
@@ -208,6 +215,9 @@
       <ProductName>Windows Installer 3.1</ProductName>
       <Install>true</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Entities\_Ex\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -27,6 +27,7 @@ using System.Reflection;
 using Nistec;
 using System.Text;
 using Nistec.Data.Entities;
+using Nistec.Generic;
 
 namespace Nistec.Data.Entities
 {
@@ -38,17 +39,60 @@ namespace Nistec.Data.Entities
     /// </summary>
     public class EntityCommandResult
     {
-        public readonly int AffectedRecords;
+        public static EntityCommandResult Empty
+        {
+            get { return new EntityCommandResult(0, null, null); }
+        }
+        public static int GetAffectedRecords(EntityCommandResult result)
+        {
+            return result == null ? 0 : result.AffectedRecords;
+        }
 
+        public readonly int AffectedRecords;
         public readonly Dictionary<string, object> OutputValues;
-       
-        public EntityCommandResult(int affectedRecords,Dictionary<string, object> outputValues)
+        public readonly string IdentityField;
+
+        public int GetReturnValue()
+        {
+            if (OutputValues == null || IdentityField == null)
+                return -1;
+            return OutputValues.Get<int>(IdentityField);
+        }
+        public T GetIdentityValue<T>()
+        {
+            if (OutputValues == null || IdentityField == null)
+                return default(T);
+            return OutputValues.Get<T>(IdentityField);
+        }
+        public T GetValue<T>(string key)
+        {
+            if (OutputValues==null)
+                return default(T);
+            return OutputValues.Get<T>(key);
+        }
+        public T GetValue<T>(string key, T defaultValue)
+        {
+            if (OutputValues == null)
+                return default(T);
+            return OutputValues.Get<T>(key, defaultValue);
+        }
+        public EntityCommandResult(int affectedRecords,Dictionary<string, object> outputValues, string identityField)
         {
             AffectedRecords = affectedRecords;
             OutputValues = outputValues;
+            IdentityField = identityField;
         }
+        public EntityCommandResult(int affectedRecords, int outputValue, string identityField)
+        {
+            AffectedRecords = affectedRecords;
+            OutputValues = new Dictionary<string,object>();
+            OutputValues[identityField] = outputValue;
+            IdentityField = identityField;
+        }
+
     }
 
+    
     #endregion
 
     /// <summary>
@@ -59,6 +103,7 @@ namespace Nistec.Data.Entities
 
         #region static
 
+    
         public static int DeleteCommand(object instance, EntityDbContext db)
         {
             using (EntityCommandBuilder ac = new EntityCommandBuilder(instance, db, null))
@@ -152,6 +197,7 @@ namespace Nistec.Data.Entities
         string m_tableName;
         Dictionary<string, object> m_FieldsChanged;
         IDbCommand m_command;
+        string m_autoNumberField;
         #endregion
 
         public PropertyInfo[] Properties
@@ -165,8 +211,11 @@ namespace Nistec.Data.Entities
         {
             get { return m_tableName; }
         }
-
-        private EntityCommandBuilder(object instance, EntityDbContext db, Dictionary<string,object> fieldsChanged)
+        public string AutoNumberField
+        {
+            get { return m_autoNumberField; }
+        }
+        internal EntityCommandBuilder(object instance, EntityDbContext db, Dictionary<string, object> fieldsChanged)
         {
             m_Instance = instance;
             m_connection = db.DbConnection();
@@ -174,28 +223,65 @@ namespace Nistec.Data.Entities
             m_properties = instance.GetType().GetProperties();
             m_FieldsChanged = fieldsChanged;
         }
-       
-        public EntityCommandBuilder(object instance, IDbConnection idb, string tableName)
+
+        internal EntityCommandBuilder(IEntityItem instance, DbContext db, string tableName, Dictionary<string, object> fieldsChanged)
         {
             m_Instance = instance;
-            m_connection = idb;
+            m_connection = db.Connection;
             m_tableName = tableName;
             m_properties = instance.GetType().GetProperties();
-            if (instance is ActiveEntity)
-            {
-                m_FieldsChanged = ((ActiveEntity)instance).GetFieldsChanged();
-            }
-
+            m_FieldsChanged = fieldsChanged;
         }
 
-        public EntityCommandBuilder(IEntityFields entity, object instance, IDbConnection idb, string tableName)
+        public EntityCommandBuilder(GenericEntity instance, Type entity, IDbConnection idb, string tableName)
+        {
+            m_Instance = instance;
+            m_connection = idb;
+            m_tableName = tableName;
+            m_properties = entity.GetProperties();
+            m_FieldsChanged = instance.GetFieldsChanged();
+        }
+
+        //public EntityCommandBuilder(object instance, IDbConnection idb, string tableName)
+        //{
+        //    m_Instance = instance;
+        //    m_connection = idb;
+        //    m_tableName = tableName;
+        //    m_properties = instance.GetType().GetProperties();
+        //    if (instance is ActiveEntity)
+        //    {
+        //        m_FieldsChanged = ((ActiveEntity)instance).GetFieldsChanged();
+        //    }
+        //    else if (instance is GenericEntity)
+        //    {
+        //        m_FieldsChanged = ((GenericEntity)instance).GetFieldsChanged();
+        //    }
+        //}
+
+        public EntityCommandBuilder(ActiveEntity instance, IDbConnection idb, string tableName)
+        {
+            m_Instance = instance;
+            m_connection = idb;
+            m_tableName = tableName;
+            m_properties = instance.GetType().GetProperties();
+            m_FieldsChanged = instance.GetFieldsChanged();
+        }
+        //public EntityCommandBuilder(GenericEntity instance, IDbConnection idb, string tableName)
+        //{
+        //    m_Instance = instance;
+        //    m_connection = idb;
+        //    m_tableName = tableName;
+        //    m_properties = instance.GetType().GetProperties();
+        //    m_FieldsChanged = instance.GetFieldsChanged();
+        //}
+        public EntityCommandBuilder(IEntityFields entityFileds, object instance, IDbConnection idb, string tableName)
         {
             m_Instance = instance;
             m_connection = idb;
             m_tableName = tableName;
             m_properties = instance.GetType().GetProperties();
 
-            EntityFieldsChanges gf = entity.GetFieldsChanged();
+            EntityFieldsChanges gf = entityFileds.GetFieldsChanged();
             if (gf != null)
             {
                 m_FieldsChanged = gf.FieldsChanged;
@@ -268,6 +354,73 @@ namespace Nistec.Data.Entities
         /// </summary>
         /// <param name="commandType"><see cref="UpdateCommandType"/> enumeration value</param>
         /// <returns>int</returns>
+        public virtual int ExecCommand(UpdateCommandType commandType)
+        {
+
+            ValidateUpdate();
+
+            // create command object
+            m_command = m_connection.CreateCommand();
+
+            // define default command properties (command text, command type and missing schema action)
+            string commandText = "";
+
+            // set command text
+            m_command.CommandText = commandText;
+
+            // set command type
+            m_command.CommandType = CommandType.Text;
+
+
+            // define command parameters.
+            SetParameters(commandType);
+
+            // execute command
+            int result = 0;
+
+            try
+            {
+
+                if (m_command.Connection.State == ConnectionState.Closed)
+                {
+                    m_command.Connection.Open();
+                }
+
+                result = m_command.ExecuteNonQuery();
+                //m_OutputValues = new Dictionary<string, object>();
+                //foreach (IDbDataParameter prm in m_command.Parameters)
+                //{
+                //    if (prm.Direction != ParameterDirection.Input)
+                //    {
+                //        m_OutputValues.Add(prm.ParameterName.Replace("@", ""), prm.Value);
+                //    }
+                //}
+                return result;
+            }
+            catch (System.Data.SqlClient.SqlException ex)
+            {
+                throw new DalException(ex.Message);
+            }
+            catch (DalException dbex)
+            {
+                throw new DalException(dbex.Message);
+            }
+            finally
+            {
+                if (m_command.Connection.State != ConnectionState.Closed)
+                {
+                    m_command.Connection.Close();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Executes Sql command and returns execution result. 
+        /// Command text, type and parameters are taken from method using reflection.
+        /// Command parameter values are taken from method parameter values.
+        /// </summary>
+        /// <param name="commandType"><see cref="UpdateCommandType"/> enumeration value</param>
+        /// <returns>int</returns>
         public virtual EntityCommandResult ExecuteCommand(UpdateCommandType commandType)
         {
 
@@ -309,7 +462,7 @@ namespace Nistec.Data.Entities
                         m_OutputValues.Add(prm.ParameterName.Replace("@", ""), prm.Value);
                     }
                 }
-                return new EntityCommandResult(result, m_OutputValues);
+                return new EntityCommandResult(result, m_OutputValues, m_autoNumberField);
             }
             catch (System.Data.SqlClient.SqlException ex)
             {
@@ -373,7 +526,7 @@ namespace Nistec.Data.Entities
                         m_OutputValues.Add(prm.ParameterName.Replace("@", ""), prm.Value);
                     }
                 }
-                return new EntityCommandResult(result, m_OutputValues);
+                return new EntityCommandResult(result, m_OutputValues, m_autoNumberField);
             }
             catch (System.Data.SqlClient.SqlException ex)
             {
@@ -406,7 +559,9 @@ namespace Nistec.Data.Entities
             #region InsertUpdate parts declaration
             string cmdPart1 = "";
             string cmdPart2 = "";
-            string autNumberField = "";
+            //string autNumberField = "";
+            string cmdPart3 = "";
+            string cmdPart4 = "";
 
             #endregion
 
@@ -427,23 +582,18 @@ namespace Nistec.Data.Entities
                 }
                 EntityPropertyType paramCustType = paramAttribute.ParameterType;
 
-                if (paramCustType == EntityPropertyType.NA)
+                switch (paramCustType)
                 {
+                    case EntityPropertyType.NA:
+                    case EntityPropertyType.View:
+                    case EntityPropertyType.Optional:
                     continue;
                 }
-                if (paramCustType == EntityPropertyType.View)
-                {
-                    continue;
-                }
-
-                if (paramCustType == EntityPropertyType.Default && !property.CanWrite)
-                {
-                    continue;
-                }
+               
 
                 string propName = paramAttribute.GetColumn(property.Name);
 
-                if (commandType== UpdateCommandType.Update && paramCustType == EntityPropertyType.Default)
+                if ((commandType == UpdateCommandType.Update || commandType == UpdateCommandType.Upsert) && paramCustType == EntityPropertyType.Default)
                 {
                     if (m_Instance is IActiveEntity)
                     {
@@ -467,7 +617,13 @@ namespace Nistec.Data.Entities
 
                 // set default values
                 string paramName = null;
-                object v = property.GetValue(m_Instance, null);
+                object v = null;// property.GetValue(m_Instance, null);
+
+                if (!m_FieldsChanged.TryGetValue(propName, out v))
+                {
+                    v = property.GetValue(m_Instance, null);
+                }
+
                 // create command parameter
                 IDbDataParameter sqlParameter = m_command.CreateParameter();
 
@@ -497,7 +653,7 @@ namespace Nistec.Data.Entities
                 {
                     if (commandType == UpdateCommandType.Insert)
                     {
-                        autNumberField = paramName;
+                        m_autoNumberField = paramName;
                         sqlParameter.Direction = ParameterDirection.Output;// paramInfo.IsOut ? ParameterDirection.Output : ParameterDirection.InputOutput;
                     }
                     else
@@ -527,8 +683,28 @@ namespace Nistec.Data.Entities
                 // generate parts of InsertUpdate expresion
                 #region generate parts of InsertUpdateDelete expresion
 
- 
-                if (commandType == UpdateCommandType.Insert)
+                if (commandType == UpdateCommandType.Upsert)
+                {
+                    string fieldName = "[" + paramName + "]";
+                    string cmdparamName = "@" + paramName;
+
+                    //insert part
+                    if (paramCustType != EntityPropertyType.Identity)
+                    {
+                        cmdPart1 = AddWithDelim(cmdPart1, ", ", fieldName);
+                        cmdPart2 = AddWithDelim(cmdPart2, ", ", cmdparamName);
+                    }
+                    //update part
+                    if ((paramCustType == EntityPropertyType.Key) || (paramCustType == EntityPropertyType.Identity))
+                    {
+                        cmdPart4 = AddWithDelim(cmdPart4, " and ", fieldName + "=" + cmdparamName);
+                    }
+                    else if (paramCustType != EntityPropertyType.Identity)
+                    {
+                        cmdPart3 = AddWithDelim(cmdPart3, ", ", fieldName + "=" + cmdparamName);
+                    }
+                }
+                else if (commandType == UpdateCommandType.Insert)
                 {
                     string fieldName = "[" + paramName + "]";
                     string cmdparamName = "@" + paramName;
@@ -589,7 +765,36 @@ namespace Nistec.Data.Entities
             string cmdString = "";
             string CommandText = "";
 
-            if (commandType == UpdateCommandType.Insert)
+            if (commandType == UpdateCommandType.Upsert)
+            {
+                if (string.IsNullOrEmpty(cmdPart1) || string.IsNullOrEmpty(cmdPart2) || string.IsNullOrEmpty(cmdPart3) || string.IsNullOrEmpty(cmdPart4))
+                {
+                    throw new DalException("Command Builder has no values to update");
+                }
+
+                //insert
+                string cmdInsertString = "";
+                string insertString = SqlFormatter.InsertString(TableName, cmdPart1, cmdPart2);
+                if (m_autoNumberField == null)
+                {
+                    cmdInsertString += String.Format("{0} if (@@rowcount = 0) {1}", insertString, "print 'Warning: No rows were updated'");
+                }
+                else
+                {
+                    cmdInsertString += String.Format("if(@{0} is NULL) begin {1} select @{0} = SCOPE_IDENTITY() end ", m_autoNumberField, insertString);
+                    cmdInsertString += String.Format("else begin {0} end", insertString);
+                }
+
+
+                //update
+                string cmdUpdateString = "";
+                string updateString = SqlFormatter.UpdateString(TableName, cmdPart3, cmdPart4);
+                cmdUpdateString += String.Format("{0} if (@@rowcount = 0) {1}", updateString, "print 'Warning: No rows were updated'");
+
+                CommandText = string.Format("if not exists(select 1 from {0} where {1}) begin {2} end else begin {3} end", TableName, cmdPart4, cmdInsertString, cmdUpdateString);
+                m_command.CommandText = CommandText;
+            }
+            else if (commandType == UpdateCommandType.Insert)
             {
                 if (string.IsNullOrEmpty(cmdPart1) || string.IsNullOrEmpty(cmdPart2))
                 {
@@ -597,13 +802,13 @@ namespace Nistec.Data.Entities
                 }
                 cmdString = SqlFormatter.InsertString(TableName, cmdPart1, cmdPart2);// String.Format(" INSERT INTO [{0}]({1}) VALUES({2}) ", TableName, cmdPart1, cmdPart2);
 
-                if (autNumberField == "")
+                if (m_autoNumberField == null)
                 {
                     CommandText += String.Format("{0} if (@@rowcount = 0) {1}", cmdString, "print 'Warning: No rows were updated'");
                 }
                 else
                 {
-                    CommandText += String.Format("if(@{0} is NULL) begin {1} select @{0} = SCOPE_IDENTITY() end ", autNumberField, cmdString);
+                    CommandText += String.Format("if(@{0} is NULL) begin {1} select @{0} = SCOPE_IDENTITY() end ", m_autoNumberField, cmdString);
                     CommandText += String.Format("else begin {0} end", cmdString);
                 }
                 m_command.CommandText = CommandText;
@@ -642,7 +847,6 @@ namespace Nistec.Data.Entities
             #endregion
 
         }
-
 
 
         #endregion

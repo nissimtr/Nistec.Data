@@ -373,13 +373,17 @@ namespace Nistec.Data.Factory
                     Provider = DBProvider.Oracle; break;
                 case "sybasease":
                     Provider = DBProvider.SybaseASE; break;
+                case "sqlite":
+                    Provider = DBProvider.SQLite; break;
+                case "sqlce":
+                    Provider = DBProvider.SqlCe; break;
                 default:
                     Provider = DBProvider.SqlServer;
                     break;
             }
             return Provider;
         }
-
+        
  
         #endregion
 

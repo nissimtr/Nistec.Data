@@ -35,26 +35,27 @@ namespace Nistec.Data
     public static class DataExtension
     {
 
-        public static T Get<T>(this DataRow row, string field)
+        public static T Get<T>(this DataRow row, string field, bool checkContains=false)
         {
+            if (checkContains)
+                return row.Table.Columns.Contains(field) ? GenericTypes.Convert<T>(row[field]):default(T);
             return GenericTypes.Convert<T>(row[field]);
         }
 
-        public static T Get<T>(this DataRow row, string field, T valueIfNull)
+        public static T Get<T>(this DataRow row, string field, T valueIfNull, bool checkContains = false)
         {
+            if (checkContains)
+                return row.Table.Columns.Contains(field) ? GenericTypes.Convert<T>(row[field], valueIfNull) : valueIfNull;
             return GenericTypes.Convert<T>(row[field], valueIfNull);
         }
 
-        public static object GetSafe(this DataRow row, string field)
+        public static object Get(this DataRow row, string field, Type type, bool checkContains = false)
         {
-            try
-            {
-                return row[field];
-            }
-            catch { return null; }
+            if (checkContains)
+                return row.Table.Columns.Contains(field) ? GenericTypes.Convert(row[field], type) : null;
+            return GenericTypes.Convert(row[field], type);
         }
 
-    
         public static Dictionary<K, V> ToDictionary<K, V>(this DataTable dt, string keyName, string valueName)
         {
 
@@ -94,6 +95,45 @@ namespace Nistec.Data
             return list;
         }
 
+        public static string ToCSV(this DataTable table, bool addApos = true, bool addColumnsHeader=true)
+        {
+            var result = new StringBuilder();
+            int colCount = table.Columns.Count;
+
+            string q = addApos ? "\"" : "";
+
+            StringBuilder sb = new StringBuilder();
+            
+            if (addColumnsHeader)
+            {
+                IEnumerable<string> columnNames = table.Columns.Cast<DataColumn>().
+                                                  Select(column => string.Concat(q, column.ColumnName, q));
+
+                //sb.AppendLine(string.Join(",", columnNames));
+                sb.Append(string.Join(",", columnNames));
+                sb.Append("\n");
+            }
+
+            foreach (DataRow row in table.Rows)
+            {
+                IEnumerable<string> fields = row.ItemArray.Select(field => string.Concat(q, field.ToString(), q));
+                //sb.AppendLine(string.Join(",", fields));
+                sb.Append(string.Join(",", fields));
+                sb.Append("\n");
+            }
+
+            //foreach (DataRow row in table.Rows)
+            //{
+            //    IEnumerable<string> fields = row.ItemArray.Select(field =>
+            //      string.Concat(q, field.ToString().Replace("\"", "\"\""), q));
+            //    sb.AppendLine(string.Join(",", fields));
+            //}
+
+            return sb.ToString();
+
+        }
+
+       
         public static string ToJson(this DataTable dt)
         {
             return JsonSerializer.Serialize(dt);

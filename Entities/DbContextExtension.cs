@@ -27,12 +27,12 @@ using Nistec.Data.Factory;
 using System.Data;
 using System.Reflection;
 using Nistec.Runtime;
+using System.ComponentModel;
 
 namespace Nistec.Data.Entities
 {
     public static class DbContextExtension
     {
-      
 
         #region GenericRecord
 
@@ -76,6 +76,28 @@ namespace Nistec.Data.Entities
 
         #region DataRow|DataTable <T>
 
+        public static DataTable ToDataTable<T>(this IList<T> data)
+        {
+            PropertyDescriptorCollection props =
+            TypeDescriptor.GetProperties(typeof(T));
+            DataTable table = new DataTable();
+            for (int i = 0; i < props.Count; i++)
+            {
+                PropertyDescriptor prop = props[i];
+                table.Columns.Add(prop.Name, prop.PropertyType);
+            }
+            object[] values = new object[props.Count];
+            foreach (T item in data)
+            {
+                for (int i = 0; i < values.Length; i++)
+                {
+                    values[i] = props[i].GetValue(item);
+                }
+                table.Rows.Add(values);
+            }
+            return table;
+        }
+
         /// <summary>
         /// Create Entity from <see cref="DataRow"/>
         /// </summary>
@@ -96,7 +118,7 @@ namespace Nistec.Data.Entities
             }
         }
 
-        static void SetEntityContext<T>(T item, DataRow values, IEnumerable<PropertyAttributeInfo<EntityPropertyAttribute>> props)
+        static void SetEntityContext<T>(T item, DataRow values, IEnumerable<PropertyAttributeInfo<EntityPropertyAttribute>> props, bool allowNull = true)
         {
             foreach (var pa in props)
             {
@@ -116,10 +138,12 @@ namespace Nistec.Data.Entities
                     field = attr.IsColumnDefined ? attr.Column : property.Name;
                 }
 
-                object fieldValue = GenericTypes.Convert(values[field], property.PropertyType);
+                //object fieldValue = GenericTypes.Convert(values[field], property.PropertyType);
+
+                object fieldValue = values.Get(field, property.PropertyType, attr.ParameterType == EntityPropertyType.Optional);
 
                 if (fieldValue == null && property.PropertyType == typeof(string))
-                    fieldValue = "";
+                    fieldValue = allowNull ? null : "";
 
                 property.SetValue(item, fieldValue, null);
 
