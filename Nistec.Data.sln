@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nistec.Data", "Nistec.Data\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataDemo", "Demo\DataDemo\DataDemo.csproj", "{A4E0D9C9-C832-40BB-88B2-8BEC627E698B}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Library", "Library", "{4BD88DE4-D94A-45C9-AF81-B4A6FCA9EB90}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nistec.Lib", "..\Nistec.Lib\Nistec.Lib.csproj", "{54F52ED5-AECD-47C6-93D8-7B3358BA7F8C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,8 +25,15 @@ Global
 		{A4E0D9C9-C832-40BB-88B2-8BEC627E698B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A4E0D9C9-C832-40BB-88B2-8BEC627E698B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A4E0D9C9-C832-40BB-88B2-8BEC627E698B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{54F52ED5-AECD-47C6-93D8-7B3358BA7F8C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{54F52ED5-AECD-47C6-93D8-7B3358BA7F8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{54F52ED5-AECD-47C6-93D8-7B3358BA7F8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{54F52ED5-AECD-47C6-93D8-7B3358BA7F8C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{54F52ED5-AECD-47C6-93D8-7B3358BA7F8C} = {4BD88DE4-D94A-45C9-AF81-B4A6FCA9EB90}
 	EndGlobalSection
 EndGlobal
