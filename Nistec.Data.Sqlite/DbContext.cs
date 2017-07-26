@@ -200,6 +200,18 @@ namespace Nistec.Data.Sqlite
         }
         #endregion
 
+        /// <summary>
+        /// Executes a command NonQuery and returns the number of rows affected.
+        /// </summary>
+        /// <param name="cmdText">Sql command.</param>
+        /// <param name="keyValueParameters">Sql parameters.</param>
+        /// <returns></returns> 
+        public int ExecuteNonQuery(string cmdText, params object[] keyValueParameters)
+        {
+            IDbDataParameter[] patameters = (keyValueParameters == null || keyValueParameters.Length == 0) ? null : GetParam(keyValueParameters);
+            return ExecuteCommandNonQuery(cmdText, patameters, CommandType.Text);
+        }
+
         //public void ExecuteReader()
         //{
 

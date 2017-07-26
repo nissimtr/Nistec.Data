@@ -95,5 +95,7 @@ namespace Nistec.Data.Sqlite
             return DBProvider.SQLite;
         }
         #endregion
+
+
     }
 }
