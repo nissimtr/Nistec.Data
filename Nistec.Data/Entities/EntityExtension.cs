@@ -340,7 +340,7 @@ namespace Nistec.Data.Entities
         }
         #endregion
 
-        public static T Create<T>(this System.Collections.Specialized.NameValueCollection form)
+        public static T Create<T>(this System.Collections.Specialized.NameValueCollection form, bool enableAttributeColumn=false)
         {
 
             T instance = ActivatorUtil.CreateInstance<T>();
@@ -368,7 +368,8 @@ namespace Nistec.Data.Entities
                     }
                     if (property.CanWrite)
                     {
-                        string field = attr.GetColumn(property.Name);
+
+                        string field = attr.GetColumn(property.Name, enableAttributeColumn) ;
                         //if (attr.ParameterType == EntityPropertyType.Optional)
                         //{
                         //    Console.WriteLine("Optional");

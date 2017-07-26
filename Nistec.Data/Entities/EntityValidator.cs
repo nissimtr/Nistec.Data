@@ -25,6 +25,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
+using Nistec.Generic;
 
 namespace Nistec.Data.Entities
 {
@@ -101,10 +102,11 @@ namespace Nistec.Data.Entities
         private string m_lang = "";
         private string m_defaultLang = "en";
         bool m_Required = false;
+        private string m_RequiredVar;
         private object m_MinValue;
         private object m_MaxValue;
         //bool m_Exists  = false;
-
+        
         #endregion
 
         #region Constructors
@@ -195,6 +197,15 @@ namespace Nistec.Data.Entities
         }
 
         /// <summary>
+        /// Indicate if parameter required is vari.
+        /// </summary>
+        public string RequiredVar
+        {
+            get { return m_RequiredVar; }
+            set { m_RequiredVar = value; }
+        }
+
+        /// <summary>
         /// Indicate the parameter min value.
         /// </summary>
         public object MinValue
@@ -215,7 +226,12 @@ namespace Nistec.Data.Entities
         #endregion
 
         #region Is defined properties
-        
+
+        public bool IsRequiredVarDefined
+        {
+            get { return m_RequiredVar != null && m_RequiredVar.Length > 0; }
+
+        }
         /// <summary>
         /// Is Name Defined
         /// </summary>
@@ -403,9 +419,80 @@ namespace Nistec.Data.Entities
         public void Required<T>(T value, ValidatorAttribute attr)
         {
             if (Types.IsEmpty(value))
+            {
                 sb.AppendFormat(RequieredFormat + CrLf, attr.GetName(Lang));
+            }
         }
 
+        public void RequiredVar<T>(T value, ValidatorAttribute attr, IDictionary<string, object> reqArgs)
+        {
+            if (Types.IsEmpty(value))
+            {
+                if (ValidateRequiredVar(attr, reqArgs))
+                {
+                    return;
+                }
+                sb.AppendFormat(RequieredFormat + CrLf, attr.GetName(Lang));
+            }
+        }
+        protected bool ValidateRequiredVar(ValidatorAttribute attr, IDictionary<string, object> reqArgs)
+        {
+            if (string.IsNullOrEmpty(attr.RequiredVar))
+                return true;
+            if (reqArgs == null)
+                return false;
+            object val = null;
+            var arg = attr.RequiredVar.Split('=');
+            if (arg.Length != 2)
+                return false;
+            if (reqArgs.TryGetValue(arg[0], out val))
+            {
+                if (val == null || arg[1]==null)
+                    return false;
+                if (val.ToString().ToLower() == arg[1].ToLower())
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public void RequiredVar<T>(T value, ValidatorAttribute attr, object[] reqArgs)
+        {
+            if (Types.IsEmpty(value))
+            {
+                if (ValidateRequiredVar(attr, reqArgs))
+                {
+                    return;
+                }
+                sb.AppendFormat(RequieredFormat + CrLf, attr.GetName(Lang));
+            }
+        }
+        protected bool ValidateRequiredVar(ValidatorAttribute attr, object[] reqArgs)
+        {
+            if (string.IsNullOrEmpty(attr.RequiredVar))
+                return true;
+            if (reqArgs == null)
+                return false;
+            
+            var arg = attr.RequiredVar.Split('=');
+            if (arg.Length != 2)
+                return false;
+
+            if(reqArgs.IsMatch(arg[0],arg[1]))
+                return false;
+            
+            //if (reqArgs.TryGetValue(arg[0], out val))
+            //{
+            //    if (val == null || arg[1] == null)
+            //        return false;
+            //    if (val.ToString().ToLower() == arg[1].ToLower())
+            //    {
+            //        return false;
+            //    }
+            //}
+            return true;
+        }
         public void Validate(string value, string message)
         {
             if (Types.IsEmpty(value))
@@ -578,11 +665,11 @@ namespace Nistec.Data.Entities
             if (type == typeof(string))
                 ValidateField((string)value, int.MinValue, (int)max, field);
         }
-        public void ValidateEntity(object entity)
+        public void ValidateEntity(object entity,object[] args)
         {
             if (entity == null)
                 return;
-
+            //var validateArgs = DataParameter.ToDictionary<object>(args);
             var props = DataProperties.GetEntityValidator(entity.GetType());
 
             foreach (var pa in props)
@@ -603,10 +690,16 @@ namespace Nistec.Data.Entities
 
                     if (!attr.IsNameDefined)
                         attr.Name = field;
-                    if (attr.Required)
+                    
+                    if (attr.IsRequiredVarDefined)
+                    {
+                        this.RequiredVar(val, attr, args);
+                    }
+                    else if (attr.Required)
                     {
                         this.Required(val, attr);
                     }
+                    
                     if (attr.IsRangeDefined)
                     {
                         this.ValidateRange(val, attr.MinValue, attr.MaxValue, attr);
@@ -636,21 +729,21 @@ namespace Nistec.Data.Entities
         /// <param name="title"></param>
         /// <param name="lang"></param>
         /// <exception cref="EntityException"></exception>
-        public static void Validate(object Entity, string title, string lang)
+        public static void Validate(object Entity, string title, string lang, object[] args=null)
         {
             if (Entity == null)
             {
                 throw new EntityException("EntityValidator.Error Invalid Entity");
             }
             EntityValidator validator = new EntityValidator(title, lang);
-            validator.ValidateEntity(Entity);
+            validator.ValidateEntity(Entity, args);
             if (!validator.IsValid)
             {
                 throw new EntityException(validator.Result);
             }
         }
 
-        public static void Validate<T>(T Entity)where T:IEntityItem
+        public static void Validate<T>(T Entity, object[] args = null) where T : IEntityItem
         {
             if (Entity==null)
             {
@@ -663,23 +756,24 @@ namespace Nistec.Data.Entities
             var map= EntityMappingAttribute.Get<T>();
             string title = map.EntityName;// ?? map.MappingName;
             EntityValidator validator = new EntityValidator(title, map.Lang);
-            validator.ValidateEntity(Entity);
+            validator.ValidateEntity(Entity, args);
             if (!validator.IsValid)
             {
                 throw new EntityException(validator.Result);
             }
         }
-        public static EntityValidator ValidateEntity(object Entity, string title, string lang)
+        public static EntityValidator ValidateEntity(object Entity, string title, string lang, object[] args = null)
         {
             if (Entity == null)
             {
                 throw new EntityException("EntityValidator.Error Invalid Entity");
             }
             EntityValidator validator = new EntityValidator(title, lang);
-            validator.ValidateEntity(Entity);
+            validator.ValidateEntity(Entity, args);
             return validator;
         }
-        public static EntityValidator ValidateEntityItem<T>(T Entity) where T : IEntityItem
+       
+        public static EntityValidator ValidateEntityItem<T>(T Entity, object[] args = null) where T : IEntityItem
         {
             if (Entity == null)
             {
@@ -688,7 +782,7 @@ namespace Nistec.Data.Entities
             var map = EntityMappingAttribute.Get<T>();
             string title = map.EntityName ?? map.MappingName;
             EntityValidator validator = new EntityValidator(title, map.Lang);
-            validator.ValidateEntity(Entity);
+            validator.ValidateEntity(Entity, args);
             return validator;
         }
     }

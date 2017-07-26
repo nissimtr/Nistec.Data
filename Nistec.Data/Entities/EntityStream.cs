@@ -30,6 +30,7 @@ using System.Collections;
 using Nistec.Runtime;
 using Nistec.IO;
 using Nistec.Serialization;
+using System.Collections.Concurrent;
 
 namespace Nistec.Data.Entities
 {
@@ -426,7 +427,7 @@ namespace Nistec.Data.Entities
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="Exception"></exception>
-        public static Dictionary<string, EntityStream> CreateEntityRecordStream<T>(IEntity<T> context, DataFilter filter, out long totalSize) //where T : GenericEntity
+        public static ConcurrentDictionary<string, EntityStream> CreateEntityRecordStream<T>(IEntity<T> context, DataFilter filter, out long totalSize) //where T : GenericEntity
         {
             totalSize = 0;
 
@@ -438,7 +439,7 @@ namespace Nistec.Data.Entities
             context.EntityDb.ValidateContext();
 
             Type type = typeof(T);
-            Dictionary<string, EntityStream> values = new Dictionary<string, EntityStream>();
+            ConcurrentDictionary<string, EntityStream> values = new ConcurrentDictionary<string, EntityStream>();
 
             long size = 0;
            

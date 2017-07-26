@@ -875,10 +875,25 @@ namespace Nistec.Data
             return sb;
         }
 
-        /// <summary>
-        /// Get sql command parameters
-        /// </summary>
-        /// <returns></returns>
+        public static IDictionary<string, T> ToDictionary<T>(params object[] keyValueParameters)
+        {
+            if (keyValueParameters == null)
+                return null;
+            int count = keyValueParameters.Length;
+            if (count % 2 != 0)
+            {
+                throw new ArgumentException("values parameter not correct, Not match key value arguments");
+            }
+            Dictionary<string, T> list = new Dictionary<string, T>();
+            for (int i = 0; i < count; i++)
+            {
+                var key = keyValueParameters[i].ToString();
+                T val = GenericTypes.Convert<T>(keyValueParameters[++i]);
+                list[key] = val;
+            }
+
+            return list;
+        }
         
 #endregion
 

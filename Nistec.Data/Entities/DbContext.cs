@@ -49,6 +49,7 @@ namespace Nistec.Data.Entities
         bool HasConnection { get; }
         ILocalizer Localization { get; }
         IDbConnection Connection { get; }
+        bool OwnsConnection { get; set; }
 
         /// <summary>
         /// Get indicate if the connection is valid
@@ -781,6 +782,22 @@ namespace Nistec.Data.Entities
         public DbContext(string connectionKey)
             : base(connectionKey)
         {
+            EntityBind();
+        }
+
+        /// <summary>
+        /// Ctor
+        /// </summary>
+        /// <param name="connectionKey"></param>
+        /// <param name="spliter"></param>
+        public DbContext(string connectionKey, char spliter)
+        {
+            if (connectionKey != null && connectionKey.Contains(spliter))
+            {
+                string[] args = connectionKey.Split(spliter);
+                if (args.Length > 1)
+                    SetConnectionInternal(args[0], args[1], DBProvider.SqlServer, false);
+            }
             EntityBind();
         }
 

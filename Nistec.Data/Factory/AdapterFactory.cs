@@ -29,6 +29,7 @@ using System.Data.Common;
 using Nistec.Data.Entities;
 using Nistec.Generic;
 using Nistec.Serialization;
+using Nistec.Runtime;
 
 namespace Nistec.Data.Factory
 {
@@ -586,6 +587,28 @@ namespace Nistec.Data.Factory
                     DataTable dt = FillDataTable(cmd, addWithKey);
                     if (dt != null && dt.Rows.Count > 0)
                         result = GenericRecord.Parse(dt);
+                    return (T)result;
+                }
+                else if (typeof(IDataTableAdaptor).IsAssignableFrom(type))
+                {
+                    DataTable dt = FillDataTable(cmd, addWithKey);
+                    if (dt != null && dt.Rows.Count > 0)
+                    {
+                        T instance = ActivatorUtil.CreateInstance<T>();
+                        ((IDataTableAdaptor)instance).Prepare(dt);
+                        return instance;
+                    }
+                    return (T)result;
+                }
+                else if (typeof(IDataRowAdaptor).IsAssignableFrom(type))
+                {
+                    DataTable dt = FillDataTable(cmd, addWithKey);
+                    if (dt != null && dt.Rows.Count > 0)
+                    {
+                        T instance = ActivatorUtil.CreateInstance<T>();
+                        ((IDataRowAdaptor)instance).Prepare(dt.Rows[0]);
+                        return instance;
+                    }
                     return (T)result;
                 }
 
@@ -1239,6 +1262,29 @@ namespace Nistec.Data.Factory
                         result = dt.ToJsonResult();
                     return (T)result;
                 }
+                else if (typeof(IDataTableAdaptor).IsAssignableFrom(type))
+                {
+                    DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
+                    if (dt != null && dt.Rows.Count > 0)
+                    {
+                        T instance = ActivatorUtil.CreateInstance<T>();
+                        ((IDataTableAdaptor)instance).Prepare(dt);
+                        return instance;
+                    }
+                    return (T)result;
+                }
+                else if (typeof(IDataRowAdaptor).IsAssignableFrom(type))
+                {
+                    DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
+                    if (dt != null && dt.Rows.Count > 0)
+                    {
+                        T instance = ActivatorUtil.CreateInstance<T>();
+                        ((IDataRowAdaptor)instance).Prepare(dt.Rows[0]);
+                        return instance;
+                    }
+                    return (T)result;
+                }
+
                 else //if (type == typeof(object))
                 {
                     result = cmd.ExecuteScalar();
@@ -1337,6 +1383,29 @@ namespace Nistec.Data.Factory
                         result = dt.ToJsonResult();
                     return (TResult)result;
                 }
+                else if (typeof(IDataTableAdaptor).IsAssignableFrom(type))
+                {
+                    DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
+                    if (dt != null && dt.Rows.Count > 0)
+                    {
+                        TResult instance = ActivatorUtil.CreateInstance<TResult>();
+                        ((IDataTableAdaptor)instance).Prepare(dt);
+                        return instance;
+                    }
+                    return (TResult)result;
+                }
+                else if (typeof(IDataRowAdaptor).IsAssignableFrom(type))
+                {
+                    DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
+                    if (dt != null && dt.Rows.Count > 0)
+                    {
+                        TResult instance = ActivatorUtil.CreateInstance<TResult>();
+                        ((IDataRowAdaptor)instance).Prepare(dt.Rows[0]);
+                        return instance;
+                    }
+                    return (TResult)result;
+                }
+
                 else //if (type == typeof(object))
                 {
                     result = cmd.ExecuteScalar();

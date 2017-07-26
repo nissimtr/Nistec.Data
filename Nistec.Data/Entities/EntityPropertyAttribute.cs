@@ -407,7 +407,10 @@ namespace Nistec.Data.Entities
         {
             return string.IsNullOrEmpty(Column) ? propertyName : Column;
         }
-
+        public string GetColumn(string propertyName,bool enableAttributeColumn)
+        {
+            return enableAttributeColumn && !string.IsNullOrEmpty(Column) ? Column : propertyName;
+        }
         #endregion
 
         #region Is defined properties

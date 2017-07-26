@@ -76,7 +76,7 @@ namespace Nistec.Data.Entities
             Current = entity;
         }
 
-        public void Set(params object[] keyvalueParameters)
+        public void SetParams(params object[] keyvalueParameters)
         {
             Current = Get(keyvalueParameters);
         }
@@ -232,6 +232,18 @@ namespace Nistec.Data.Entities
             return res ?? EntityCommandResult.Empty;
         }
 
+        public EntityCommandResult Insert()
+        {
+            Validate(UpdateCommandType.Insert);
+            EntityCommandResult res = null;
+            using (IDbContext Db = DbContext.Create<Dbc>())
+            {
+                res = Db.EntityInsert<T>(Current);
+            }
+            OnChanged(UpdateCommandType.Insert);
+            return res ?? EntityCommandResult.Empty;
+        }
+
         //public EntityCommandResult Upsert(UpsertType commandType = UpsertType.Upsert, ReturnValueType returnType = ReturnValueType.ReturnValue, params object[] keyvalueParameters)
         //{
         //    switch (commandType)
@@ -301,8 +313,8 @@ namespace Nistec.Data.Entities
        
         #endregion
 
-        #region Exec proc
-        public int ExecuteNonQuery(string procName, params object[] nameValueParameters)
+        #region Exec proc  virtual
+        public virtual int ExecuteNonQuery(string procName, params object[] nameValueParameters)
         {
             //Validate(UpdateCommandType.Upsert);
             int res = 0;
@@ -313,7 +325,7 @@ namespace Nistec.Data.Entities
             OnChanged(UpdateCommandType.StoredProcedure);
             return res;
         }
-        public int ExecuteReturnValue(string procName, int returnIfNull, params object[] nameValueParameters)
+        public virtual int ExecuteReturnValue(string procName, int returnIfNull, params object[] nameValueParameters)
         {
             //Validate(UpdateCommandType.Upsert);
             int res = 0;
@@ -324,7 +336,7 @@ namespace Nistec.Data.Entities
             OnChanged(UpdateCommandType.StoredProcedure);
             return res;
         }
-        public EntityCommandResult ExecuteOutput(string procName, params object[] nameValueParameters)
+        public virtual EntityCommandResult ExecuteOutput(string procName, params object[] nameValueParameters)
         {
             //Validate(UpdateCommandType.Upsert);
             EntityCommandResult res = null;
@@ -335,7 +347,7 @@ namespace Nistec.Data.Entities
             OnChanged(UpdateCommandType.StoredProcedure);
             return res;
         }
-        public T ExecuteSingle(string procName, params object[] nameValueParameters)
+        public virtual T ExecuteSingle(string procName, params object[] nameValueParameters)
         {
             T res = default(T);
             using (IDbContext Db = DbContext.Create<Dbc>())
@@ -344,7 +356,7 @@ namespace Nistec.Data.Entities
             }
             return res;
         }
-        public IList<T> ExecuteList(string procName, params object[] nameValueParameters)
+        public virtual IList<T> ExecuteList(string procName, params object[] nameValueParameters)
         {
             IList<T> res = null;
             using (IDbContext Db = DbContext.Create<Dbc>())
@@ -548,6 +560,28 @@ namespace Nistec.Data.Entities
         //    OnChanged(UpdateCommandType.Delete);
         //    return res;
         //}
+        public int DeleteReturnValue(int returnIfNull, params object[] keyvalueParameters)
+        {
+            if (keyvalueParameters == null || keyvalueParameters.Length == 0)
+            {
+                Validate(UpdateCommandType.Delete);
+                keyvalueParameters = GetKeyValueFields(true);
+            }
+
+            var procName = EntityMappingAttribute.Proc<T>(UpdateCommandType.Delete);
+            if(procName==null)
+            {
+                throw new EntityException("Invalid Entity ProcName");
+            }
+            int res = returnIfNull;
+            using (IDbContext Db = DbContext.Create<Dbc>())
+            {
+                res = Db.ExecuteReturnValue(procName, returnIfNull, keyvalueParameters);
+            }
+            OnChanged(UpdateCommandType.Delete);
+            return res;
+        }
+
         public int Delete(params object[] keyvalueParameters)
         {
             if (keyvalueParameters == null || keyvalueParameters.Length == 0)

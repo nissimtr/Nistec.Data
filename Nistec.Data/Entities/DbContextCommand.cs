@@ -408,7 +408,6 @@ namespace Nistec.Data.Entities
         /// <summary>
         /// ConnectionOpen
         /// </summary>
-        /// <param name="cmd"></param>
         internal void ConnectionOpen()
         {
             ValidateConnectionSettings();
@@ -565,7 +564,7 @@ namespace Nistec.Data.Entities
         #endregion
 
         #region Execute none query
-
+                
         /// <summary>
         /// Executes a command NonQuery and returns the number of rows affected.
         /// </summary>
@@ -1205,6 +1204,28 @@ namespace Nistec.Data.Entities
                         result = dt.ToJsonResult();
                     return (T)result;
                 }
+                else if (typeof(IDataTableAdaptor).IsAssignableFrom(type))
+                {
+                    DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
+                    if (dt != null && dt.Rows.Count > 0)
+                    {
+                        T instance = ActivatorUtil.CreateInstance<T>();
+                        ((IDataTableAdaptor)instance).Prepare(dt);
+                        return instance;
+                    }
+                    return (T)result;
+                }
+                else if (typeof(IDataRowAdaptor).IsAssignableFrom(type))
+                {
+                    DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
+                    if (dt != null && dt.Rows.Count > 0)
+                    {
+                        T instance = ActivatorUtil.CreateInstance<T>();
+                        ((IDataRowAdaptor)instance).Prepare(dt.Rows[0]);
+                        return instance;
+                    }
+                    return (T)result;
+                }
                 else //if (type == typeof(object))
                 {
                     result = cmd.ExecuteScalar();
@@ -1303,6 +1324,29 @@ namespace Nistec.Data.Entities
                         result = dt.ToJsonResult();
                     return (TResult)result;
                 }
+                else if (typeof(IDataTableAdaptor).IsAssignableFrom(type))
+                {
+                    DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
+                    if (dt != null && dt.Rows.Count > 0)
+                    {
+                        TResult instance = ActivatorUtil.CreateInstance<TResult>();
+                        ((IDataTableAdaptor)instance).Prepare(dt);
+                        return instance;
+                    }
+                    return (TResult)result;
+                }
+                else if (typeof(IDataRowAdaptor).IsAssignableFrom(type))
+                {
+                    DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
+                    if (dt != null && dt.Rows.Count > 0)
+                    {
+                        TResult instance = ActivatorUtil.CreateInstance<TResult>();
+                        ((IDataRowAdaptor)instance).Prepare(dt.Rows[0]);
+                        return instance;
+                    }
+                    return (TResult)result;
+                }
+
                 else //if (type == typeof(object))
                 {
                     result = cmd.ExecuteScalar();

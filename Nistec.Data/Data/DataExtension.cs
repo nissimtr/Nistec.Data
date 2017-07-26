@@ -133,7 +133,20 @@ namespace Nistec.Data
 
         }
 
-       
+        //public static void ToKeyValue<T>(this IKeyValue<T> instance, DataRow dr)
+        //{
+        //    if (dr == null)
+        //        return;
+        //    DataTable dt = dr.Table;
+        //    if (dt == null)
+        //        return;
+        //    for (int i = 0; i < dt.Columns.Count; i++)
+        //    {
+        //        string colName = dt.Columns[i].ColumnName;
+        //        instance[colName] = GenericTypes.Convert<T>(dr[colName]);
+        //    }
+        //}
+
         public static string ToJson(this DataTable dt)
         {
             return JsonSerializer.Serialize(dt);

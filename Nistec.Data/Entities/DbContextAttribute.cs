@@ -171,7 +171,6 @@ namespace Nistec.Data.Entities
             else if (attrib.IsConnectionKeyDefined)
                 return new DbContext(attrib.ConnectionKey);
             throw new EntityException("DbContextAttribute.Connection not defined");
-            //return new DbContext(attrib.ConnectionKey);
         }
 
         public static void BuildDbContext(DbContext instance, bool forceSettings=false)
@@ -188,11 +187,6 @@ namespace Nistec.Data.Entities
 
             instance.SetConnectionInternal(attribute.ConnectionKey, attribute.ConnectionString, attribute.Provider, false);
 
-
-            //foreach (var attribute in attributes)
-            //{
-            //    instance.SetConnectionInternal(attribute.ConnectionKey, attribute.ConnectionString, attribute.Provider, false);
-            //}
         }
 
 	}

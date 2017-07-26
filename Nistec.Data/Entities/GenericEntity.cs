@@ -42,7 +42,7 @@ namespace Nistec.Data.Entities
     /// Represent Generic serializable entity that implement <see cref="IGenericEntity"/>, <see cref="ISerialEntity"/> and <see cref="IEntityDictionary"/>.
     /// </summary>
     [Serializable]
-    public class GenericEntity : System.Xml.Serialization.IXmlSerializable, IGenericEntity, IEntityDictionary, ISerialJson
+    public class GenericEntity : System.Xml.Serialization.IXmlSerializable, IGenericEntity, IEntityDictionary, ISerialJson,IKeyValue<object>
     {
         public const string EntityName = "GenericEntity";
 
@@ -437,6 +437,13 @@ namespace Nistec.Data.Entities
 
         #region Load
 
+        public void Prepare(DataRow dr)
+        {
+            ClearChanges();
+            ValidateData();
+            DataUtil.LoadDictionaryEntityFromDataRow(m_data, dr);
+            m_allowNew = true;
+        }
         public void Load(DataRow dr)
         {
             ClearChanges();
