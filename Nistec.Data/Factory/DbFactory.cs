@@ -46,7 +46,7 @@ namespace Nistec.Data.Factory
         /// <returns></returns>
         public static IDbCmd Create<Dbc>() where Dbc : Nistec.Data.Entities.IDbContext
         {
-            Nistec.Data.Entities.IDbContext db = ActivatorUtil.CreateInstance<Dbc>();//System.Activator.CreateInstance<Dbc>();
+            Nistec.Data.Entities.IDbContext db = ActivatorUtil.CreateInstance<Dbc>();
             if (db == null)
             {
                 throw new Entities.EntityException("Create Instance of IDbContext was failed");

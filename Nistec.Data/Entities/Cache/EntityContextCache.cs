@@ -32,7 +32,7 @@ namespace Nistec.Data.Entities.Cache
     /// <summary>
     /// Represent Entity Context Cache wrapper that contains fast search mechanizem.
     /// </summary>
-    public class EntityContextCache<T> : EntityCache<string, T>
+    public class EntityContextCache<T> : EntityCache<T> where T : IEntityItem
     {
         public EntityContextCache(EntityKeys info)
             : base(1)
@@ -45,7 +45,7 @@ namespace Nistec.Data.Entities.Cache
         public EntityContextCache()
             : base(1)
         {
-            T instance = ActivatorUtil.CreateInstance<T>();//Activator.CreateInstance<T>();
+            T instance = ActivatorUtil.CreateInstance<T>();
 
             EntityAttribute keyattr = AttributeProvider.GetCustomAttribute<EntityAttribute>(instance.GetType());
             string[] keys = keyattr.EntityKey;
@@ -55,8 +55,8 @@ namespace Nistec.Data.Entities.Cache
          
         protected override void InitCache()
         {
-            T instance = ActivatorUtil.CreateInstance<T>();//Activator.CreateInstance<T>();
-            IDictionary dt = EntityExtension.CreateEntityList((IEntity<T>)instance, null, OnError);//((IEntity<T>)instance).EntityDictionary(null, OnError);
+            T instance = ActivatorUtil.CreateInstance<T>();
+            IDictionary<string,T> dt = EntityExtension.CreateEntityList((IEntity<T>)instance, null, OnError);//((IEntity<T>)instance).EntityDictionary(null, OnError);
             base.CreateCache(dt);
         }
 

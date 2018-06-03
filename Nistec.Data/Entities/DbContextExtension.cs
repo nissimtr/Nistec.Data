@@ -68,7 +68,7 @@ namespace Nistec.Data.Entities
             {
                 throw new ArgumentNullException("ToEntity.recordor type");
             }
-            object item = ActivatorUtil.CreateInstance(type);//System.Activator.CreateInstance(type);
+            object item = ActivatorUtil.CreateInstance(type);
             EntityPropertyBuilder.SetEntityContext(item, record);
             return item;
         }
@@ -176,6 +176,75 @@ namespace Nistec.Data.Entities
             return list;
         }
 
+        ///// <summary>
+        ///// Create Entity collection from <see cref="DataTable"/>
+        ///// </summary>
+        ///// <typeparam name="T"></typeparam>
+        ///// <param name="dt"></param>
+        ///// <param name="field"></param>
+        ///// <returns></returns>
+        //public static List<T> ToSimpleList<T>(this DataTable dt, string field)
+        //{
+        //    if (dt == null)
+        //    {
+        //        throw new ArgumentNullException("EntityList.dt");
+        //    }
+        //    List<T> list = new List<T>();
+        //    if (Serialization.SerializeTools.IsSimple(typeof(T)))
+        //    {
+        //        T item = default(T);
+        //        foreach (DataRow row in dt.Rows)
+        //        {
+        //            if (field == null)
+        //                item = GenericTypes.Convert<T>(row[0]);
+        //            else
+        //                item = row.Get<T>(field);
+
+        //            list.Add(item);
+        //        }
+        //    }
+        //    else
+        //    {
+        //        T instance = ActivatorUtil.CreateInstance<T>();
+
+        //        var props = DataProperties.GetEntityProperties(instance.GetType());
+
+        //        foreach (DataRow row in dt.Rows)
+        //        {
+        //            T item = ActivatorUtil.CreateInstance<T>();
+        //            SetEntityContext<T>(item, row, props);
+        //            list.Add(item);
+        //        }
+        //    }
+        //    return list;
+        //}
+
+        /// <summary>
+        /// Create Entity collection from <see cref="DataTable"/>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="dt"></param>
+        /// <param name="field"></param>
+        /// <returns></returns>
+        public static List<T> ToSimpleList<T>(this DataTable dt, string field)
+        {
+            if (dt == null)
+            {
+                throw new ArgumentNullException("EntityList.dt");
+            }
+            List<T> list = new List<T>();
+            T item = default(T);
+            foreach (DataRow row in dt.Rows)
+            {
+                if (field == null)
+                    item = GenericTypes.Convert<T>(row[0]);
+                else
+                    item = row.Get<T>(field);
+
+                list.Add(item);
+            }
+            return list;
+        }
 
         /// <summary>
         /// Create Entity from <see cref="DataRow"/>

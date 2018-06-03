@@ -149,6 +149,38 @@ namespace Nistec.Data.SqlClient
 
         delegate void BulkInsertDelegate(DataTable source, string destinationTableName, int batchSize, int notifyAfter, int timeout, params SqlBulkCopyColumnMapping[] mapings);
 
+        public static SqlBulkCopyColumnMapping[] CreateMapping(DataTable dt)
+        {
+            List<SqlBulkCopyColumnMapping> list = new List<SqlBulkCopyColumnMapping>();
+
+            foreach(DataColumn col in dt.Columns)
+            {
+                list.Add(new SqlBulkCopyColumnMapping(col.ColumnName, col.ColumnName));
+            }
+            return list.ToArray();
+        }
+        public static SqlBulkCopyColumnMapping[] CreateMapping(Dictionary<string,string> columns)
+        {
+            List<SqlBulkCopyColumnMapping> list = new List<SqlBulkCopyColumnMapping>();
+
+            foreach (var col in columns)
+            {
+                list.Add(new SqlBulkCopyColumnMapping(col.Key, col.Value));
+            }
+            return list.ToArray();
+        }
+
+        public static SqlBulkCopyColumnMapping[] CreateMapping(params string[] columns)
+        {
+            List<SqlBulkCopyColumnMapping> list = new List<SqlBulkCopyColumnMapping>();
+
+            foreach (var col in columns)
+            {
+                list.Add(new SqlBulkCopyColumnMapping(col, col));
+            }
+            return list.ToArray();
+        }
+
         public void BulkInsertAsync(DataTable source, string destinationTableName)
         {
 

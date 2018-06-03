@@ -31,6 +31,7 @@ using Nistec.Generic;
 using Nistec.Serialization;
 using Nistec.Runtime;
 using Nistec.Data.Entities.Cache;
+using Nistec.Data.Ado;
 
 namespace Nistec.Data.Entities
 {
@@ -50,6 +51,48 @@ namespace Nistec.Data.Entities
         ILocalizer Localization { get; }
         IDbConnection Connection { get; }
         bool OwnsConnection { get; set; }
+
+        /// <summary>
+        /// Get or Set the time to wait while trying to establish a connection before terminating the attempt and generating an error.
+        /// The time (in seconds) to wait for a connection to open. The default value is 15 seconds.
+        /// </summary>
+        int ConnectionTimeout
+        {
+            get;
+            set;
+        }
+        /// <summary>
+        /// Get or Set the time to wait while trying to establish a connection before terminating the attempt and generating an error.
+        /// The time (in seconds) to wait for a connection to open. The default value is 30 seconds.
+        /// </summary>
+        int CommandTimeout
+        {
+            get;
+            set;
+        }
+
+
+        /// <summary>
+        ///     Adds the necessary columns and primary key information to complete the schema.
+        ///     For more information about how primary key information is added to a System.Data.DataTable,
+        ///     see System.Data.IDataAdapter.FillSchema(System.Data.DataSet,System.Data.SchemaType).To
+        ///     function properly with the .NET Framework Data Provider for OLE DB, AddWithKey
+        ///     requires that the native OLE DB provider obtains necessary primary key information
+        ///     by setting the DBPROP_UNIQUEROWS property, and then determines which columns
+        ///     are primary key columns by examining DBCOLUMN_KEYCOLUMN in the IColumnsRowset.
+        ///     As an alternative, the user may explicitly set the primary key constraints on
+        ///     each System.Data.DataTable. This ensures that incoming records that match existing
+        ///     records are updated instead of appended. When using AddWithKey, the .NET Framework
+        ///     Data Provider for SQL Server appends a FOR BROWSE clause to the statement being
+        ///     executed. The user should be aware of potential side effects, such as interference
+        ///     with the use of SET FMTONLY ON statements. See SQL Server Books Online for more
+        ///     information.
+        /// </summary>
+        bool AddWithKey
+        {
+            get;
+            set;
+        }
 
         /// <summary>
         /// Get indicate if the connection is valid
@@ -93,6 +136,20 @@ namespace Nistec.Data.Entities
         /// <param name="keyValueParameters"></param>
         /// <returns></returns>
         IList<T> EntityList<T>(params object[] keyValueParameters) where T : IEntityItem;
+        /// <summary>
+        /// Exec Entity using <see cref="EntityMappingAttribute"/> mapping name and keys filter.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="keyValueParameters"></param>
+        /// <returns></returns>
+        T EntityProcGet<T>(params object[] keyValueParameters) where T : IEntityItem;
+        /// <summary>
+        /// Exec Entity using <see cref="EntityMappingAttribute"/> mapping name and keys filter.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="keyValueParameters"></param>
+        /// <returns></returns>
+        IList<T> EntityProcList<T>(params object[] keyValueParameters) where T : IEntityItem;
         /// <summary>
         /// Get Entity using <see cref="EntityMappingAttribute"/> mapping name and keys filter.
         /// </summary>
@@ -287,7 +344,7 @@ namespace Nistec.Data.Entities
         #region command
 
         /// <summary>
-        /// Executes sql as NonQuery Command  and returns effective records..
+        /// Executes sql as NonQuery Command and returns T value..
         /// </summary>
         /// <param name="commandText"></param>
         /// <param name="commandType"></param>
@@ -419,32 +476,31 @@ namespace Nistec.Data.Entities
         /// <param name="nameValueParameters"></param>
         /// <returns></returns>
         IDictionary<string, object> ExecuteDictionaryRecord(string mappingName, params object[] nameValueParameters);
-        
+
 
         /// <summary>
         /// Executes CommandType.Text and returns DataTable.
         /// </summary>
-        /// <param name="mappingName"></param>
+        /// <param name="commandText"></param>
         /// <param name="nameValueParameters"></param>
         /// <returns></returns>
         DataTable QueryDataTable(string commandText, params object[] nameValueParameters);
-        
 
         /// <summary>
         /// Executes StoredProcedure and returns DataTable.
         /// </summary>
-        /// <param name="mappingName"></param>
+        /// <param name="procName"></param>
         /// <param name="nameValueParameters"></param>
         /// <returns></returns>
-        DataTable ExecuteDataTable(string mappingName, params object[] nameValueParameters);
-        
+        DataTable ExecuteDataTable(string procName, params object[] nameValueParameters);
+
         /// <summary>
         /// Executes StoredProcedure and returns DataSet.
         /// </summary>
-        /// <param name="mappingName"></param>
+        /// <param name="procName"></param>
         /// <param name="nameValueParameters"></param>
         /// <returns></returns>
-        DataSet ExecuteDataSet(string mappingName, params object[] nameValueParameters);
+        DataSet ExecuteDataSet(string procName, params object[] nameValueParameters);
        
         /// <summary>
         /// Executes Command and returns IDataReader.
@@ -644,6 +700,17 @@ namespace Nistec.Data.Entities
         #endregion
 
         #region static IDbContext
+
+        /// <summary>
+        /// Create an instance of DbContext
+        /// </summary>
+        /// <typeparam name="Dbc"></typeparam>
+        /// <returns></returns>
+        public static DbContext Get<Dbc>() where Dbc : IDbContext
+        {
+            return DbContextAttribute.Create<Dbc>();
+        }
+
         /// <summary>
         /// Create an instance of IDbContext
         /// </summary>
@@ -658,11 +725,74 @@ namespace Nistec.Data.Entities
         /// <summary>
         /// Create an instance of IDbContext
         /// </summary>
-        /// <typeparam name="Dbc"></typeparam>
+        /// <param name="connectionName"></param>
+        /// <param name="createFromProvider"></param>
         /// <returns></returns>
-        public static IDbContext Create(string connectionName)
+        public static IDbContext Create(string connectionName, bool createFromProvider=false)
         {
-            return new DbContext(connectionName);
+            return new DbContext(connectionName, createFromProvider);
+        }
+
+
+        /// <summary>
+        /// Create an instance of IDbContext
+        /// </summary>
+        /// <param name="connectionName"></param>
+        /// <param name="commandTimeout"></param>
+        /// <param name="addWithKey"></param>
+        /// <param name="createFromProvider"></param>
+        public static IDbContext Create(string connectionName, int commandTimeout, bool addWithKey = false, bool createFromProvider = false)
+        {
+            return new DbContext(connectionName, commandTimeout, addWithKey, createFromProvider);
+        }
+
+        ///// <summary>
+        ///// Create an instance of IDbContext
+        ///// </summary>
+        ///// <param name="connectionProviderKey"></param>
+        ///// <param name="commandTimeout"></param>
+        ///// <param name="addWithKey"></param>
+        //public static IDbContext CreateFromProvider(string connectionProviderKey, int commandTimeout, bool addWithKey = false)
+        //{
+        //    var cp = ConnectionSettings.Instance.Get(connectionProviderKey);
+        //    if (cp == null)
+        //    {
+        //        throw new InvalidOperationException("Invalid connection provider in ConnectionSettings collection");
+        //    }
+        //    return new DbContext(cp)
+        //    {
+        //        CommandTimeout = commandTimeout,
+        //        AddWithKey = addWithKey
+        //    };
+        //}
+        ///// <summary>
+        ///// Create an instance of IDbContext
+        ///// </summary>
+        ///// <param name="connectionProviderKey"></param>
+        //public static IDbContext CreateFromProvider(string connectionProviderKey)
+        //{
+        //    var cp = ConnectionSettings.Instance.Get(connectionProviderKey);
+        //    if (cp == null)
+        //    {
+        //        throw new InvalidOperationException("Invalid connection provider in ConnectionSettings collection");
+        //    }
+        //    return new DbContext(cp);
+        //}
+
+        /// <summary>
+        /// Create an instance of IDbContext
+        /// </summary>
+        /// <param name="connectioString"></param>
+        /// <param name="provider"></param>
+        /// <param name="commandTimeout"></param>
+        /// <param name="addWithKey"></param>
+        public static IDbContext Create(string connectioString, DBProvider provider, int commandTimeout, bool addWithKey = false)
+        {
+            return new DbContext(connectioString, provider)
+            {
+                CommandTimeout = commandTimeout,
+                AddWithKey = addWithKey
+            };
         }
 
         ///// <summary>
@@ -779,9 +909,25 @@ namespace Nistec.Data.Entities
         /// Ctor
         /// </summary>
         /// <param name="connectionKey"></param>
-        public DbContext(string connectionKey)
-            : base(connectionKey)
+        /// <param name="createFromProvider"></param>
+        public DbContext(string connectionKey, bool createFromProvider = false)
+            : base(connectionKey, createFromProvider)
         {
+            EntityBind();
+        }
+
+        /// <summary>
+        /// Ctor
+        /// </summary>
+        /// <param name="connectionKey"></param>
+        /// <param name="commandTimeout"></param>
+        /// <param name="addWithKey"></param>
+        /// <param name="createFromProvider"></param>
+        public DbContext(string connectionKey, int commandTimeout, bool addWithKey = false, bool createFromProvider = false)
+            : base(connectionKey, createFromProvider)
+        {
+            CommandTimeout = commandTimeout == 0 ? DefaultCommandTimeout : commandTimeout;
+            AddWithKey = addWithKey;
             EntityBind();
         }
 
@@ -813,6 +959,18 @@ namespace Nistec.Data.Entities
             EntityBind();
         }
 
+        /// <summary>
+        /// Ctor
+        /// </summary>
+        /// <param name="cp"></param>
+        public DbContext(Ado.ConnectionProvider cp)
+            : base(cp.ConnectionString, cp.Provider)
+        {
+            if (cp.TimeOut > 0)
+                ConnectionTimeout = cp.TimeOut;
+            //SetConnectionInternal(connectionName, connectionString, provider, true);
+            EntityBind();
+        }
         protected void SetConnection(string connectionName, string connectionString, DBProvider provider)
         {
             ConnectionName = connectionName;
@@ -841,7 +999,7 @@ namespace Nistec.Data.Entities
                 Provider = provider;
                 ConnectionString = connectionString;
             }
-
+           
             //Command = DbFactory.Create(ConnectionString, Provider);
 
             if (enableBinding)
@@ -955,7 +1113,7 @@ namespace Nistec.Data.Entities
         #region internal
         internal EntityDbContext GetEntityDb(object instance, string mappingName)
         {
-            EntityKeys keys = EntityPropertyBuilder.GetEntityPrimaryKey(instance);
+            EntityKeys keys = new EntityKeys(instance);// EntityPropertyBuilder.GetEntityPrimaryKey(instance);
             if (keys == null || keys.Count == 0)
                 throw new EntityException("Invalid entity key which is required");
             EntityDbContext db = new EntityDbContext(this, mappingName, keys);
@@ -1067,6 +1225,38 @@ namespace Nistec.Data.Entities
 
             string commandText = SqlFormatter.GetCommandText(mappingName, keyValueParameters);
             return Query<T>(commandText, keyValueParameters);
+        }
+        /// <summary>
+        /// Exec Entity using <see cref="EntityMappingAttribute"/> mapping name and keys filter.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="keyValueParameters"></param>
+        /// <returns></returns>
+        public IList<T> EntityProcList<T>(params object[] keyValueParameters) where T : IEntityItem
+        {
+            //ValidateConnectionSettings();
+            var proc = EntityMappingAttribute.Proc<T>(ProcedureType.GetList);
+            if (proc == null)
+            {
+                throw new InvalidOperationException("Invalid get list by StoredProcedure!");
+            }
+            return ExecuteList<T>(proc, keyValueParameters);
+        }
+        /// <summary>
+        /// Exec Entity using <see cref="EntityMappingAttribute"/> mapping name and keys filter.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="keyValueParameters"></param>
+        /// <returns></returns>
+        public T EntityProcGet<T>(params object[] keyValueParameters) where T : IEntityItem
+        {
+            //ValidateConnectionSettings();
+            var proc = EntityMappingAttribute.Proc<T>(ProcedureType.GetRecord);
+            if (proc == null)
+            {
+                throw new InvalidOperationException("Invalid get record by StoredProcedure!");
+            }
+            return ExecuteSingle<T>(proc, keyValueParameters);
         }
         /// <summary>
         /// Get Entity using <see cref="EntityMappingAttribute"/> mapping name and keys filter.
@@ -1583,7 +1773,7 @@ namespace Nistec.Data.Entities
         /// <returns><see cref="EntityCommandResult"/></returns> 
         public EntityCommandResult ExecuteOutput(string procName, params object[] keyValueDirectionParameters)
         {
-            return ExecuteCommandOutput(procName, DataParameter.GetSqlWithDirection(keyValueDirectionParameters), CommandType.StoredProcedure);
+            return ExecuteCommandOutput(procName, DataParameter.GetSqlWithDirection(keyValueDirectionParameters), CommandType.StoredProcedure, CommandTimeout);
         }
 
         /// <summary>
@@ -1595,7 +1785,7 @@ namespace Nistec.Data.Entities
         /// <returns><see cref="int"/></returns> 
         public int ExecuteReturnValue(string procName, int returnIfNull, params object[] nameValueParameters)
         {
-            return ExecuteCommandReturnValue(procName, DataParameter.GetSqlWithReturnValue(nameValueParameters), returnIfNull);
+            return ExecuteCommandReturnValue(procName, DataParameter.GetSqlWithReturnValue(nameValueParameters), returnIfNull, CommandTimeout);
         }
 
 
@@ -1611,7 +1801,7 @@ namespace Nistec.Data.Entities
             //{
             //    throw new ArgumentNullException("ExecuteNonQuery.commandText");
             //}
-            return ExecuteCommandNonQuery(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure);
+            return ExecuteCommandNonQuery(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure, CommandTimeout);
         }
         /// <summary>
         /// Executes StoredProcedure and returns T value such as (String|Number|DateTime) or any primitive type.
@@ -1627,7 +1817,7 @@ namespace Nistec.Data.Entities
             //{
             //    throw new ArgumentNullException("ExecuteScalar.commandText");
             //}
-            return ExecuteCommandScalar<T>(procName, DataParameter.GetSql(nameValueParameters), returnIfNull, CommandType.StoredProcedure, 0);
+            return ExecuteCommandScalar<T>(procName, DataParameter.GetSql(nameValueParameters), returnIfNull, CommandType.StoredProcedure, CommandTimeout);
         }
 
         /// <summary>
@@ -1643,7 +1833,7 @@ namespace Nistec.Data.Entities
             //{
             //    throw new ArgumentNullException("ExecuteSingle.commandText");
             //}
-            return ExecuteCommand<T>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure);
+            return ExecuteCommand<T>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure, CommandTimeout, AddWithKey);
         }
 
 
@@ -1660,7 +1850,7 @@ namespace Nistec.Data.Entities
             //{
             //    throw new ArgumentNullException("ExecuteQuery.commandText");
             //}
-            return ExecuteCommand<T, IList<T>>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure);
+            return ExecuteCommand<T, IList<T>>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure, CommandTimeout, AddWithKey);
         }
 
      
@@ -1683,7 +1873,7 @@ namespace Nistec.Data.Entities
                 throw new ArgumentNullException("ExecuteCommand.commandText");
             }
 
-            return ExecuteCommand<T>(commandText, DataParameter.GetSql(nameValueParameters), commandType);
+            return ExecuteCommand<T>(commandText, DataParameter.GetSql(nameValueParameters), commandType, CommandTimeout, AddWithKey);
         }
 
        
@@ -1701,13 +1891,53 @@ namespace Nistec.Data.Entities
                 throw new ArgumentNullException("ExecuteCommand.commandText");
             }
 
-            return ExecuteCommandNonQuery(commandText, DataParameter.GetSql(nameValueParameters), commandType);
+            return ExecuteCommandNonQuery(commandText, DataParameter.GetSql(nameValueParameters), commandType, CommandTimeout);
 
             //using (IDbCmd cmd = DbCmd())
             //{
             //return ExecuteNonQuery(commandText, DataParameter.GetSql(nameValueParameters), commandType);
             //}
         }
+
+        /// <summary>
+        /// Executes sql update as NonQuery Command  and returns effective records..
+        /// </summary>
+        /// <param name="mappingName"></param>
+        /// <param name="setCommand"></param>
+        /// <param name="whereCommand"></param>
+        /// <param name="nameValueParameters"></param>
+        /// <returns></returns>
+        public int ExecuteCommandUpdate(string mappingName, string setCommand, string whereCommand, params object[] nameValueParameters)
+        {
+            if (mappingName == null)
+            {
+                throw new ArgumentNullException("ExecuteCommand.commandText");
+            }
+
+            var commandText= SqlFormatter.UpdateString(mappingName, setCommand, whereCommand);
+
+            return ExecuteCommandNonQuery(commandText, DataParameter.GetSql(nameValueParameters),  CommandType.Text, CommandTimeout);
+        }
+
+        /// <summary>
+        /// Executes sql insert as NonQuery Command  and returns effective records..
+        /// </summary>
+        /// <param name="mappingName"></param>
+        /// <param name="nameValueParameters"></param>
+        /// <returns></returns>
+        public int ExecuteCommandInsert(string mappingName, params object[] nameValueParameters)
+        {
+            if (mappingName == null)
+            {
+                throw new ArgumentNullException("ExecuteCommand.commandText");
+            }
+
+            var commandText = SqlFormatter.InsertCommandString(mappingName, nameValueParameters);
+
+            return ExecuteCommandNonQuery(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text, CommandTimeout);
+        }
+
+
         /*
        /// <summary>
        /// Execute Command and returns T value such as (DataSet|DataTable|DataRow) or any entity class or scalar.
@@ -1767,7 +1997,7 @@ namespace Nistec.Data.Entities
             //{
             //    throw new ArgumentNullException("QueryScalar.commandText");
             //}
-            return ExecuteCommandScalar<T>(commandText, DataParameter.GetSql(nameValueParameters), returnIfNull, CommandType.Text, 0);
+            return ExecuteCommandScalar<T>(commandText, DataParameter.GetSql(nameValueParameters), returnIfNull, CommandType.Text, CommandTimeout);
         }
 
         /// <summary>
@@ -1783,7 +2013,7 @@ namespace Nistec.Data.Entities
             //{
             //    throw new ArgumentNullException("QuerySingle.commandText");
             //}
-            return ExecuteCommand<T>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text);
+            return ExecuteCommand<T>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text, CommandTimeout, AddWithKey);
         }
 
 
@@ -1800,7 +2030,7 @@ namespace Nistec.Data.Entities
             //{
             //    throw new ArgumentNullException("Query.commandText");
             //}
-            return ExecuteCommand<T, IList<T>>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text);
+            return ExecuteCommand<T, IList<T>>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text, CommandTimeout, AddWithKey);
         }
         #endregion
 
@@ -1819,7 +2049,7 @@ namespace Nistec.Data.Entities
             }
             commandText = SqlFormatter.GetCommandText(commandText, nameValueParameters);
 
-            DataTable dt = ExecuteCommand<DataTable>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text);
+            DataTable dt = ExecuteCommand<DataTable>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text, CommandTimeout, AddWithKey);
             if (dt == null)
                 return null;
             return dt.ToListDictionary();// DataUtil.DatatableToDictionary(dt, Pk);
@@ -1837,7 +2067,7 @@ namespace Nistec.Data.Entities
             //{
             //    throw new ArgumentNullException("ExecuteDictionary.commandText");
             //}
-            DataTable dt = ExecuteCommand<DataTable>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure);
+            DataTable dt = ExecuteCommand<DataTable>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure, CommandTimeout, AddWithKey);
             if (dt == null)
                 return null;
             return dt.ToListDictionary();//DataUtil.DatatableToDictionary(dt, Pk);
@@ -1857,7 +2087,7 @@ namespace Nistec.Data.Entities
             }
             commandText = SqlFormatter.GetCommandText(commandText, nameValueParameters);
 
-            return ExecuteCommand<JsonResults>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text);
+            return ExecuteCommand<JsonResults>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text, CommandTimeout, AddWithKey);
          }
 
         /// <summary>
@@ -1874,12 +2104,33 @@ namespace Nistec.Data.Entities
             }
             commandText = SqlFormatter.GetCommandText(commandText, nameValueParameters);
 
-            DataTable dt = ExecuteCommand<DataTable>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text);
+            DataTable dt = ExecuteCommand<DataTable>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text, CommandTimeout, AddWithKey);
             if (dt == null)
                 return null;
             return JsonSerializer.Serialize(dt);
             //return dt.ToJson();
         }
+        /// <summary>
+        /// Executes CommandType.Text and returns Json array.
+        /// </summary>
+        /// <param name="commandText">Command text or mapping name</param>
+        /// <param name="nameValueParameters"></param>
+        /// <returns></returns>
+        public string QueryJsonArray(string commandText, params object[] nameValueParameters)
+        {
+            if (commandText == null)
+            {
+                throw new ArgumentNullException("QueryJsonArray.commandText");
+            }
+            commandText = SqlFormatter.GetCommandText(commandText, nameValueParameters);
+
+            DataTable dt = ExecuteCommand<DataTable>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text, CommandTimeout, AddWithKey);
+            if (dt == null)
+                return null;
+            return JsonSerializer.Serialize(dt.Select());
+            //return dt.ToJson();
+        }
+
         /// <summary>
         /// Executes StoredProcedure and returns Json.
         /// </summary>
@@ -1892,7 +2143,7 @@ namespace Nistec.Data.Entities
             //{
             //    throw new ArgumentNullException("ExecuteJson.commandText");
             //}
-            DataTable dt = ExecuteCommand<DataTable>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure);
+            DataTable dt = ExecuteCommand<DataTable>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure,CommandTimeout,AddWithKey);
             if (dt == null)
                 return null;
             //return dt.ToJson();
@@ -1915,7 +2166,7 @@ namespace Nistec.Data.Entities
             }
             commandText = SqlFormatter.GetCommandText(commandText, nameValueParameters);
 
-            DataTable dt = ExecuteCommand<DataTable>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text);
+            DataTable dt = ExecuteCommand<DataTable>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text, CommandTimeout, AddWithKey);
             if (dt == null || dt.Rows.Count == 0)
                 return null;
             return JsonSerializer.Serialize(dt.Rows[0]);
@@ -1934,7 +2185,7 @@ namespace Nistec.Data.Entities
             //{
             //    throw new ArgumentNullException("QueryJsonRecord.commandText");
             //}
-            DataTable dt = ExecuteCommand<DataTable>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure);
+            DataTable dt = ExecuteCommand<DataTable>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure, CommandTimeout, AddWithKey);
             if (dt == null || dt.Rows.Count == 0)
                 return null;
             //return dt.ToJson();
@@ -1954,7 +2205,7 @@ namespace Nistec.Data.Entities
                 throw new ArgumentNullException("QueryDictionaryRecord.commandText");
             }
             commandText = SqlFormatter.GetCommandText(commandText, nameValueParameters);
-            DataRow dr = ExecuteCommand<DataRow>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text);
+            DataRow dr = ExecuteCommand<DataRow>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text, CommandTimeout, AddWithKey);
             if (dr == null)
                 return null;
             return dr.ToDictionary();
@@ -1972,7 +2223,7 @@ namespace Nistec.Data.Entities
             //{
             //    throw new ArgumentNullException("QueryDictionaryRecord.commandText");
             //}
-            DataRow dr = ExecuteCommand<DataRow>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure);
+            DataRow dr = ExecuteCommand<DataRow>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure, CommandTimeout, AddWithKey);
             if (dr == null)
                 return null;
             return dr.ToDictionary();
@@ -1981,7 +2232,7 @@ namespace Nistec.Data.Entities
         /// <summary>
         /// Executes CommandType.Text and returns DataTable.
         /// </summary>
-        /// <param name="mappingName"></param>
+        /// <param name="commandText"></param>
         /// <param name="nameValueParameters"></param>
         /// <returns></returns>
         public DataTable QueryDataTable(string commandText, params object[] nameValueParameters)
@@ -1991,7 +2242,7 @@ namespace Nistec.Data.Entities
                 throw new ArgumentNullException("ExecuteDataTable.commandText");
             }
             commandText = SqlFormatter.GetCommandText(commandText, nameValueParameters);
-            return ExecuteCommand<DataTable>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text);
+            return ExecuteCommand<DataTable>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text, CommandTimeout, AddWithKey);
         }
 
      
@@ -2007,7 +2258,7 @@ namespace Nistec.Data.Entities
             //{
             //    throw new ArgumentNullException("ExecuteDataTable.commandText");
             //}
-            return ExecuteCommand<DataTable>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure);
+            return ExecuteCommand<DataTable>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure, CommandTimeout, AddWithKey);
         }
         /// <summary>
         /// Executes StoredProcedure and returns DataSet.
@@ -2022,7 +2273,7 @@ namespace Nistec.Data.Entities
             //    throw new ArgumentNullException("ExecuteDataSet.commandText");
             //}
 
-            return ExecuteCommand<DataSet>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure);
+            return ExecuteCommand<DataSet>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure, CommandTimeout, AddWithKey);
         }
 
         /// <summary>

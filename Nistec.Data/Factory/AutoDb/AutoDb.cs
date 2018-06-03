@@ -28,7 +28,7 @@ using Nistec.Data.Entities;
 using System.Collections.Generic;
 using Nistec.Data;
 using Nistec.Data.Advanced;
-
+using Nistec.Runtime;
 
 namespace Nistec.Data.Factory
 {
@@ -451,7 +451,7 @@ namespace Nistec.Data.Factory
         /// <returns></returns>
         protected T ExecuteScalar<T>(string cmdText)
         {
-            return ExecuteScalar<T>(cmdText,null, typeof(T).IsValueType ? Activator.CreateInstance<T>() : default(T));
+            return ExecuteScalar<T>(cmdText,null, typeof(T).IsValueType ? ActivatorUtil.CreateInstance<T>() : default(T));
         }
 
         /// <summary>

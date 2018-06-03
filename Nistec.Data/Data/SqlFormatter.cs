@@ -153,7 +153,18 @@ namespace Nistec.Data
             }
             return string.Format("INSERT INTO {0} ({1}) VALUES({2})", TableFormat(From), Fields, Values);
         }
-   
+        public static string InsertCommandString(string From, object[] keyValueInsert)
+        {
+            if (string.IsNullOrEmpty(From))
+            {
+                throw new ArgumentNullException("From");
+            }
+            if (keyValueInsert == null || keyValueInsert.Length == 0)
+            {
+                throw new ArgumentNullException("keyValueInsert");
+            }
+            return string.Format("INSERT INTO {0} ({1}) VALUES({2})", TableFormat(From), CommandInsertFields(keyValueInsert), CommandInsertValues(keyValueInsert));
+        }
         public static string UpdateString(string From,string Set, string Where)
         {
             if (string.IsNullOrEmpty(From))
@@ -170,7 +181,23 @@ namespace Nistec.Data
             }
             return string.Format("UPDATE {0} SET {1} WHERE {2}", TableFormat(From),Set, Where);
         }
-   
+        public static string UpdateCommandString(string From, object[] keyValueSet, object[] keyValueWhere)
+        {
+            if (string.IsNullOrEmpty(From))
+            {
+                throw new ArgumentNullException("From");
+            }
+            if (keyValueSet == null || keyValueSet.Length==0)
+            {
+                throw new ArgumentNullException("Set");
+            }
+            if (keyValueWhere == null || keyValueWhere.Length == 0)
+            {
+                throw new ArgumentNullException("Where");
+            }
+            return string.Format("UPDATE {0} SET {1} WHERE {2}", TableFormat(From), CommandSet(keyValueSet), CommandWhere(keyValueWhere));
+        }
+
         public static string DeleteString( string From, string Where)
         {
             if (string.IsNullOrEmpty(From))
@@ -294,7 +321,78 @@ namespace Nistec.Data
             }
         }
 
+        public static string CommandInsertFields(object[] keyValueParameters)
+        {
+            if (keyValueParameters == null)
+            {
+                return "";
+            }
+            int count = keyValueParameters.Length;
+            if (count > 0)
+            {
+                StringBuilder sb = new StringBuilder();
+                //sb.Append(" WHERE ");
+                for (int i = 0; i < count; i++)
+                {
+                    sb.AppendFormat("{0}", keyValueParameters[i]);
+                    i++;
+                    if (i < count - 1)
+                        sb.Append(", ");
 
+                }
+
+                return sb.ToString();
+            }
+            return "";
+        }
+        public static string CommandInsertValues(object[] keyValueParameters)
+        {
+            if (keyValueParameters == null)
+            {
+                return "";
+            }
+            int count = keyValueParameters.Length;
+            if (count > 0)
+            {
+                StringBuilder sb = new StringBuilder();
+                //sb.Append(" WHERE ");
+                for (int i = 0; i < count; i++)
+                {
+                    i++;
+                    sb.AppendFormat("@{0}", keyValueParameters[i]);
+                    if (i < count - 1)
+                        sb.Append(", ");
+
+                }
+
+                return sb.ToString();
+            }
+            return "";
+        }
+        public static string CommandSet(object[] keyValueParameters)
+        {
+            if (keyValueParameters == null)
+            {
+                return "";
+            }
+            int count = keyValueParameters.Length;
+            if (count > 0)
+            {
+                StringBuilder sb = new StringBuilder();
+                //sb.Append(" WHERE ");
+                for (int i = 0; i < count; i++)
+                {
+                    sb.AppendFormat("{0}=@{0}", keyValueParameters[i]);
+                    i++;
+                    if (i < count - 1)
+                        sb.Append(" , ");
+
+                }
+
+                return sb.ToString();
+            }
+            return "";
+        }
         public static string CommandWhere(object[] keyValueParameters)
         {
             if (keyValueParameters == null)
@@ -318,6 +416,26 @@ namespace Nistec.Data
                 return sb.ToString();
             }
             return "";
+        }
+        public static string GetCommandText(string mappingName, IEnumerable<string> keys)
+        {
+            if (string.IsNullOrEmpty(mappingName))
+            {
+                throw new ArgumentNullException("Invalid MappingName CommandText");
+            }
+            if (mappingName.TrimStart().ToLower().StartsWith("select"))
+            {
+                return mappingName;
+            }
+            else
+            {
+                string where = "";
+                if (keys != null)
+                {
+                    where = SqlFormatter.CommandWhere(keys.ToArray());
+                }
+                return SqlFormatter.SelectString("*", mappingName, where);
+            }
         }
         public static string CommandWhere(string[] keys, bool addWhere)
         {

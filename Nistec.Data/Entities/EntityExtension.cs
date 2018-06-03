@@ -33,6 +33,7 @@ using Nistec.Data.Entities.Cache;
 using Nistec.Runtime;
 using System.IO;
 using Nistec.Serialization;
+using System.Collections.Concurrent;
 
 namespace Nistec.Data.Entities
 {
@@ -40,20 +41,25 @@ namespace Nistec.Data.Entities
     public static class EntityExtension
     {
 
-        public static string EntityName<T>(this IEntityItem item)
+        public static string EntityName<T>(this IEntityItem item) where T : IEntityItem
         {
             return EntityMappingAttribute.Name<T>();
         }
-        public static string EntityMapping<T>(this IEntityItem item)
+        public static string EntityMapping<T>(this IEntityItem item) where T : IEntityItem
         {
             return EntityMappingAttribute.Mapping<T>();
         }
-        public static string EntityViewName<T>(this IEntityItem item)
+        public static string EntityViewName<T>(this IEntityItem item) where T : IEntityItem
         {
             return EntityMappingAttribute.View<T>();
         }
 
- 
+        public static string EntityPrimaryKey<T>(this IEntityItem item) where T : IEntityItem
+        {
+            return EntityPropertyBuilder.GetEntityPrimaryKey<T>(item);
+        }
+
+
         #region update / insert / delete
 
 
@@ -100,7 +106,7 @@ namespace Nistec.Data.Entities
 
         #region Entity Extension
 
-        public static Dictionary<string, T> CreateEntityList<T>(DataTable dt)
+         public static Dictionary<string, T> CreateEntityList<T>(DataTable dt)
         {
 
             bool isGR = (typeof(T) == typeof(GenericEntity));
@@ -111,7 +117,7 @@ namespace Nistec.Data.Entities
             {
                 foreach (var gr in records)
                 {
-                    T item = GenericTypes.Cast<T>(gr);
+                    T item = GenericTypes.Cast<T>(gr, true);
                     if (gr.PrimaryKey != null)
                     {
                         values.Add(gr.PrimaryKey.ToString(), item);
@@ -120,26 +126,74 @@ namespace Nistec.Data.Entities
             }
             else
             {
-                EntityKeys entityKeys = EntityKeys.BuildKeys<T>();
-
+                //EntityKeys entityKeys = EntityKeys.BuildKeys<T>();
+               
                 foreach (var gr in records)
                 {
-                    T item = ActivatorUtil.CreateInstance<T>();//System.Activator.CreateInstance<T>();
-
-                    string key = entityKeys.CreateEntityPrimaryKey(gr);
-                    if (!string.IsNullOrEmpty(key))
-                    {
-                        values.Add(key, item);
-                    }
-
-                    //gr.PrimaryKey = EntityPropertyBuilder.SetEntityContextWithKey(item, gr);
-                    //if (gr.PrimaryKey != null)
+                    T item = ActivatorUtil.CreateInstance<T>();
+                    
+                    //string key = entityKeys.CreateEntityPrimaryKey(gr);
+                    //if (!string.IsNullOrEmpty(key))
                     //{
-                    //    values.Add(gr.PrimaryKey.ToString(), item);
+                    //    values.Add(key, item);
                     //}
+
+                    gr.PrimaryKey = EntityPropertyBuilder.SetEntityContextWithKey(item, gr);
+                    if (gr.PrimaryKey != null)
+                    {
+                        values.Add(gr.PrimaryKey.ToString(), item);
+                    }
                 }
             }
 
+
+            return values;
+        }
+
+        public static ConcurrentDictionary<string, T> CreateConcurrentEntityList<T>(IEntity context, DataTable dt)
+        {
+
+            bool isGR = (typeof(T) == typeof(GenericEntity));
+            GenericEntity[] records = null;
+            EntityAttribute keyattr = null;
+            ConcurrentDictionary<string, T> values = new ConcurrentDictionary<string, T>();
+
+            if (isGR)
+            {
+                string[] fieldsKey = context.EntityDb.EntityKeys.ToArray();
+                records = GenericEntity.CreateEntities(dt, fieldsKey);
+
+                foreach (var gr in records)
+                {
+                    T item = GenericTypes.Cast<T>(gr, true);
+
+                    if (gr.PrimaryKey != null)
+                    {
+                        values.TryAdd(gr.PrimaryKey.ToString(), item);
+                    }
+                }
+            }
+            else
+            {
+                keyattr = GetEntityAttribute(context);
+                records = GenericEntity.CreateEntities(dt, false);
+                //EntityKeys entityKeys = EntityKeys.BuildKeys<T>();
+
+                foreach (var gr in records)
+                {
+                    T item = ActivatorUtil.CreateInstance<T>();
+                    //string key = entityKeys.CreateEntityPrimaryKey(gr);
+                    //if (!string.IsNullOrEmpty(key))
+                    //{
+                    //    values.TryAdd(key, item);
+                    //}
+                    gr.PrimaryKey = EntityPropertyBuilder.SetEntityContextWithKey(item, gr);
+                    if (gr.PrimaryKey != null)
+                    {
+                        values.TryAdd(gr.PrimaryKey.ToString(), item);
+                    }
+                }
+            }
 
             return values;
         }
@@ -159,7 +213,7 @@ namespace Nistec.Data.Entities
 
                 foreach (var gr in records)
                 {
-                    T item = GenericTypes.Cast<T>(gr);
+                    T item = GenericTypes.Cast<T>(gr, true);
 
                     if (gr.PrimaryKey != null)
                     {
@@ -171,15 +225,20 @@ namespace Nistec.Data.Entities
             {
                 keyattr = GetEntityAttribute(context);
                 records = GenericEntity.CreateEntities(dt, false);
-                EntityKeys entityKeys = EntityKeys.BuildKeys<T>();
+                //EntityKeys entityKeys = EntityKeys.BuildKeys<T>();
 
                 foreach (var gr in records)
                 {
-                    T item = ActivatorUtil.CreateInstance<T>();//System.Activator.CreateInstance<T>();
-                    string key = entityKeys.CreateEntityPrimaryKey(gr);
-                    if (!string.IsNullOrEmpty(key))
+                    T item = ActivatorUtil.CreateInstance<T>();
+                    //string key = entityKeys.CreateEntityPrimaryKey(gr);
+                    //if (!string.IsNullOrEmpty(key))
+                    //{
+                    //    values.Add(key, item);
+                    //}
+                    gr.PrimaryKey = EntityPropertyBuilder.SetEntityContextWithKey(item, gr);
+                    if (gr.PrimaryKey != null)
                     {
-                        values.Add(key, item);
+                        values.Add(gr.PrimaryKey.ToString(), item);
                     }
                 }
             }
@@ -197,11 +256,11 @@ namespace Nistec.Data.Entities
 
             foreach (var gr in records)
             {
-                object item = ActivatorUtil.CreateInstance(type);//System.Activator.CreateInstance(type);
-                EntityKeys entityKey = EntityPropertyBuilder.SetEntityContextWithKey(item, gr.Record);
+                object item = ActivatorUtil.CreateInstance(type);
+                var entityKey = EntityPropertyBuilder.SetEntityContextWithKey(item, gr.Record);
                 if (entityKey != null)
                 {
-                    gr.PrimaryKey = entityKey.FieldsKey;
+                    gr.PrimaryKey = entityKey;//.FieldsKey;
                     values.Add(entityKey.ToString(), item);
                 }
             }
@@ -291,7 +350,31 @@ namespace Nistec.Data.Entities
             return null;
         }
 
- 
+
+        public static ConcurrentDictionary<string, T> CreateConcurrentEntityList<T>(IEntity<T> entity, DataFilter filter, Action<Exception> onError)
+        {
+
+            try
+            {
+                if (entity == null)
+                    return null;
+                if (!entity.EntityDb.HasConnection)
+                    return null;
+                DataTable dt = entity.EntityDb.DoCommand<DataTable>(filter);
+
+                return CreateConcurrentEntityList<T>(entity, dt);
+
+            }
+            catch (Exception ex)
+            {
+                if (onError != null)
+                {
+                    onError(ex);
+                }
+            }
+            return null;
+        }
+
         #endregion
 
         #region ReadStream/WriteStream

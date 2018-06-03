@@ -31,8 +31,7 @@ using System.Globalization;
 using System.Xml;
 using System.Reflection;
 using Nistec.Generic;
-
-
+using Nistec.Runtime;
 
 namespace Nistec.Data
 {
@@ -40,7 +39,7 @@ namespace Nistec.Data
     /// <summary>
     /// Represents a parameter to a DbCommand and optionally,its mapping to a System.Data.DataSet column.
     /// </summary>
-    public class DataParameter : DbParameter//IDbDataParameter
+    public class DataParameter : DbParameter, ICloneable, IDbDataParameter, IDataParameter//IDbDataParameter
     {
         public DalParamType ParamType { get; set; }
 
@@ -184,9 +183,27 @@ namespace Nistec.Data
         {
 
         }
-     
-              
+
+
         #endregion
+
+        object ICloneable.Clone()
+        {
+            return new DataParameter(this.ParameterName, this.Value)
+            {
+                DbType = this.DbType,
+                ParamType = this.ParamType,
+                Direction = this.Direction,
+                IsNullable = this.IsNullable,
+                Precision = this.Precision,
+                Scale = this.Scale,
+                Size = this.Size,
+                SourceColumn = this.SourceColumn,
+                SourceColumnNullMapping = this.SourceColumnNullMapping,
+                SourceVersion = this.SourceVersion,
+                Value = this.Value
+            };
+        }
 
         #region ctor
 
@@ -608,12 +625,31 @@ namespace Nistec.Data
             return keyValueParameters;
         }
 
+
+        ///// <summary>
+        ///// Create IDbCmd
+        ///// </summary>
+        ///// <param name="provider"></param>
+        ///// <param name="keyValueParameters"></param>
+        ///// <returns></returns>
+        //public static IDbCmd Create(DBProvider provider, params object[] keyValueParameters)
+        //{
+        //    if (provider == DBProvider.SqlServer)
+        //        return new SqlClient.DbSqlCmd(connectionString);
+        //    else if (provider == DBProvider.OleDb)
+        //        return new OleDb.DbOleCmd(connectionString);
+        //    else
+        //        throw new ArgumentException("Provider not supported");
+        //}
+
+
         /// <summary>
         /// Create KeyValueParameters
         /// </summary>
+        /// <param name="command"></param>
         /// <param name="keyValueParameters"></param>
         /// <returns></returns>
-        public static IDbDataParameter[] Get(params object[] keyValueParameters)
+        public static IDbDataParameter[] Get(IDbCommand command,params object[] keyValueParameters)
         {
 
             int count = keyValueParameters.Length;
@@ -624,7 +660,100 @@ namespace Nistec.Data
             List<IDbDataParameter> list = new List<IDbDataParameter>();
             for (int i = 0; i < count; i++)
             {
-                list.Add(new DataParameter(keyValueParameters[i].ToString(), keyValueParameters[++i]));
+                var parameter= command.CreateParameter();
+                string key = keyValueParameters[i].ToString();
+                object value = keyValueParameters[++i];
+                parameter.ParameterName = key;
+                parameter.Value = value;
+                parameter.DbType = GetDbTypeFromObject(value);
+                list.Add(parameter);
+                //list.Add(new DataParameter(keyValueParameters[i].ToString(), keyValueParameters[++i]));
+            }
+            return list.ToArray();
+        }
+
+        /// <summary>
+        /// Create KeyValueParameters
+        /// </summary>
+        /// <param name="connection"></param>
+        /// <param name="keyValueParameters"></param>
+        /// <returns></returns>
+        public static IDbDataParameter[] Get(IDbConnection connection, params object[] keyValueParameters)
+        {
+
+            int count = keyValueParameters.Length;
+            if (count % 2 != 0)
+            {
+                throw new ArgumentException("values parameter not correct, Not match key value arguments");
+            }
+            List<IDbDataParameter> list = new List<IDbDataParameter>();
+
+            using (var command = connection.CreateCommand())
+            {
+                for (int i = 0; i < count; i++)
+                {
+                    var parameter = command.CreateParameter();
+                    string key = keyValueParameters[i].ToString();
+                    object value = keyValueParameters[++i];
+                    parameter.ParameterName = key;
+                    parameter.Value = value;
+                    parameter.DbType = GetDbTypeFromObject(value);
+                    list.Add(parameter);
+                    //list.Add(new DataParameter(keyValueParameters[i].ToString(), keyValueParameters[++i]));
+                }
+            }
+            return list.ToArray();
+        }
+
+
+        ///// <summary>
+        ///// Create KeyValueParameters
+        ///// </summary>
+        ///// <param name="keyValueParameters"></param>
+        ///// <returns></returns>
+        //public static IDbDataParameter[] Get(params object[] keyValueParameters)
+        //{
+
+        //    int count = keyValueParameters.Length;
+        //    if (count % 2 != 0)
+        //    {
+        //        throw new ArgumentException("values parameter not correct, Not match key value arguments");
+        //    }
+        //    List<IDbDataParameter> list = new List<IDbDataParameter>();
+        //    for (int i = 0; i < count; i++)
+        //    {
+        //        //list.Add(new OleDbParameter(keyValueParameters[i].ToString(), keyValueParameters[++i]));
+
+        //        list.Add(new DataParameter(keyValueParameters[i].ToString(), keyValueParameters[++i]));
+        //    }
+        //    return list.ToArray();
+        //}
+
+        /// <summary>
+        /// Create KeyValueParameters
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="keyValueParameters"></param>
+        /// <returns></returns>
+        public static T[] Get<T>(params object[] keyValueParameters) where T: IDbDataParameter
+        {
+
+            int count = keyValueParameters.Length;
+            if (count % 2 != 0)
+            {
+                throw new ArgumentException("values parameter not correct, Not match key value arguments");
+            }
+            List<T> list = new List<T>();
+            for (int i = 0; i < count; i++)
+            {
+                T instance = ActivatorUtil.CreateInstance<T>();
+                string key= keyValueParameters[i].ToString();
+                object value = keyValueParameters[++i];
+                instance.ParameterName = key;
+                instance.Value = value;
+                instance.DbType = GetDbTypeFromObject(value);
+
+                list.Add(instance);
             }
 
             return list.ToArray();
@@ -652,12 +781,12 @@ namespace Nistec.Data
         //    return list.ToArray();
         //}
 
-       /// <summary>
+        /// <summary>
         /// Create sql parameter from <see cref="GenericRecord"/>
-       /// </summary>
-       /// <param name="keyValueParameters"></param>
-       /// <param name="sortedByKey"></param>
-       /// <returns></returns>
+        /// </summary>
+        /// <param name="keyValueParameters"></param>
+        /// <param name="sortedByKey"></param>
+        /// <returns></returns>
         public static SqlParameter[] GetSqlParameters(GenericRecord keyValueParameters, bool sortedByKey)
         {
             if (keyValueParameters == null)

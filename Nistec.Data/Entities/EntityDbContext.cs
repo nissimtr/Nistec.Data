@@ -124,6 +124,7 @@ namespace Nistec.Data.Entities
         /// </summary>
         public EntityDbContext()
         {
+            Columns = "*";
             SourceType = EntitySourceType.Table;
         }
         /// <summary>
@@ -138,19 +139,22 @@ namespace Nistec.Data.Entities
             ConnectionKey = attr.ConnectionKey;
             SourceType = attr.EntitySourceType;
             Keys = attr.EntityKey;
+            Columns = attr.Columns;
         }
         /// <summary>
         ///  Crate a new instance of <see cref="EntityDbContext"/>
         /// </summary>
         /// <param name="mappingName"></param>
         /// <param name="connectionKey"></param>
-        public EntityDbContext(string mappingName,string connectionKey)
+        /// <param name="columns"></param>
+        public EntityDbContext(string mappingName,string connectionKey, string columns="*")
             : this()
         {
             EntityName = mappingName;
             MappingName = mappingName;
             ConnectionKey = connectionKey;
             Keys = null;
+            Columns = columns;
         }
         /// <summary>
         ///  Crate a new instance of <see cref="EntityDbContext"/>
@@ -160,13 +164,15 @@ namespace Nistec.Data.Entities
         /// <param name="connectionKey"></param>
         /// <param name="sourceType"></param>
         /// <param name="keys"></param>
-        public EntityDbContext(string entityName, string mappingName, string connectionKey,EntitySourceType sourceType, EntityKeys keys)
+        /// <param name="columns"></param>
+        public EntityDbContext(string entityName, string mappingName, string connectionKey,EntitySourceType sourceType, EntityKeys keys, string columns = "*")
         {
             EntityName = entityName;
             MappingName = mappingName;
             ConnectionKey = connectionKey;
             SourceType = sourceType;
             Keys = keys.ToArray();
+            Columns = columns;
         }
         /// <summary>
         ///  Crate a new instance of <see cref="EntityDbContext"/>
@@ -176,7 +182,8 @@ namespace Nistec.Data.Entities
         /// <param name="mappingName"></param>
         /// <param name="sourceType"></param>
         /// <param name="keys"></param>
-        public EntityDbContext(IDbContext db, string entityName, string mappingName, EntitySourceType sourceType, EntityKeys keys)
+        /// <param name="columns"></param>
+        public EntityDbContext(IDbContext db, string entityName, string mappingName, EntitySourceType sourceType, EntityKeys keys, string columns = "*")
         {
             EntityName = entityName;
             MappingName = mappingName;
@@ -184,30 +191,16 @@ namespace Nistec.Data.Entities
             ConnectionKey = db.ConnectionName;
             SourceType = sourceType;
             Keys = keys.ToArray();
+            Columns = columns;
         }
-         /// <summary>
-        ///  Crate a new instance of <see cref="EntityDbContext"/>
-         /// </summary>
-         /// <param name="db"></param>
-         /// <param name="mappingName"></param>
-         /// <param name="keys"></param>
-        public EntityDbContext(IDbContext db, string mappingName, EntityKeys keys)
-            : this()
-        {
-             this.MappingName = mappingName;
-             this.EntityName = mappingName;
-             this._Db = db;
-             this.ConnectionKey = db.ConnectionName;
-             this.Keys = keys.ToArray();
-             
-         }
         /// <summary>
         ///  Crate a new instance of <see cref="EntityDbContext"/>
         /// </summary>
         /// <param name="db"></param>
         /// <param name="mappingName"></param>
         /// <param name="keys"></param>
-        public EntityDbContext(IDbContext db, string mappingName, KeySet keys)
+        /// <param name="columns"></param>
+        public EntityDbContext(IDbContext db, string mappingName, EntityKeys keys, string columns = "*")
             : this()
         {
             this.MappingName = mappingName;
@@ -215,6 +208,24 @@ namespace Nistec.Data.Entities
             this._Db = db;
             this.ConnectionKey = db.ConnectionName;
             this.Keys = keys.ToArray();
+            Columns = columns;
+        }
+        /// <summary>
+        ///  Crate a new instance of <see cref="EntityDbContext"/>
+        /// </summary>
+        /// <param name="db"></param>
+        /// <param name="mappingName"></param>
+        /// <param name="keys"></param>
+        /// <param name="columns"></param>
+        public EntityDbContext(IDbContext db, string mappingName, KeySet keys, string columns = "*")
+            : this()
+        {
+            this.MappingName = mappingName;
+            this.EntityName = mappingName;
+            this._Db = db;
+            this.ConnectionKey = db.ConnectionName;
+            this.Keys = keys.Keys.ToArray();
+            Columns = columns;
 
         }
         #endregion
@@ -264,6 +275,8 @@ namespace Nistec.Data.Entities
 
         #region properties
 
+        string _Columns;
+
         IDbContext _Db;
         /// <summary>
         /// Get <see cref="IDbContext"/> Context.
@@ -273,7 +286,7 @@ namespace Nistec.Data.Entities
         {
             if (_Db == null)
             {
-                _Db = DbContext.Create(ConnectionKey);
+                _Db = DbContext.Create(ConnectionKey, EnableConnectionProvider);
             }
             return _Db;
         }
@@ -285,6 +298,14 @@ namespace Nistec.Data.Entities
         /// Get or Set mapping name.
         /// </summary>
         public string MappingName { get; set; }
+        /// <summary>
+        /// Get or Set columns names.
+        /// </summary>
+        public string Columns
+        {
+            get { return _Columns == null || _Columns == "" ? "*" : _Columns; }
+            set { _Columns = value == null || value == "" ? "*" : value; }
+        }
         /// <summary>
         /// Get or Set connection key.
         /// </summary>
@@ -298,6 +319,23 @@ namespace Nistec.Data.Entities
         /// </summary>
         public EntitySourceType SourceType { get; set; }
 
+        bool _EnableConnectionProvider;
+        public bool EnableConnectionProvider
+        {
+            get { return _EnableConnectionProvider; }
+            set
+            {
+                if(_EnableConnectionProvider!=value)
+                {
+                    if (_Db != null)
+                    {
+                        _Db = DbContext.Create(ConnectionKey, EnableConnectionProvider);
+                    }
+                    _EnableConnectionProvider = value;
+                }
+
+            }
+        }
         internal CommandType CmdType()
         {
                 if (SourceType == Entities.EntitySourceType.Procedure)
@@ -313,6 +351,7 @@ namespace Nistec.Data.Entities
         /// Get or Set current culture
         /// </summary>
         [EntityProperty(EntityPropertyType.NA)]
+        [NoSerialize]
         public virtual CultureInfo EntityCulture
         {
             get
@@ -357,6 +396,49 @@ namespace Nistec.Data.Entities
                 return false;
             }
         }
+        #endregion
+
+        #region  ISerialEntity
+
+
+        ///// <summary>
+        ///// Write the current object include the body and properties to stream using <see cref="IBinaryStreamer"/>, This method is a part of <see cref="ISerialEntity"/> implementation.
+        ///// </summary>
+        ///// <param name="stream"></param>
+        ///// <param name="streamer"></param>
+        //public void EntityWrite(Stream stream, IBinaryStreamer streamer)
+        //{
+        //    if (streamer == null)
+        //        streamer = new BinaryStreamer(stream);
+
+        //    streamer.WriteString(EntityName);
+        //    streamer.WriteValue(MappingName);
+        //    streamer.WriteString(ConnectionKey);
+        //    streamer.WriteValue(Keys);
+        //    streamer.WriteValue((int)SourceType);
+        //    streamer.WriteString(Columns);
+        //    streamer.Flush();
+        //}
+
+
+        ///// <summary>
+        ///// Read stream to the current object include the body and properties using <see cref="IBinaryStreamer"/>, This method is a part of <see cref="ISerialEntity"/> implementation.
+        ///// </summary>
+        ///// <param name="stream"></param>
+        ///// <param name="streamer"></param>
+        //public void EntityRead(Stream stream, IBinaryStreamer streamer)
+        //{
+        //    if (streamer == null)
+        //        streamer = new BinaryStreamer(stream);
+
+        //    EntityName = streamer.ReadString();
+        //    MappingName = streamer.ReadString();
+        //    ConnectionKey = streamer.ReadString();
+        //    Keys = streamer.ReadValue<string[]>();
+        //    SourceType = (EntitySourceType)streamer.ReadValue<int>();
+        //    Columns = streamer.ReadString();
+        //}
+ 
         #endregion
 
         internal IDbConnection DbConnection()
@@ -550,13 +632,57 @@ namespace Nistec.Data.Entities
             }
         }
 
+        public string QueryJsonRecord(params object[] keyValueParameters)
+        {
+            ValidateContext();
+            try
+            {
+                var cmd = Context();
+                if (SourceType == EntitySourceType.Procedure)
+                {
+                    return cmd.ExecuteJsonRecord(MappingName, keyValueParameters);
+                }
+                else
+                {
+                    string commandText = GetCommandText(keyValueParameters);
+                    return cmd.QueryJsonRecord(commandText, keyValueParameters);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new EntityException(ex.Message);
+            }
+        }
+
+        public string QueryJson(params object[] keyValueParameters)
+        {
+            ValidateContext();
+            try
+            {
+                var cmd = Context();
+                if (SourceType == EntitySourceType.Procedure)
+                {
+                    return cmd.ExecuteJson(MappingName, keyValueParameters);
+                }
+                else
+                {
+                    string commandText = GetCommandText(keyValueParameters);
+                    return cmd.QueryJson(commandText, keyValueParameters);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new EntityException(ex.Message);
+            }
+        }
+
         internal T DoCommand<T>(DataFilter filter)
         {
             ValidateContext();
             try
             {
                 var context = Context();
-                string commandText = filter == null ? SqlFormatter.SelectString(MappingName) : filter.Select(MappingName);
+                string commandText = filter == null ? SqlFormatter.SelectString(Columns,MappingName, null) : filter.Select(Columns,MappingName);
                 IDbDataParameter[] parameters = filter == null ? null : filter.Parameters;
                 //return context.ExecuteCommand<T>(commandText, parameters, CmdType());
                 using (var cmd = context.NewCmd())
@@ -669,9 +795,10 @@ namespace Nistec.Data.Entities
             {
                 throw new EntityException("Invalid MappingName or ConnectionContext");
             }
+            
             if (_Db == null)
             {
-                _Db = DbContext.Create(ConnectionKey);
+                Context(); //_Db = DbContext.Create(ConnectionKey);
             }
 
         }

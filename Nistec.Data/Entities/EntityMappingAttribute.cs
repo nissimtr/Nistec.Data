@@ -208,6 +208,22 @@ namespace Nistec.Data.Entities
             set;
         }
         /// <summary>
+        /// Get or Set Entity Primary Fields
+        /// </summary>
+        public string PrimaryFields
+        {
+            get;
+            set;
+        }
+        /// <summary>
+        /// Get or Set get procedure
+        /// </summary>
+        public string ProcGet
+        {
+            get;
+            set;
+        }
+        /// <summary>
         /// Get or Set delete procedure
         /// </summary>
         public string ProcDelete
@@ -300,6 +316,29 @@ namespace Nistec.Data.Entities
             //}
             //return null;
         }
+
+        public static string[] Primary<T>(bool useEntityKeysBuilder=false) where T:IEntityItem
+        {
+            EntityMappingAttribute attribute = Get<T>();
+            if (attribute == null)
+            {
+                return useEntityKeysBuilder ? EntityPropertyBuilder.GetEntityPrimaryFields<T>().ToArray() : null;
+            }
+            var pfields = attribute.PrimaryFields;
+
+            return string.IsNullOrWhiteSpace(pfields) ? (useEntityKeysBuilder ? EntityPropertyBuilder.GetEntityPrimaryFields<T>().ToArray() : null) : pfields.SplitTrim(',');
+        }
+
+        //public static string[] Primary<T>()
+        //{
+        //    EntityMappingAttribute attribute = Get<T>();
+        //    if (attribute == null)
+        //    {
+        //        EntityKeys.BuildKeys<T>().ToArray();
+        //    }
+        //    return attribute.PrimaryFields.SplitTrim(',');
+        //}
+
         public static string Name<T>()
         {
             EntityMappingAttribute attribute = Get<T>();
@@ -321,23 +360,25 @@ namespace Nistec.Data.Entities
                 return null;
             return attribute.ViewName;
         }
-        public static string Proc<T>(UpdateCommandType cmdType)
+        public static string Proc<T>(ProcedureType cmdType)
         {
             EntityMappingAttribute attribute = Get<T>();
             if (attribute == null)
                 return null;
             switch (cmdType)
             {
-                case UpdateCommandType.Delete:
+                case ProcedureType.Delete:
                     return attribute.ProcDelete;
-                case UpdateCommandType.Insert:
+                case ProcedureType.Insert:
                     return attribute.ProcInsert;
-                case UpdateCommandType.Update:
+                case ProcedureType.Update:
                     return attribute.ProcUpdate;
-                case UpdateCommandType.Upsert:
+                case ProcedureType.Upsert:
                     return attribute.ProcUpsert;
-                case UpdateCommandType.StoredProcedure:
+                case ProcedureType.GetList:
                     return attribute.ProcListView;
+                case ProcedureType.GetRecord:
+                    return attribute.ProcGet;
                 default:
                     return null;
             }

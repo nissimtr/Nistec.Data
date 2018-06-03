@@ -152,6 +152,37 @@ namespace Nistec.Data
     }
 
     /// <summary>
+    /// Command type enumeration for ProcedureTypes property
+    /// </summary>
+    public enum ProcedureType
+    {
+        /// <summary>
+        /// The command implements if not exists, insert operation else update for a table specified.
+        /// </summary>
+        Upsert = 0,
+        /// <summary>
+        /// The command implements insert operation for a table specified.
+        /// </summary>
+        Insert = 1,
+        /// <summary>
+        /// The command implements update operation for a table specified.
+        /// </summary>
+        Update = 2,
+        /// <summary>
+        /// The command implements Delete operation for a table specified.
+        /// </summary>
+        Delete = 3,
+        /// <summary>
+        /// Equals to <b>CommandType.StoredProcedure return records set</b> value. 
+        /// </summary>
+        GetList = 4,
+        /// <summary>
+        /// Equals to <b>CommandType.StoredProcedure return single record</b> value. 
+        /// </summary>
+        GetRecord = 5
+    }
+
+    /// <summary>
     /// Command type enumeration for ActiveCommandBuilder property
     /// </summary>
     public enum UpsertType

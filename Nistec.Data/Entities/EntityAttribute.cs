@@ -42,9 +42,9 @@ namespace Nistec.Data.Entities
 
     public enum EntitySourceType
     {
-        Table,
-        View,
-        Procedure
+        Table=0,
+        View=1,
+        Procedure=2
     }
 
     #endregion
@@ -61,9 +61,11 @@ namespace Nistec.Data.Entities
         private EntitySourceType m_EntitySourceType = EntitySourceType.Table;
         private string m_Connection = "";
         private string m_MappingName = "";
+        private string m_Columns = "*";
         private string m_EntityName = "";
         private string[] m_Key;
         private string m_LangResources;
+        private bool m_EnableConnectionProvider = false;
         #endregion
 
 		#region Constructors
@@ -92,7 +94,34 @@ namespace Nistec.Data.Entities
                 LangResources = langResources;
                 MappingName = db.MappingName;
                 Mode = EntityMode.Generic;
+                Columns = db.Columns;
             }
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="EntityAttribute"/> class
+        /// </summary>
+        /// <param name="entityName"></param>
+        /// <param name="mappingName"></param>
+        /// <param name="connectionKey"></param>
+        /// <param name="mode"></param>
+        /// <param name="sourceType"></param>
+        /// <param name="key">Array as comma separated string of EntityKeys</param>
+        /// <param name="columns"></param>
+        /// <param name="langResource"></param>
+        public EntityAttribute(string entityName, string mappingName, string connectionKey, EntityMode mode, EntitySourceType sourceType, string key, string columns, string langResource)//, CommandType  cmdType)
+        {
+            m_EntityName = entityName;
+            m_MappingName = mappingName;
+            m_Connection = connectionKey;
+            m_EntityMode = mode;
+            m_EntitySourceType = sourceType;
+            if (key != null)
+            {
+                m_Key = key.SplitTrim(',', ';');
+            }
+            m_LangResources = langResource;
+            Columns = columns;
         }
 
         /// <summary>
@@ -135,7 +164,7 @@ namespace Nistec.Data.Entities
             m_EntityMode = mode;
             if (key != null)
             {
-                m_Key = key.SplitTrim(',', ';'); ;
+                m_Key = key.SplitTrim(',', ';');
             }
 		}
 
@@ -235,8 +264,8 @@ namespace Nistec.Data.Entities
 		/// <returns></returns>
         public static CustomAttributeBuilder GetAttributeBuilder(EntityAttribute attr)
 		{
-            Type[] arrParamTypes = new Type[] { typeof(string), typeof(string), typeof(string), typeof(string), typeof(EntityMode), typeof(EntitySourceType), typeof(string[]), typeof(string) };
-            object[] arrParamValues = new object[] { attr.EntityName, attr.MappingName, attr.ConnectionKey, attr.Mode, attr.EntitySourceType, attr.EntityKey, attr.LangResources };
+            Type[] arrParamTypes = new Type[] { typeof(string), typeof(string), typeof(string), typeof(string), typeof(EntityMode), typeof(EntitySourceType), typeof(string[]), typeof(string), typeof(string), typeof(bool) };
+            object[] arrParamValues = new object[] { attr.EntityName, attr.MappingName, attr.ConnectionKey, attr.Mode, attr.EntitySourceType, attr.EntityKey, attr.Columns, attr.LangResources, attr.EnableConnectionProvider };
             ConstructorInfo ctor = typeof(EntityAttribute).GetConstructor(arrParamTypes);
 			return new CustomAttributeBuilder(ctor, arrParamValues);
 		}
@@ -272,7 +301,14 @@ namespace Nistec.Data.Entities
             get { return m_MappingName == null ? string.Empty : m_MappingName; }
             set { m_MappingName = value; }
         }
-
+        /// <summary>
+        /// Parameter columns names represent the DB entity columns.
+        /// </summary>
+        public string Columns
+        {
+            get { return m_Columns == null ? "*" : m_Columns; }
+            set { m_Columns = value == null || value == "" ? "*" : value; }
+        }
 
         /// <summary>
         /// Parameter Connection. usefull for connecetion to DB
@@ -356,7 +392,14 @@ namespace Nistec.Data.Entities
             get { return IsMappingNameDefined; }
         }
 
-		#endregion
+        /// <summary>
+        /// Enable Connection Provider
+        /// </summary>
+        public bool EnableConnectionProvider
+        {
+            get { return m_EnableConnectionProvider; }
+        }
+        #endregion
 
         internal static EntityAttribute EnsureSettings(EntityAttribute attribute)
         {

@@ -93,9 +93,18 @@ namespace Nistec.Data
 
         public string Select(string mappingName)
         {
+            //if (string.IsNullOrEmpty(Filter))
+            //    return string.Format("select * from [{0}]", mappingName);
+            //return string.Format("select * from [{0}] where {1}", mappingName, Filter);
+
+            return Select("*", mappingName);
+        }
+
+        public string Select(string columns,string mappingName)
+        {
             if (string.IsNullOrEmpty(Filter))
-                return string.Format("select * from [{0}]", mappingName);
-            return string.Format("select * from [{0}] where {1}", mappingName, Filter);
+                return string.Format("select {0} from [{1}]", columns,mappingName);
+            return string.Format("select {0} from [{1}] where {2}", columns,mappingName, Filter);
 
         }
 

@@ -480,7 +480,7 @@ namespace Nistec.Data.Advanced
 
         public static LookupView Instance(DataTable dt, string keyMember, string valueMember)
         {
-            return new LookupView(dt, keyMember, valueMember); ;
+            return new LookupView(dt, keyMember, valueMember);
         }
 
         #region LookupThreadSort

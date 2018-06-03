@@ -53,7 +53,7 @@ namespace Nistec.Data.Entities
 
         protected T Current<T>() //where T : IEntityItem
         {
-           return GenericTypes.Cast<T>(this); 
+           return GenericTypes.Cast<T>(this, true); 
         }
 
         protected object[] GetKeyFields<T>() where T : IEntityItem
@@ -82,7 +82,7 @@ namespace Nistec.Data.Entities
 
         public int DoUpdate<T>(T newEntity) where T : IEntityItem
         {
-            T current = GenericTypes.Cast<T>(this);
+            T current = GenericTypes.Cast<T>(this, true);
             var validation = Validate(UpdateCommandType.Update);
             if (!validation.IsValid)
             {
@@ -95,7 +95,7 @@ namespace Nistec.Data.Entities
         }
         public int DoInsert<T>() where T : IEntityItem
         {
-            T current = GenericTypes.Cast<T>(this);
+            T current = GenericTypes.Cast<T>(this, true);
             var validation = Validate(UpdateCommandType.Insert);
             if (!validation.IsValid)
             {
@@ -108,7 +108,7 @@ namespace Nistec.Data.Entities
         }
         public int DoDelete<T>() where T : IEntityItem
         {
-            T current = GenericTypes.Cast<T>(this);
+            T current = GenericTypes.Cast<T>(this, true);
             var validation = Validate(UpdateCommandType.Delete);
             if (!validation.IsValid)
             {

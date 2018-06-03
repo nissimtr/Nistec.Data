@@ -212,7 +212,7 @@ namespace Nistec.Data.Entities
             {
                 throw new ArgumentNullException("DataRowToEntity.dr");
             }
-            T item = ActivatorUtil.CreateInstance<T>();//System.Activator.CreateInstance<T>();
+            T item = ActivatorUtil.CreateInstance<T>();
             GenericRecord record = new GenericRecord(dr);
             if (record != null)
             {
@@ -338,7 +338,7 @@ namespace Nistec.Data.Entities
   
             DataTable dt = EntityToTableSchema(entities[0], tableName, writeAbleOnly, disableIdentity);
 
-            TMap context = ActivatorUtil.CreateInstance<TMap>();//Activator.CreateInstance<TMap>();
+            TMap context = ActivatorUtil.CreateInstance<TMap>();
 
             foreach (IEntityItem entity in entities)
             {

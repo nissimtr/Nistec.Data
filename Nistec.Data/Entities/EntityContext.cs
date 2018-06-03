@@ -48,8 +48,16 @@ namespace Nistec.Data.Entities
             }
             //return DbContext.EntityList<Dbc, T>(keyvalueParameters);
         }
+        public static IList<T> ExecEntityList(params object[] keyvalueParameters)
+        {
+            using (IDbContext Db = DbContext.Create<Dbc>())
+            {
+                return Db.EntityProcList<T>(keyvalueParameters);
+            }
+        }
+
         #region ctor
-        protected EntityContext()
+        public EntityContext()
         {
 
         }
@@ -80,11 +88,20 @@ namespace Nistec.Data.Entities
         {
             Current = Get(keyvalueParameters);
         }
-
-        public virtual void Validate(UpdateCommandType commandType = UpdateCommandType.Update)
+        
+        //public virtual void Validate(UpdateCommandType commandType = UpdateCommandType.Update)
+        //{
+        //    EntityValidator.Validate(Current);
+        //}
+        public virtual void Validate(ProcedureType commandType = ProcedureType.Update)
         {
             EntityValidator.Validate(Current);
         }
+        public virtual EntityValidator Validate(string title, string lang, object[] args = null)
+        {
+            return EntityValidator.ValidateEntity(Current, title, lang, args);
+        }
+
         protected bool EnableCache
         {
             get;
@@ -119,7 +136,44 @@ namespace Nistec.Data.Entities
         #endregion
 
         #region Get Lists
-        public virtual IList<T> GetList(params object[] keyvalueParameters)
+
+        public virtual IList<T> ExecList(params object[] keyvalueParameters)
+        {
+            using (IDbContext Db = DbContext.Create<Dbc>())
+            {
+                return Db.EntityProcList<T>(keyvalueParameters);
+            }
+        }
+
+        public virtual string ExecListJson(params object[] keyvalueParameters)
+        {
+            var proc = EntityMappingAttribute.Proc<T>(ProcedureType.GetList);
+            if (proc == null)
+            {
+                throw new InvalidOperationException("Invalid get list by StoredProcedure!");
+            }
+            using (IDbContext Db = DbContext.Create<Dbc>())
+            {
+                return Db.ExecuteJson(proc, keyvalueParameters);
+            }
+        }
+        public virtual IList<T> ViewList(params object[] keyvalueParameters)
+        {
+            using (IDbContext Db = DbContext.Create<Dbc>())
+            {
+                return Db.EntityList<T>(keyvalueParameters);
+            }
+        }
+
+        public virtual string ViewListJson(params object[] keyvalueParameters)
+        {
+            using (IDbContext Db = DbContext.Create<Dbc>())
+            {
+                return Db.EntityListJson<T>(keyvalueParameters);
+            }
+        }
+
+        public virtual IList<T> ExecOrViewList(params object[] keyvalueParameters)
         {
             //int ttl = 3;
             //string key = DbContextCache.GetKey<TaskComment>(Settings.ProjectName, EntityCacheGroups.Task, 0, userId);
@@ -127,7 +181,7 @@ namespace Nistec.Data.Entities
 
             //var list = TryFromCach(keyvalueParameters);
 
-            var proc = EntityMappingAttribute.Proc<T>(UpdateCommandType.StoredProcedure);
+            var proc = EntityMappingAttribute.Proc<T>(ProcedureType.GetList);
             if (proc != null)
             {
                 using (IDbContext Db = DbContext.Create<Dbc>())
@@ -137,16 +191,15 @@ namespace Nistec.Data.Entities
             }
             else
             {
-
                 using (IDbContext Db = DbContext.Create<Dbc>())
                 {
                     return Db.EntityList<T>(keyvalueParameters);
                 }
             }
         }
-        public virtual string GetListJson(params object[] keyvalueParameters)
+        public virtual string ExecOrViewListJson(params object[] keyvalueParameters)
         {
-            var proc = EntityMappingAttribute.Proc<T>(UpdateCommandType.StoredProcedure);
+            var proc = EntityMappingAttribute.Proc<T>(ProcedureType.GetList);
             if (proc != null)
             {
                 using (IDbContext Db = DbContext.Create<Dbc>())
@@ -162,6 +215,7 @@ namespace Nistec.Data.Entities
                 }
             }
         }
+
         #endregion
 
         #region Get
@@ -202,7 +256,7 @@ namespace Nistec.Data.Entities
         {
             //Validate(UpdateCommandType.Update);
             int res = entity.Upsert<Dbc>();
-            OnChanged(UpdateCommandType.Upsert);
+            OnChanged(ProcedureType.Upsert);
             return res;
         }
         /// <summary>
@@ -211,36 +265,36 @@ namespace Nistec.Data.Entities
         /// <returns></returns>
         public EntityCommandResult SaveChanges(bool InsertIfNotExists = true)
         {
-            Validate(UpdateCommandType.Upsert);
+            Validate(ProcedureType.Upsert);
             EntityCommandResult res = null;
             using (IDbContext Db = DbContext.Create<Dbc>())
             {
                 res = Db.EntitySaveChanges<T>(Current, InsertIfNotExists);
             }
-            OnChanged(UpdateCommandType.Upsert);
+            OnChanged(ProcedureType.Upsert);
             return res ?? EntityCommandResult.Empty;
         }
         public EntityCommandResult Save()
         {
-            Validate(UpdateCommandType.Upsert);
+            Validate(ProcedureType.Upsert);
             EntityCommandResult res = null;
             using (IDbContext Db = DbContext.Create<Dbc>())
             {
                 res = Db.EntitySave<T>(Current);
             }
-            OnChanged(UpdateCommandType.Upsert);
+            OnChanged(ProcedureType.Upsert);
             return res ?? EntityCommandResult.Empty;
         }
 
         public EntityCommandResult Insert()
         {
-            Validate(UpdateCommandType.Insert);
+            Validate(ProcedureType.Insert);
             EntityCommandResult res = null;
             using (IDbContext Db = DbContext.Create<Dbc>())
             {
                 res = Db.EntityInsert<T>(Current);
             }
-            OnChanged(UpdateCommandType.Insert);
+            OnChanged(ProcedureType.Insert);
             return res ?? EntityCommandResult.Empty;
         }
 
@@ -270,7 +324,7 @@ namespace Nistec.Data.Entities
 
         public EntityCommandResult Upsert(UpsertType commandType = UpsertType.Upsert, ReturnValueType returnType = ReturnValueType.ReturnValue, params object[] keyvalueParameters)
         {
-            UpdateCommandType updateCommandType = (UpdateCommandType)(int)commandType;
+            ProcedureType updateCommandType = (ProcedureType)(int)commandType;
 
             EntityCommandResult res = null;
             var proc = EntityMappingAttribute.Proc<T>(updateCommandType);
@@ -284,7 +338,7 @@ namespace Nistec.Data.Entities
 
                 if (returnType == ReturnValueType.OutputParameters)
                 {
-                    res = ExecuteOutput(proc, keyvalueParameters);
+                    res = ExecuteOutput(ProcedureType.Upsert, proc, keyvalueParameters);
                 }
                 else
                 {
@@ -292,7 +346,7 @@ namespace Nistec.Data.Entities
                     //{
                     //    throw new Exception("Current entity not set");
                     //}
-                    var result = ExecuteReturnValue(proc, -1, keyvalueParameters);
+                    var result = ExecuteReturnValue(ProcedureType.Upsert, proc, -1, keyvalueParameters);
                     var p = DataProperties.GetEntityProperty(typeof(T), EntityPropertyType.Identity);
                     string entityField = (p == null) ? "ReturnValue" : p.Attribute.Column;
                     res = new EntityCommandResult(1, result, entityField);
@@ -314,7 +368,7 @@ namespace Nistec.Data.Entities
         #endregion
 
         #region Exec proc  virtual
-        public virtual int ExecuteNonQuery(string procName, params object[] nameValueParameters)
+        public virtual int ExecuteNonQuery(ProcedureType procType,string procName, params object[] nameValueParameters)
         {
             //Validate(UpdateCommandType.Upsert);
             int res = 0;
@@ -322,10 +376,10 @@ namespace Nistec.Data.Entities
             {
                 res = Db.ExecuteNonQuery(procName, nameValueParameters);
             }
-            OnChanged(UpdateCommandType.StoredProcedure);
+            OnChanged(procType);
             return res;
         }
-        public virtual int ExecuteReturnValue(string procName, int returnIfNull, params object[] nameValueParameters)
+        public virtual int ExecuteReturnValue(ProcedureType procType, string procName, int returnIfNull, params object[] nameValueParameters)
         {
             //Validate(UpdateCommandType.Upsert);
             int res = 0;
@@ -333,10 +387,10 @@ namespace Nistec.Data.Entities
             {
                 res = Db.ExecuteReturnValue(procName, returnIfNull, nameValueParameters);
             }
-            OnChanged(UpdateCommandType.StoredProcedure);
+            OnChanged(procType);
             return res;
         }
-        public virtual EntityCommandResult ExecuteOutput(string procName, params object[] nameValueParameters)
+        public virtual EntityCommandResult ExecuteOutput(ProcedureType procType, string procName, params object[] nameValueParameters)
         {
             //Validate(UpdateCommandType.Upsert);
             EntityCommandResult res = null;
@@ -344,7 +398,7 @@ namespace Nistec.Data.Entities
             {
                 res = Db.ExecuteOutput(procName, nameValueParameters);
             }
-            OnChanged(UpdateCommandType.StoredProcedure);
+            OnChanged(procType);
             return res;
         }
         public virtual T ExecuteSingle(string procName, params object[] nameValueParameters)
@@ -368,163 +422,188 @@ namespace Nistec.Data.Entities
         #endregion
 
         #region protected
-        protected EntityCommandResult Upsert(params object[] keyvalueParameters)
+        protected EntityCommandResult UpsertReturnValue(params object[] keyvalueParameters)
         {
 
             EntityCommandResult res = null;
-            var proc = EntityMappingAttribute.Proc<T>(UpdateCommandType.Upsert);
+            var proc = EntityMappingAttribute.Proc<T>(ProcedureType.Upsert);
             if (proc != null)
             {
                 if (keyvalueParameters == null || keyvalueParameters.Length == 0)
                 {
-                    Validate(UpdateCommandType.Upsert);
+                    Validate(ProcedureType.Upsert);
                     keyvalueParameters = GetKeyValueFields(false);
                 }
-                var result = ExecuteReturnValue(proc, -1, keyvalueParameters);
+                var result = ExecuteReturnValue(ProcedureType.Upsert, proc, -1, keyvalueParameters);
                 var p = DataProperties.GetEntityProperty(Current.GetType(), EntityPropertyType.Identity);
                 string entityField = (p == null) ? "ReturnValue" : p.Attribute.Column;
                 res = new EntityCommandResult(1, result, entityField);
             }
             else
             {
-                Validate(UpdateCommandType.Upsert);
+                Validate(ProcedureType.Upsert);
                 using (IDbContext Db = DbContext.Create<Dbc>())
                 {
                     res = Db.EntitySaveChanges<T>(Current,true);
                 }
             }
-            OnChanged(UpdateCommandType.Upsert);
+            OnChanged(ProcedureType.Upsert);
             return res ?? EntityCommandResult.Empty;
         }
         protected EntityCommandResult UpsertOutput(params object[] keyvalueParameters)
         {
 
             EntityCommandResult res = null;
-            var proc = EntityMappingAttribute.Proc<T>(UpdateCommandType.Upsert);
+            var proc = EntityMappingAttribute.Proc<T>(ProcedureType.Upsert);
             if (proc != null)
             {
                 if (keyvalueParameters == null || keyvalueParameters.Length == 0)
                 {
-                    Validate(UpdateCommandType.Upsert);
+                    Validate(ProcedureType.Upsert);
                     keyvalueParameters = GetKeyValueFields(false);
                 }
-                res = ExecuteOutput(proc, keyvalueParameters);
+                res = ExecuteOutput(ProcedureType.Upsert, proc, keyvalueParameters);
             }
             else
             {
-                Validate(UpdateCommandType.Upsert);
+                Validate(ProcedureType.Upsert);
                 using (IDbContext Db = DbContext.Create<Dbc>())
                 {
                     res = Db.EntitySaveChanges<T>(Current, true);
                 }
             }
-            OnChanged(UpdateCommandType.Upsert);
+            OnChanged(ProcedureType.Upsert);
             return res ?? EntityCommandResult.Empty;
         }
         protected EntityCommandResult InsertOutput(params object[] keyvalueParameters)
         {
             
             EntityCommandResult res = null;
-            var proc = EntityMappingAttribute.Proc<T>(UpdateCommandType.Insert);
+            var proc = EntityMappingAttribute.Proc<T>(ProcedureType.Insert);
             if (proc != null)
             {
                 if (keyvalueParameters == null || keyvalueParameters.Length == 0)
                 {
-                    Validate(UpdateCommandType.Insert);
+                    Validate(ProcedureType.Insert);
                     keyvalueParameters = GetKeyValueFields(false);
                 }
-                res = ExecuteOutput(proc, keyvalueParameters);
+                res = ExecuteOutput(ProcedureType.Insert, proc, keyvalueParameters);
             }
             else
             {
-                Validate(UpdateCommandType.Insert);
+                Validate(ProcedureType.Insert);
                 using (IDbContext Db = DbContext.Create<Dbc>())
                 {
                     res = Db.EntityInsert<T>(Current);
                 }
             }
-            OnChanged(UpdateCommandType.Insert);
+            OnChanged(ProcedureType.Insert);
             return res ?? EntityCommandResult.Empty;
         }
-        protected EntityCommandResult Insert(params object[] keyvalueParameters)
+        protected EntityCommandResult InsertReturnValue(params object[] keyvalueParameters)
         {
            
             EntityCommandResult res = null;
-            var proc = EntityMappingAttribute.Proc<T>(UpdateCommandType.Insert);
+            var proc = EntityMappingAttribute.Proc<T>(ProcedureType.Insert);
             if (proc != null)
             {
                 if (keyvalueParameters == null || keyvalueParameters.Length == 0)
                 {
-                    Validate(UpdateCommandType.Insert);
+                    Validate(ProcedureType.Insert);
                     keyvalueParameters = GetKeyValueFields(false);
                 }
-                var result = ExecuteReturnValue(proc, -1, keyvalueParameters);
+                var result = ExecuteReturnValue(ProcedureType.Insert, proc, -1, keyvalueParameters);
                 var p = DataProperties.GetEntityProperty(Current.GetType(), EntityPropertyType.Identity);
                 string entityField = (p == null) ? "ReturnValue" : p.Attribute.Column;
                 res = new EntityCommandResult(1, result, entityField);
             }
             else
             {
-                Validate(UpdateCommandType.Insert);
+                Validate(ProcedureType.Insert);
                 using (IDbContext Db = DbContext.Create<Dbc>())
                 {
                     res = Db.EntityInsert<T>(Current);
                 }
             }
-            OnChanged(UpdateCommandType.Insert);
+            OnChanged(ProcedureType.Insert);
             return res ?? EntityCommandResult.Empty;
         }
         protected EntityCommandResult UpdateOutput(params object[] keyvalueParameters)
         {
             
             EntityCommandResult res = null;
-            var proc = EntityMappingAttribute.Proc<T>(UpdateCommandType.Update);
+            var proc = EntityMappingAttribute.Proc<T>(ProcedureType.Update);
             if (proc != null)
             {
                 if (keyvalueParameters == null || keyvalueParameters.Length == 0)
                 {
-                    Validate(UpdateCommandType.Update);
+                    Validate(ProcedureType.Update);
                     keyvalueParameters = GetKeyValueFields(false);
                 }
-                res = ExecuteOutput(proc, keyvalueParameters);
+                res = ExecuteOutput(ProcedureType.Update, proc, keyvalueParameters);
             }
             else
             {
-                Validate(UpdateCommandType.Update);
+                Validate(ProcedureType.Update);
                 using (IDbContext Db = DbContext.Create<Dbc>())
                 {
                     res = Db.EntitySaveChanges<T>(Current,false);
                 }
             }
-            OnChanged(UpdateCommandType.Insert);
+            OnChanged(ProcedureType.Update);
             return res ?? EntityCommandResult.Empty;
         }
-        protected EntityCommandResult Update(params object[] keyvalueParameters)
+        protected EntityCommandResult UpdateReturnValue(params object[] keyvalueParameters)
         {
             
             EntityCommandResult res = null;
-            var proc = EntityMappingAttribute.Proc<T>(UpdateCommandType.Update);
+            var proc = EntityMappingAttribute.Proc<T>(ProcedureType.Update);
             if (proc != null)
             {
                 if (keyvalueParameters == null || keyvalueParameters.Length == 0)
                 {
-                    Validate(UpdateCommandType.Update);
+                    Validate(ProcedureType.Update);
                     keyvalueParameters = GetKeyValueFields(false);
                 }
-                var result = ExecuteReturnValue(proc, -1, keyvalueParameters);
+                var result = ExecuteReturnValue(ProcedureType.Update, proc, -1, keyvalueParameters);
                 //var p = DataProperties.GetEntityProperty(Current.GetType(), EntityPropertyType.Identity);
                 res = new EntityCommandResult(1, result, "ReturnValue");
             }
             else
             {
-                Validate(UpdateCommandType.Update);
+                Validate(ProcedureType.Update);
                 using (IDbContext Db = DbContext.Create<Dbc>())
                 {
                     res = Db.EntitySaveChanges<T>(Current,false);
                 }
             }
-            OnChanged(UpdateCommandType.Insert);
+            OnChanged(ProcedureType.Insert);
             return res ?? EntityCommandResult.Empty;
+        }
+
+        protected int DoCommandNoneQuery(string commandText, ProcedureType procedureType, params object[] keyvalueParameters)
+        {
+
+            int affectedRecord = 0;
+            using (var Db = DbContext.Get<Dbc>())
+            {
+                affectedRecord = Db.ExecuteCommand(commandText, CommandType.Text, keyvalueParameters);
+            }
+
+            OnChanged(procedureType);
+            return affectedRecord;
+        }
+        protected Result DoCommand<Result>(string commandText, ProcedureType procedureType, CommandType commandType, params object[] keyvalueParameters)
+        {
+
+            Result result = default(Result);
+            using (var Db = DbContext.Get<Dbc>())
+            {
+                result = Db.ExecuteCommand<Result>(commandText, commandType, keyvalueParameters);
+            }
+            if (!(procedureType == ProcedureType.GetList || procedureType == ProcedureType.GetRecord))
+                OnChanged(procedureType);
+            return result;
         }
 
         #endregion
@@ -545,7 +624,7 @@ namespace Nistec.Data.Entities
         //{
         //    Validate(UpdateCommandType.Delete);
         //    var keyvalueParameters = GetKeyValueFields(true);
-            
+
         //    int res = 0;
         //    var proc = EntityMappingAttribute.Proc<T>(UpdateCommandType.Delete);
         //    if (proc != null)
@@ -560,15 +639,16 @@ namespace Nistec.Data.Entities
         //    OnChanged(UpdateCommandType.Delete);
         //    return res;
         //}
+
         public int DeleteReturnValue(int returnIfNull, params object[] keyvalueParameters)
         {
             if (keyvalueParameters == null || keyvalueParameters.Length == 0)
             {
-                Validate(UpdateCommandType.Delete);
+                Validate(ProcedureType.Delete);
                 keyvalueParameters = GetKeyValueFields(true);
             }
 
-            var procName = EntityMappingAttribute.Proc<T>(UpdateCommandType.Delete);
+            var procName = EntityMappingAttribute.Proc<T>(ProcedureType.Delete);
             if(procName==null)
             {
                 throw new EntityException("Invalid Entity ProcName");
@@ -578,7 +658,7 @@ namespace Nistec.Data.Entities
             {
                 res = Db.ExecuteReturnValue(procName, returnIfNull, keyvalueParameters);
             }
-            OnChanged(UpdateCommandType.Delete);
+            OnChanged(ProcedureType.Delete);
             return res;
         }
 
@@ -586,14 +666,14 @@ namespace Nistec.Data.Entities
         {
             if (keyvalueParameters == null || keyvalueParameters.Length == 0)
             {
-                Validate(UpdateCommandType.Delete);
+                Validate(ProcedureType.Delete);
                 keyvalueParameters = GetKeyValueFields(true);
             }
 
             int res = 0;
-            var proc = EntityMappingAttribute.Proc<T>(UpdateCommandType.Delete);
+            var proc = EntityMappingAttribute.Proc<T>(ProcedureType.Delete);
             if (proc != null)
-                res = ExecuteNonQuery(proc, keyvalueParameters);
+                res = ExecuteNonQuery(ProcedureType.Delete, proc, keyvalueParameters);
             else
             {
                 using (IDbContext Db = DbContext.Create<Dbc>())
@@ -601,7 +681,7 @@ namespace Nistec.Data.Entities
                     res = Db.EntityDelete<T>(keyvalueParameters);
                 }
             }
-            OnChanged(UpdateCommandType.Delete);
+            OnChanged(ProcedureType.Delete);
             return res;
         }
  
@@ -609,7 +689,7 @@ namespace Nistec.Data.Entities
         //{
         //    return null;
         //}
-        protected virtual void OnChanged(UpdateCommandType commandType)
+        protected virtual void OnChanged(ProcedureType commandType)
         {
 
         }
@@ -642,7 +722,7 @@ namespace Nistec.Data.Entities
         public EntityContext()
             : base()
         {
-            _instance = ActivatorUtil.CreateInstance<T>();//System.Activator.CreateInstance<T>();
+            _instance = ActivatorUtil.CreateInstance<T>();
         }
               
 
@@ -659,7 +739,7 @@ namespace Nistec.Data.Entities
                 throw new ArgumentNullException("EntityContext<>.keys");
             }
             GenericRecord gv = new GenericRecord();
-            _instance = ActivatorUtil.CreateInstance<T>();//System.Activator.CreateInstance<T>();
+            _instance = ActivatorUtil.CreateInstance<T>();
 
             if (HasConnection())
             {
@@ -708,7 +788,7 @@ namespace Nistec.Data.Entities
             {
                 throw new ArgumentNullException("EntityContext<>.stream");
             }
-            _instance = ActivatorUtil.CreateInstance<T>();//System.Activator.CreateInstance<T>();
+            _instance = ActivatorUtil.CreateInstance<T>();
             EntityRead(stream, streamer);
         }
 
@@ -841,7 +921,7 @@ namespace Nistec.Data.Entities
              _Data = gr;
              if (_instance == null)
              {
-                 _instance = ActivatorUtil.CreateInstance<T>();//System.Activator.CreateInstance<T>();
+                 _instance = ActivatorUtil.CreateInstance<T>();
              }
 
              isEmpty = _Data == null || _Data.IsEmpty;
@@ -966,7 +1046,10 @@ namespace Nistec.Data.Entities
             if (streamer == null)
                 streamer = new BinaryStreamer(stream);
 
-            T entity = streamer.ReadValue<T>();
+            T entity = ((BinaryStreamer)streamer).ReadAnyEntity<T>();
+
+
+            //T entity = streamer.ReadValue<T>();
             if (entity == null)
             {
                 return;
@@ -1002,7 +1085,7 @@ namespace Nistec.Data.Entities
             {
                 Set((T)o);
             }
-            else if (SerializeTools.IsDictionary(typ))
+            else if (SerializeTools.IsAssignableFromDictionary(typ))
             {
                 Set(new GenericRecord((IDictionary)o));
             }

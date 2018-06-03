@@ -62,7 +62,7 @@ namespace Nistec.Data.Entities.Cache
                 this[entityName] = db;
                 return db;
             }
-            return new EntityDbContext(this.context, entityName, mappingName, sourceType, entityKeys); ;
+            return new EntityDbContext(this.context, entityName, mappingName, sourceType, entityKeys);
         }
 
         /// <summary>
@@ -85,7 +85,7 @@ namespace Nistec.Data.Entities.Cache
                 this[mappingName] = db;
                 return db;
             }
-            return new EntityDbContext(this.context, mappingName, mappingName, EntitySourceType.Table, entityKeys); ;
+            return new EntityDbContext(this.context, mappingName, mappingName, EntitySourceType.Table, entityKeys);
         }
 
         /// <summary>

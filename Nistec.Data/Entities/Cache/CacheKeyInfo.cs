@@ -37,6 +37,20 @@ namespace Nistec.Data.Entities.Cache
     public class CacheKeyInfo
     {
 
+        public static CacheKeyInfo Get(string name, string key)
+        {
+            if (string.IsNullOrEmpty(name))
+            {
+                throw new ArgumentNullException("CacheKeyInfo.name");
+            }
+            if (key == null || key.Length == 0)
+            {
+                throw new ArgumentNullException("CacheKeyInfo.keys");
+            }
+            //return new CacheKeyInfo() { ItemName = name, ItemKeys = keys };
+            return new CacheKeyInfo() { ItemName = name, ItemKey = key };
+        }
+
         public static CacheKeyInfo Get(string name, string[] keys)
         {
             if (string.IsNullOrEmpty(name))
@@ -47,7 +61,8 @@ namespace Nistec.Data.Entities.Cache
             {
                 throw new ArgumentNullException("CacheKeyInfo.keys");
             }
-            return new CacheKeyInfo() { ItemName = name, ItemKeys = keys };
+            //return new CacheKeyInfo() { ItemName = name, ItemKeys = keys };
+            return new CacheKeyInfo() { ItemName = name, ItemKey = keys.JoinTrim("|") };
         }
 
         public static CacheKeyInfo Get(string[] keys)
@@ -56,7 +71,8 @@ namespace Nistec.Data.Entities.Cache
             {
                 throw new ArgumentNullException("CacheKeyInfo.keys");
             }
-            return new CacheKeyInfo() { ItemName = "", ItemKeys = keys };
+            //return new CacheKeyInfo() { ItemName = "", ItemKeys = keys };
+            return new CacheKeyInfo() { ItemName = "", ItemKey = keys.JoinTrim("|") };
         }
 
         public static CacheKeyInfo Parse(string strKeyInfo)
@@ -70,7 +86,8 @@ namespace Nistec.Data.Entities.Cache
             {
                 throw new ArgumentException("CacheKeyInfo.strKeyInfo is incorrect");
             }
-            return new CacheKeyInfo() { ItemName = args[0], ItemKeys = args[1].SplitTrim('_') };
+            //return new CacheKeyInfo() { ItemName = args[0], ItemKeys = args[1].SplitTrim('|') };
+            return new CacheKeyInfo() { ItemName = args[0].Trim(), ItemKey = args[1].Trim() };
         }
 
         #region properties
@@ -80,21 +97,27 @@ namespace Nistec.Data.Entities.Cache
             get;
             set;
         }
-
-        public string[] ItemKeys
+        public string ItemKey
         {
             get;
             set;
         }
+        //public string[] ItemKeys
+        //{
+        //    get;
+        //    set;
+        //}
 
         public string CacheKey
         {
-            get { return ItemKeys == null ? null : string.Join("_", ItemKeys); }
+            get { return ItemKey; }
+            //get { return ItemKeys == null ? null : string.Join("|", ItemKeys); }
         }
 
         public bool IsEmpty
         {
-            get { return ItemKeys == null || ItemKeys.Length == 0; }
+            get { return ItemKey == null || ItemKey.Length == 0; }
+            //get { return ItemKeys == null || ItemKeys.Length == 0; }
         }
 
         #endregion
@@ -107,14 +130,14 @@ namespace Nistec.Data.Entities.Cache
         {
             return string.Format("{0}:{1}", ItemName, CacheKey);
         }
-        /// <summary>
-        /// Split key to ItemKeys.
-        /// </summary>
-        /// <param name="key"></param>
-        /// <returns></returns>
-        public static string[] SplitKey(string key)
-        {
-            return key.SplitTrim('_');
-        }
+        ///// <summary>
+        ///// Split key to ItemKeys.
+        ///// </summary>
+        ///// <param name="key"></param>
+        ///// <returns></returns>
+        //public static string[] SplitKey(string key)
+        //{
+        //    return key.SplitTrim('|');
+        //}
     }
 }

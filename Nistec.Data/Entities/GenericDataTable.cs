@@ -45,7 +45,7 @@ namespace Nistec.Data.Entities
     /// <summary>
     /// Represent Generic Data Values
     /// </summary>
-    [Serializable, EntitySerialize]
+    [Serializable, Serialize]
     public class GenericDataTable : DataTable, ISerialEntity,ISerialContext
     {
         public const string EntityName = "EntityDataSource";
@@ -316,7 +316,7 @@ namespace Nistec.Data.Entities
 
         #region data methods
 
-        [EntitySerialize]
+        [Serialize]
         private DataTable Data
         {
             get { return this as DataTable; }

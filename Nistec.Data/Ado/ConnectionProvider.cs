@@ -22,21 +22,46 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Nistec.Data;
-//
+using Nistec.Generic;
 using System.Data;
+using System.Collections.Concurrent;
+using System.Linq;
+using Nistec.Config;
 
 namespace Nistec.Data.Ado
 {
+
     /// <summary>
     /// DataSource 
     /// </summary>
     [Serializable]
-    public class ConnectionProvider : IDisposable
+    public class ConnectionProvider : IDisposable, IConfigurable
     {
+        public const DBProvider DefaultProvider = DBProvider.SqlServer;
 
         #region ctor
 
-        public ConnectionProvider() { }
+        public ConnectionProvider()
+        {
+
+            //_ConnectionString = "";
+            //_Server = "";
+            //_Database = "";
+            //_FriendlyName = "";
+
+            //_IntegratedSecurity = "";//SSPI
+            //_PersistSecurityInfo = "";
+            //_UserId = "";
+            //_Password = "";
+            //WorkstationID = "";
+
+            TimeOut = 30;
+            IsConnected = false;
+            AsynchronousProcessing = false;
+            IsEncrypted = false;
+            PacketSize = 8192;
+            ID = -1;
+        }
 
         public ConnectionProvider(
             DBProvider provider,
@@ -44,17 +69,81 @@ namespace Nistec.Data.Ado
             string friendlyName)
         {
             Provider = provider;
-            ConnectionString = connectionString;
             FriendlyName = friendlyName;
-            ParseConnectionString();
+            _ConnectionString = connectionString;
+
+            TimeOut = 30;
+            IsConnected = false;
+            AsynchronousProcessing = false;
+            IsEncrypted = false;
+            PacketSize = 8192;
+            ID = -1;
+
+            ParseConnectionString(false);
+        }
+
+        public ConnectionProvider(
+        DBProvider provider,
+        string friendlyName,
+        string server,
+        string database,
+        string userId,
+        string password,
+        int timeOut)
+        {
+            Provider = provider;
+            FriendlyName = friendlyName;
+            Server = server;
+            Database = database;
+            IntegratedSecurity = null;
+            PersistSecurityInfo = null;
+            UserId = userId;
+            Password = password;
+
+            TimeOut = timeOut;
+            IsConnected = false;
+            AsynchronousProcessing = false;
+            IsEncrypted = false;
+            PacketSize = 8192;
+            ID = -1;
+
+            CreateConnectionString();
         }
 
         public ConnectionProvider(
          DBProvider provider,
          string friendlyName,
-         string integratedSecurity,
          string server,
          string database,
+         bool integratedSecurity,
+         bool persistSecurityInfo,
+         int timeOut)
+        {
+            Provider = provider;
+            FriendlyName = friendlyName;
+            Server = server;
+            Database = database;
+            IntegratedSecurity = integratedSecurity?"sspi":"false";
+            PersistSecurityInfo = persistSecurityInfo?"true":"false";
+            UserId = null;
+            Password = null;
+
+            TimeOut = timeOut;
+            IsConnected = false;
+            AsynchronousProcessing = false;
+            IsEncrypted = false;
+            PacketSize = 8192;
+            ID = -1;
+
+            CreateConnectionString();
+        }
+
+        public ConnectionProvider(
+         DBProvider provider,
+         string friendlyName,
+         string server,
+         string database,
+         string integratedSecurity,
          string persistSecurityInfo,
          string userId,
          string password,
@@ -70,77 +159,140 @@ namespace Nistec.Data.Ado
             PersistSecurityInfo = persistSecurityInfo;
             UserId = userId;
             Password = password;
+
+            TimeOut = timeOut;
+            IsConnected = false;
+            AsynchronousProcessing = false;
+            IsEncrypted = isEncrypted;
+            PacketSize = 8192;
+            ID = -1;
+
+
             TimeOut = timeOut;
             IsEncrypted = isEncrypted;
             AsynchronousProcessing = asynchronousProcessing;
             CreateConnectionString();
         }
 
+        public ConnectionProvider(XmlTable xml)
+        {
+            TimeOut = 30;
+            IsConnected = false;
+            AsynchronousProcessing = false;
+            IsEncrypted = false;
+            PacketSize = 8192;
+            ID = -1;
+
+            LoadConfig(xml);
+
+
+            //Server = xml.Get<string>("Server");
+            //Database = xml.Get<string>("Database");
+            //IntegratedSecurity = xml.Get<string>("IntegratedSecurity");
+            //PersistSecurityInfo = xml.Get<string>("PersistSecurityInfo");
+            //UserId = xml.Get<string>("UserId");
+            //Password = xml.Get<string>("Password");
+            //TimeOut = xml.Get<int>("TimeOut");
+            //IsEncrypted = xml.Get<bool>("IsEncrypted",false);
+            //PacketSize = xml.Get<int>("PacketSize",8192);
+            //ID = xml.Get<int>("ID",-1);
+        }
+
         public void Dispose()
         {
-            _Server = null;
-            _Database = null;
-            _FriendlyName = null;
-            _IntegratedSecurity = null;
-            _PersistSecurityInfo = null;
-            _UserId = null;
-            _Password = null;
-            _WorkstationID = null;
+            _ConnectionString = null;
+            Database = null;
+            FriendlyName = null;
+            IntegratedSecurity = null;
+            PersistSecurityInfo = null;
+            UserId = null;
+            Password = null;
+            WorkstationID = null;
+        }
+
+
+
+        #endregion
+
+        #region IConfigurable
+
+        public void LoadConfig(XmlTable xml)
+        {
+            //< add name = "AdventureWorks" connectionString = "Data Source=NISTEC-PC;Initial Catalog=AdventureWorks;Integrated Security=True;" providerName = "System.Data.SqlClient" />
+
+            if (xml == null)
+            {
+                throw new ArgumentNullException("xml");
+            }
+
+            Provider = ParseProvider(xml.Get<string>("providerName"));
+            FriendlyName = xml.Get<string>("name");
+            _ConnectionString = xml.Get<string>("connectionString");
+
+            ParseConnectionString(false);
+        }
+
+        public bool IsEqual(object item)
+        {
+            if (item == null)
+                return false;
+
+            ConnectionProvider cp = (ConnectionProvider)item;
+            if (cp == null)
+                return false;
+            return cp.FriendlyName == FriendlyName && cp.Database == Database && cp.Server == Server;
         }
 
         #endregion
 
         #region members
 
-        /// <summary>
-        /// Provider
-        /// </summary>
-        private DBProvider _Provider;
-        /// <summary>
-        /// _ConnectionString
-        /// </summary>
+
+        //private DBProvider _Provider;
+
         private string _ConnectionString = "";
-        private string _Server = "";
-        private string _Database = "";
-        private string _FriendlyName = "";
+        //private string _Server = "";
+        //private string _Database = "";
+        //private string _FriendlyName = "";
 
 
 
-        private string _IntegratedSecurity = "";//SSPI
-        private string _PersistSecurityInfo = "";
-        private string _UserId = "";
-        private string _Password = "";
-        private int _TimeOut = 30;
-        private bool _IsConnected;
-        private bool _AsynchronousProcessing = false;
-        private bool _IsEncrypted = false;
-        private int _PacketSize = 8192;
-        private string _WorkstationID = "";
-        private int _DBID = -1;
+        //private string _IntegratedSecurity = "";//SSPI
+        //private string _PersistSecurityInfo = "";
+        //private string _UserId = "";
+        //private string _Password = "";
+        //private int _TimeOut = 30;
+        //private bool _IsConnected;
+        //private bool _AsynchronousProcessing = false;
+        //private bool _IsEncrypted = false;
+        //private int _PacketSize = 8192;
+        //private string _WorkstationID = "";
+        //private int _DBID = -1;
+
         #endregion
 
         #region properties
-        public int DB_ID { get { return _DBID; } set { _DBID = value; } }
+        public int ID { get; private set; }
 
-        public DBProvider Provider { get { return _Provider; } set { _Provider = value; } }
+        public DBProvider Provider { get; private set; }
 
-        public string FriendlyName { get { return _FriendlyName; } set { if (value == null)return; _FriendlyName = value; } }
-        public string Server { get { return _Server; } set { if (value == null)return; _Server = value; } }
-        public string Database { get { return _Database; } set { if (value == null)return; _Database = value; } }
+        public string FriendlyName { get; private set; }//{ get { return _FriendlyName; } set { if (value == null)return; _FriendlyName = value; } }
+        public string Server { get; private set; }//{ get { return _Server; } set { if (value == null)return; _Server = value; } }
+        public string Database { get; private set; }//{ get { return _Database; } set { if (value == null)return; _Database = value; } }
 
 
-        public string IntegratedSecurity { get { return _IntegratedSecurity; } set { if (value == null)return; _IntegratedSecurity = value; } }
-        public string PersistSecurityInfo { get { return _PersistSecurityInfo; } set { if (value == null)return; _PersistSecurityInfo = value; } }
-        public string InitialCatalog { get { return _Database; } set { if (value == null)return; _Database = value; } }
-        public string UserId { get { return _UserId; } set { if (value == null)return; _UserId = value; } }
-        public string Password { get { return _Password; } set { if (value == null)return; _Password = value; } }
-        public int TimeOut { get { return _TimeOut; } set { _TimeOut = value; } }
-        public bool IsConnected { get { return _IsConnected; } set { _IsConnected = value; } }
-        public bool AsynchronousProcessing { get { return _AsynchronousProcessing; } set { _AsynchronousProcessing = value; } }
-        public bool IsEncrypted { get { return _IsEncrypted; } set { _IsEncrypted = value; } }
-        public string WorkstationID { get { return _WorkstationID; } set { if (value == null)return; _WorkstationID = value; } }
-        public string ConnectionString { get { return _ConnectionString; } set { if (value == null)return; _ConnectionString = value; } }
-        public int PacketSize { get { return _PacketSize; } set { _PacketSize = value; } }
+        public string IntegratedSecurity { get; private set; }//{ get { return _IntegratedSecurity; } set { if (value == null)return; _IntegratedSecurity = value; } }
+        public string PersistSecurityInfo { get; private set; }//{ get { return _PersistSecurityInfo; } set { if (value == null)return; _PersistSecurityInfo = value; } }
+        public string InitialCatalog { get; private set; }//{ get { return _Database; } set { if (value == null)return; _Database = value; } }
+        public string UserId { get; private set; }//{ get { return _UserId; } set { if (value == null)return; _UserId = value; } }
+        public string Password { get; private set; }//{ get { return _Password; } set { if (value == null)return; _Password = value; } }
+        public int TimeOut { get; private set; }
+        public bool IsConnected { get; set; }
+        public bool AsynchronousProcessing { get; private set; }
+        public bool IsEncrypted { get; private set; }
+        public string WorkstationID { get; private set; }//{ get { return _WorkstationID; } set { if (value == null)return; _WorkstationID = value; } }
+        public string ConnectionString { get { return _ConnectionString; } }//{ get { return _ConnectionString; } set { if (value == null)return; _ConnectionString = value; } }
+        public int PacketSize { get; private set; }
 
         /// <summary>
         /// DataSource empty
@@ -149,7 +301,7 @@ namespace Nistec.Data.Ado
         /// <summary>
         /// IsEmpty
         /// </summary>
-        public bool IsEmpty { get { return _ConnectionString == null || _ConnectionString == "" /*|| ConnectionID==""*/; } }
+        public bool IsEmpty { get { return ConnectionString == null || ConnectionString == "" /*|| ConnectionID==""*/; } }
 
         private object GetValue(string properyName)
         {
@@ -258,7 +410,7 @@ namespace Nistec.Data.Ado
                     WorkstationID = value.ToString();
                     break;
                 case "connectionstring":
-                    ConnectionString = value.ToString();
+                    _ConnectionString = value.ToString();
                     break;
                 case "packetsize":
                     PacketSize = Types.ToInt(value, 8192);
@@ -287,6 +439,44 @@ namespace Nistec.Data.Ado
         #endregion
 
         #region methods
+
+        public static DBProvider ParseProvider(string dbProvider)
+        {
+            if(dbProvider==null)
+            {
+                return DefaultProvider;
+                //throw new ArgumentNullException("dbProvider");
+            }
+
+            string provider = dbProvider.ToLower();
+            string[] args = provider.SplitTrim('.');
+            if(args.Length>1)
+            {
+                provider = args.LastOrDefault();
+            }
+
+            switch (provider.ToLower())
+            {
+                case "system.data.sqlclient":
+                case "sqlclient":
+                case "sqlserver":
+                    return DBProvider.SqlServer;
+                case "oledb":
+                    return DBProvider.OleDb;
+                case "oracle":
+                    return DBProvider.Oracle;
+                case "mysql":
+                    return DBProvider.MySQL;
+                case "sybasease":
+                    return DBProvider.SybaseASE;
+                case "firebird":
+                    return DBProvider.Firebird;
+                case "db2":
+                    return DBProvider.DB2;
+                default:
+                    return DBProvider.SqlServer;
+            }
+        }
 
         /// <summary>
         /// GetAsynchronousProcessing

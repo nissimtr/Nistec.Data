@@ -28,6 +28,8 @@ using Nistec;
 using System.Text;
 using Nistec.Data.Entities;
 using Nistec.Generic;
+using Nistec.Runtime;
+using Nistec.Serialization;
 
 namespace Nistec.Data.Entities
 {
@@ -51,6 +53,24 @@ namespace Nistec.Data.Entities
         public readonly int AffectedRecords;
         public readonly Dictionary<string, object> OutputValues;
         public readonly string IdentityField;
+
+        public int Status { get; set; }
+        public string Message { get; set; }
+        public int OutputId { get; set; }
+        public string Title { get; set; }
+
+        public void Set(string message, string title)
+        {
+            Status = AffectedRecords > 1 ? 1 : AffectedRecords;
+            Message = message;
+            Title = title;
+            OutputId = GetIdentityValue<int>();
+        }
+        
+        public string ToJson()
+        {
+           return  JsonSerializer.Serialize(this);
+        }
 
         public int GetReturnValue()
         {
@@ -220,16 +240,16 @@ namespace Nistec.Data.Entities
             m_Instance = instance;
             m_connection = db.DbConnection();
             m_tableName = db.MappingName;
-            m_properties = instance.GetType().GetProperties();
+            m_properties = instance.GetType().GetProperties(true);
             m_FieldsChanged = fieldsChanged;
         }
 
-        internal EntityCommandBuilder(IEntityItem instance, DbContext db, string tableName, Dictionary<string, object> fieldsChanged)
+        public EntityCommandBuilder(IEntityItem instance, IDbContext db, string tableName, Dictionary<string, object> fieldsChanged)
         {
             m_Instance = instance;
             m_connection = db.Connection;
             m_tableName = tableName;
-            m_properties = instance.GetType().GetProperties();
+            m_properties = instance.GetType().GetProperties(true);
             m_FieldsChanged = fieldsChanged;
         }
 
@@ -238,7 +258,7 @@ namespace Nistec.Data.Entities
             m_Instance = instance;
             m_connection = idb;
             m_tableName = tableName;
-            m_properties = entity.GetProperties();
+            m_properties = entity.GetProperties(true);
             m_FieldsChanged = instance.GetFieldsChanged();
         }
 
@@ -247,7 +267,7 @@ namespace Nistec.Data.Entities
         //    m_Instance = instance;
         //    m_connection = idb;
         //    m_tableName = tableName;
-        //    m_properties = instance.GetType().GetProperties();
+        //    m_properties = instance.GetType().GetProperties(true);
         //    if (instance is ActiveEntity)
         //    {
         //        m_FieldsChanged = ((ActiveEntity)instance).GetFieldsChanged();
@@ -263,7 +283,7 @@ namespace Nistec.Data.Entities
             m_Instance = instance;
             m_connection = idb;
             m_tableName = tableName;
-            m_properties = instance.GetType().GetProperties();
+            m_properties = instance.GetType().GetProperties(true);
             m_FieldsChanged = instance.GetFieldsChanged();
         }
         //public EntityCommandBuilder(GenericEntity instance, IDbConnection idb, string tableName)
@@ -271,7 +291,7 @@ namespace Nistec.Data.Entities
         //    m_Instance = instance;
         //    m_connection = idb;
         //    m_tableName = tableName;
-        //    m_properties = instance.GetType().GetProperties();
+        //    m_properties = instance.GetType().GetProperties(true);
         //    m_FieldsChanged = instance.GetFieldsChanged();
         //}
         public EntityCommandBuilder(IEntityFields entityFileds, object instance, IDbConnection idb, string tableName)
@@ -279,7 +299,7 @@ namespace Nistec.Data.Entities
             m_Instance = instance;
             m_connection = idb;
             m_tableName = tableName;
-            m_properties = instance.GetType().GetProperties();
+            m_properties = instance.GetType().GetProperties(true);
 
             EntityFieldsChanges gf = entityFileds.GetFieldsChanged();
             if (gf != null)
@@ -294,7 +314,7 @@ namespace Nistec.Data.Entities
             m_Instance = instance;
             m_connection = idb;
             m_tableName = tableName;
-            m_properties = instance.GetType().GetProperties();
+            m_properties = instance.GetType().GetProperties(true);
             m_FieldsChanged = fg.FieldsChanged;
 
         }
@@ -587,9 +607,9 @@ namespace Nistec.Data.Entities
                     case EntityPropertyType.NA:
                     case EntityPropertyType.View:
                     case EntityPropertyType.Optional:
-                    continue;
+                        continue;
                 }
-               
+
 
                 string propName = paramAttribute.GetColumn(property.Name);
 
@@ -619,6 +639,11 @@ namespace Nistec.Data.Entities
                 string paramName = null;
                 object v = null;// property.GetValue(m_Instance, null);
 
+                if (m_FieldsChanged == null)// && commandType == UpdateCommandType.Delete)
+                {
+                    m_FieldsChanged = new Dictionary<string, object>();
+                }
+
                 if (!m_FieldsChanged.TryGetValue(propName, out v))
                 {
                     v = property.GetValue(m_Instance, null);
@@ -638,7 +663,7 @@ namespace Nistec.Data.Entities
                 {
                     string caption = paramName;
 
-                    
+
                     if (paramAttribute != null)
                     {
                         caption = ((IEntity)m_Instance).EntityProperties.GetCaption(paramName);//.EntityCaption(paramName);
@@ -665,7 +690,7 @@ namespace Nistec.Data.Entities
                 {
                     sqlParameter.Direction = ParameterDirection.Input;
                 }
-                
+
 
                 if (paramAttribute.IsTypeDefined)
                     sqlParameter.DbType = paramAttribute.SqlDbType;

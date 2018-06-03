@@ -41,7 +41,8 @@ namespace Nistec.Data
 	/// </summary>
 	public static class DataUtil
 	{
-      
+
+        public const int MaxRowForNameIndexColumns = 1000;
 
         public static DateTime? ValidateSqlDate(this DateTime? date)
         {
@@ -209,7 +210,39 @@ namespace Nistec.Data
                 instance[colName] = dr[colName];
             }
         }
-
+        public static void LoadDictionaryEntityFromDataRow(IDictionary<string, object> instance, DataRow dr, Dictionary<string,int> columnsNameIndex)
+        {
+            if (dr == null || columnsNameIndex == null)
+                return;
+            foreach (var entry in columnsNameIndex)
+            {
+                instance[entry.Key] = dr[entry.Value];
+            }
+        }
+        public static Dictionary<string, int> GetEntityColumnsFromDataTable(DataTable dt, string[] columns)
+        {
+            if (dt == null)
+                return null;
+            Dictionary<string, int> columnsNameIndex = new Dictionary<string, int>();
+            if (columns != null && columns.Length > 0)
+            {
+                foreach (DataColumn entry in dt.Columns)
+                {
+                    if(columns.IndexOf(entry.ColumnName)>=0)
+                    {
+                        columnsNameIndex.Add(entry.ColumnName, entry.Ordinal);
+                    }
+                }
+            }
+            else
+            {
+                foreach (DataColumn entry in dt.Columns)
+                {
+                    columnsNameIndex.Add(entry.ColumnName, entry.Ordinal);
+                }
+            }
+            return columnsNameIndex;
+        }
         public static void LoadDictionaryEntityFromDataRow(IDictionary<string, object> instance, DataRow dr)
         {
             if (dr == null)

@@ -28,14 +28,14 @@ using System.Collections.Generic;
 using Nistec.Data;
 using System.Data.OleDb;
 using Nistec.Data.Entities;
-
+using Nistec.Runtime;
 
 namespace Nistec.Data.Factory
 {
 
     #region generic AutoBase
-
     #region summary
+
     /// <summary>
     /// Represent generic base class of data access that implements <see cref="IAutoBase"/>.
     /// </summary>
@@ -58,16 +58,16 @@ namespace Nistec.Data.Factory
     ///    {
     ///        get
     ///        {
-    ///            return base.GetLangManager<AdventureWorksResources>();
+    ///            return base.GetLangManager&lt;AdventureWorksResources&gt;();
     ///        }
     ///    }
     ///}
     ///
-    /// public sealed class AdventureWorksBase : Nistec.Data.Factory.AutoBase<AdventureWorks>
+    /// public sealed class AdventureWorksBase : Nistec.Data.Factory.AutoBase&lt;AdventureWorks&gt;
     ///{
     ///    public static readonly AdventureWorksBase DB = new AdventureWorksBase();
     ///    
-    ///    public IAdventureWorksDB IAdventureWorks { get { return DB.CreateInstance<IAdventureWorksDB>(); } }
+    ///    public IAdventureWorksDB IAdventureWorks { get { return DB.CreateInstance&lt;IAdventureWorksDB&gt;(); } }
     ///}
     ///
     ///public interface IAdventureWorksDB : Nistec.Data.IAutoDb
@@ -108,9 +108,9 @@ namespace Nistec.Data.Factory
     ///        Console.WriteLine(mail);
     ///    }
     ///}
-
     ///</code>
     ///</example> 
+
     #endregion
     public abstract class AutoBase<T> : AutoBase where T: IDbContext
     {
@@ -397,7 +397,7 @@ namespace Nistec.Data.Factory
         /// <param name="ownsConnection"></param>
         protected void Init<T>(bool autoCloseConnection, bool ownsConnection) where T : IDbContext
         {
-            IDbContext connection = System.Activator.CreateInstance<T>();
+            IDbContext connection = ActivatorUtil.CreateInstance<T>();
             m_dbProvider = connection.Provider;
             //m_Permit = Nistec.Net.DalNet.NetFram(path, "SERVER");
             InitInternal(connection.ConnectionString, autoCloseConnection, ownsConnection);

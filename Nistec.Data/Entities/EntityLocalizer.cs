@@ -25,6 +25,7 @@ using System.Text;
 using System.Globalization;
 using System.Resources;
 using Nistec.Generic;
+using Nistec.Runtime;
 
 namespace Nistec.Data.Entities
 {
@@ -90,7 +91,7 @@ namespace Nistec.Data.Entities
 
         static ILocalizer Create<Erm>() where Erm : ILocalizer
         {
-            return Activator.CreateInstance<Erm>();
+            return ActivatorUtil.CreateInstance<Erm>();
         }
 
         public static ILocalizer Get<Erm>() where Erm : ILocalizer

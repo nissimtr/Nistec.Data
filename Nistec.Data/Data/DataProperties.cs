@@ -63,13 +63,13 @@ namespace Nistec.Data
 
         public static PropertyAttributeInfo<EntityPropertyAttribute> GetEntityProperty(Type type, EntityPropertyType attributeType)
         {
-            var props = from p in type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            var props = from p in type.GetProperties(BindingFlags.Public | BindingFlags.Instance,false)
                         let attr = p.GetCustomAttributes(typeof(EntityPropertyAttribute), true)
                         where attr.Length == 1 && ((EntityPropertyAttribute)attr[0]).ParameterType == attributeType
                         select new PropertyAttributeInfo<EntityPropertyAttribute>() { Property = p, Attribute = (EntityPropertyAttribute)attr.First() };
             return props.FirstOrDefault();
         }
-
+        
         public static IEnumerable<PropertyAttributeInfo<EntityPropertyAttribute>> GetEntityProperties(Type type, bool ignorePropertyAttribute = true)
         {
             string typename = type.FullName;
@@ -84,14 +84,14 @@ namespace Nistec.Data
                 IEnumerable<PropertyAttributeInfo<EntityPropertyAttribute>> props = null;
                 if (ignorePropertyAttribute)
                 {
-                    props = from p in type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    props = from p in type.GetProperties(BindingFlags.Public | BindingFlags.Instance, false)
                             let attr = p.GetCustomAttributes(typeof(EntityPropertyAttribute), true)
                             //where attr.Length == 1
                             select new PropertyAttributeInfo<EntityPropertyAttribute>() { Property = p, Attribute = attr.Length < 1 ? EntityPropertyAttribute.Default : (EntityPropertyAttribute)attr.FirstOrDefault() };
                 }
                 else
                 {
-                    props = from p in type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    props = from p in type.GetProperties(BindingFlags.Public | BindingFlags.Instance, false)
                             let attr = p.GetCustomAttributes(typeof(EntityPropertyAttribute), true)
                             where attr.Length == 1
                             select new PropertyAttributeInfo<EntityPropertyAttribute>() { Property = p, Attribute = (EntityPropertyAttribute)attr.First() };
@@ -122,12 +122,12 @@ namespace Nistec.Data
             {
                 IEnumerable<PropertyAttributeInfo<ValidatorAttribute>> props = null;
                 if (ignorePropertyAttribute)
-                    props = from p in type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    props = from p in type.GetProperties(BindingFlags.Public | BindingFlags.Instance, false)
                             let attr = p.GetCustomAttributes(typeof(ValidatorAttribute), true)
                             //where attr.Length == 1
                             select new PropertyAttributeInfo<ValidatorAttribute>() { Property = p, Attribute = attr == null ? default(ValidatorAttribute) : (ValidatorAttribute)attr.FirstOrDefault() };
                 else
-                    props = from p in type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    props = from p in type.GetProperties(BindingFlags.Public | BindingFlags.Instance, false)
                             let attr = p.GetCustomAttributes(typeof(ValidatorAttribute), true)
                             where attr.Length == 1
                             select new PropertyAttributeInfo<ValidatorAttribute>() { Property = p, Attribute = (ValidatorAttribute)attr.First() };
@@ -155,7 +155,7 @@ namespace Nistec.Data
             else
             {
                 td = new Dictionary<string, PropertyInfo>();
-                PropertyInfo[] pr = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+                PropertyInfo[] pr = type.GetProperties(BindingFlags.Public | BindingFlags.Instance, false);
                 foreach (PropertyInfo p in pr)
                 {
                     td.Add(p.Name, p);

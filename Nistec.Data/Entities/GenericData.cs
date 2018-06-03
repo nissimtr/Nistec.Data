@@ -46,7 +46,7 @@ namespace Nistec.Data.Entities
     /// <summary>
     /// Represent Generic Data Values
     /// </summary>
-    [Serializable, EntitySerialize]
+    [Serializable, Serialize]
     public class GenericData : ISerialEntity, IDisposable
     {
         public const string EntityName = "EntityData";
@@ -796,7 +796,7 @@ namespace Nistec.Data.Entities
         /// <summary>
         /// Get Data source (When is ReadOnly return a Copy)
         /// </summary>
-        [EntitySerialize]
+        [Serialize]
         public DataTable Data
         {
             get 

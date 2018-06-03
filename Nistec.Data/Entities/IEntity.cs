@@ -99,10 +99,26 @@ namespace Nistec.Data.Entities
         Dictionary<string, object> GetFieldsChanged();
         GenericDataTable EntityDataSource { get; set; }
     }
-    
+
+    public interface IKeyValueItem
+    {
+        string Key { get; set; }
+        object Value { get; set; }
+        //Int64 Index { get; set; }
+    }
+    public interface IKeyValueItem<T>
+    {
+        string Key { get; set; }
+        T Value { get; set; }
+    }
     public interface IEntityItem
     {
 
+    }
+
+    public interface IEntityListItem
+    {
+        int TotalRows { get; set; }
     }
 
     public interface IEntityData : IEntityItem
@@ -158,6 +174,7 @@ namespace Nistec.Data.Entities
     {
 
     }
+      
 
     public interface IDataEntity : IEntity
     {

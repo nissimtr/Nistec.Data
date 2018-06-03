@@ -35,9 +35,13 @@ using Nistec.IO;
 using Nistec.Xml;
 using Nistec.Serialization;
 using System.Collections.Specialized;
+using System.Diagnostics;
 
 namespace Nistec.Data.Entities
 {
+
+   
+
     /// <summary>
     /// Represent Generic serializable entity that implement <see cref="IGenericEntity"/>, <see cref="ISerialEntity"/> and <see cref="IEntityDictionary"/>.
     /// </summary>
@@ -160,6 +164,7 @@ namespace Nistec.Data.Entities
         {
             m_allowNew = true;
             m_data = new GenericRecord();
+            this._Modified = DateTime.Now;
         }
      
 
@@ -167,26 +172,32 @@ namespace Nistec.Data.Entities
         {
             m_data = new GenericRecord(stream, streamer);
             m_allowNew = false;
+            this._Modified = DateTime.Now;
         }
 
         public GenericEntity(SerializeInfo info)
         {
             m_data = new GenericRecord(info);
             m_allowNew = false;
+            this._Modified = DateTime.Now;
         }
 
         public GenericEntity(DataRow dr)
         {
             ValidateData();
             DataUtil.LoadDictionaryEntityFromDataRow(m_data , dr);
+            SetPrimaryKey(dr.Table.PrimaryKey);
             m_allowNew = true;
+            this._Modified = DateTime.Now;
         }
 
         public GenericEntity(DataRow dr, string[] columns)
         {
             ValidateData(); 
             DataUtil.LoadDictionaryEntityFromDataRow(m_data, dr, columns);
+            SetPrimaryKey(dr.Table.PrimaryKey);
             m_allowNew = true;
+            this._Modified = DateTime.Now;
         }
 
         public GenericEntity(DataRow dr, string[] columns, string[] fieldsKey)
@@ -194,22 +205,57 @@ namespace Nistec.Data.Entities
            ValidateData();
             DataUtil.LoadDictionaryEntityFromDataRow(m_data, dr, columns);
             if (fieldsKey != null && fieldsKey.Length > 0)
-                this._PrimaryKey = KeySet.BuildKeys(m_data, fieldsKey);
+                SetPrimaryKey(fieldsKey);
+            else
+                SetPrimaryKey(dr.Table.PrimaryKey);
             m_allowNew = true;
+            this._Modified = DateTime.Now;
         }
+        public GenericEntity(DataRow dr, Dictionary<string,int> columnsNameIndex, string[] fieldsKey)
+        {
+            ValidateData();
+            DataUtil.LoadDictionaryEntityFromDataRow(m_data, dr, columnsNameIndex);
+            if (fieldsKey != null && fieldsKey.Length > 0)
+                SetPrimaryKey(fieldsKey);
+            else
+                SetPrimaryKey(dr.Table.PrimaryKey);
+            m_allowNew = true;
+            this._Modified = DateTime.Now;
+        }
+        public GenericEntity(DataRow dr, string[] fieldsKey, bool isPrimaryKeyFirst)
+        {
+            ValidateData();
+            DataUtil.LoadDictionaryEntityFromDataRow(m_data, dr);
 
+            if (isPrimaryKeyFirst)
+                if(!SetPrimaryKey(dr.Table.PrimaryKey))
+                {
+                    SetPrimaryKey(fieldsKey);
+                }
+            else
+                SetPrimaryKey(fieldsKey);
+
+            //if (fieldsKey != null && fieldsKey.Length > 0)
+            //{
+            //    this._PrimaryKey = KeySet.BuildKeys(m_data, fieldsKey);
+            //}
+            m_allowNew = true;
+            this._Modified = DateTime.Now;
+        }
         public GenericEntity(IDictionary dr)
         {
             ValidateData();
             DataUtil.CopyIDictionary(m_data, dr);
             m_allowNew = false;
+            this._Modified = DateTime.Now;
         }
 
         public GenericEntity(Dictionary<string, object> dr)
         {
-            m_data = GenericTypes.Cast<GenericRecord>(dr);
+            m_data = GenericTypes.Cast<GenericRecord>(dr, true);
             ValidateData();
             m_allowNew = false;
+            this._Modified = DateTime.Now;
         }
 
         void ValidateData()
@@ -285,7 +331,7 @@ namespace Nistec.Data.Entities
         {
             string cmdText = SqlFormatter.SelectString("*", db.MappingName, SqlFormatter.ParametersString(parameters));
 
-            DataRow row = db.DoCommand<DataRow>(cmdText, parameters, CommandType.Text, 0); ;
+            DataRow row = db.DoCommand<DataRow>(cmdText, parameters, CommandType.Text, 0);
          
             return new GenericEntity(row);
 
@@ -350,9 +396,21 @@ namespace Nistec.Data.Entities
                 {
                     throw new Exception("GenericEntity.CreateEntities, DataTable has no PrimaryKey");
                 }
-                foreach (DataRow dr in dt.Rows)
+
+                if (dt.Rows.Count > DataUtil.MaxRowForNameIndexColumns)
                 {
-                    values.Add(new GenericEntity(dr, columns, fieldsKey));
+                    var columnsNameIndex = DataUtil.GetEntityColumnsFromDataTable(dt, null);
+                    foreach (DataRow dr in dt.Rows)
+                    {
+                        values.Add(new GenericEntity(dr, columnsNameIndex, fieldsKey));
+                    }
+                }
+                else
+                {
+                    foreach (DataRow dr in dt.Rows)
+                    {
+                        values.Add(new GenericEntity(dr, columns, fieldsKey));
+                    }
                 }
             }
             else
@@ -386,9 +444,20 @@ namespace Nistec.Data.Entities
                 {
                     throw new Exception("GenericEntity.CreateEntities, DataTable has no PrimaryKey");
                 }
-                foreach (DataRow dr in dt.Rows)
+                if (dt.Rows.Count > DataUtil.MaxRowForNameIndexColumns)
                 {
-                    values.Add(new GenericEntity(dr, columns, fieldsKey));
+                    var columnsNameIndex = DataUtil.GetEntityColumnsFromDataTable(dt, null);
+                    foreach (DataRow dr in dt.Rows)
+                    {
+                        values.Add(new GenericEntity(dr, columnsNameIndex, fieldsKey));
+                    }
+                }
+                else
+                {
+                    foreach (DataRow dr in dt.Rows)
+                    {
+                        values.Add(new GenericEntity(dr, columns, fieldsKey));
+                    }
                 }
             }
             else
@@ -413,11 +482,22 @@ namespace Nistec.Data.Entities
             }
             List<GenericEntity> values = new List<GenericEntity>();
             string[] columns = DataUtil.ColumnsFromDataTable(dt);
-            foreach (DataRow dr in dt.Rows)
-            {
-                values.Add(new GenericEntity(dr, columns, fieldsKey));
-            }
 
+            if (dt.Rows.Count > DataUtil.MaxRowForNameIndexColumns)
+            {
+                var columnsNameIndex = DataUtil.GetEntityColumnsFromDataTable(dt, null);
+                foreach (DataRow dr in dt.Rows)
+                {
+                    values.Add(new GenericEntity(dr, columnsNameIndex, fieldsKey));
+                }
+            }
+            else
+            {
+                foreach (DataRow dr in dt.Rows)
+                {
+                    values.Add(new GenericEntity(dr, columns, fieldsKey));
+                }
+            }
             return values.ToArray();
         }
 
@@ -482,7 +562,7 @@ namespace Nistec.Data.Entities
             if (useCopy)
                 DataUtil.CopyDictionary(m_data, dic);
             else
-                m_data = GenericTypes.Cast<GenericRecord>(dic);
+                m_data = GenericTypes.Cast<GenericRecord>(dic, true);
             ValidateData();
             m_allowNew = false;
         }
@@ -570,6 +650,7 @@ namespace Nistec.Data.Entities
         {
             ValidateReadOnly();
             this[field] = value;
+            this._Modified = DateTime.Now;
         }
 
         /// <summary>
@@ -581,6 +662,7 @@ namespace Nistec.Data.Entities
         {
             ValidateReadOnly();
             this[field] = value;
+            this._Modified = DateTime.Now;
         }
 
         /// <summary>
@@ -594,6 +676,7 @@ namespace Nistec.Data.Entities
             if (field == null)
                 return;
             this[field.ToString()] = value;
+            this._Modified = DateTime.Now;
         }
 
         internal void SetRecord(GenericRecord value, KeySet keyset)
@@ -607,6 +690,7 @@ namespace Nistec.Data.Entities
                 FieldsChanged[entry.Key] = entry.Value;
             }
             this._PrimaryKey = keyset;
+            this._Modified = DateTime.Now;
 
         }
         #endregion
@@ -633,15 +717,38 @@ namespace Nistec.Data.Entities
             }
         }
 
-          
-        public void SetPrimaryKey(string[] fieldsKey)
+        //public void SetPrimaryKey(DataTable dt,string[] fieldsKey)
+        //{
+        //    if (dt != null && dt.PrimaryKey != null && dt.PrimaryKey.Length > 0)
+        //    {
+        //        this._PrimaryKey = KeySet.BuildKeys(m_data, dt.PrimaryKey);
+        //    }
+        //    else if (fieldsKey != null && fieldsKey.Length > 0)
+        //    {
+        //        this._PrimaryKey = KeySet.BuildKeys(m_data, fieldsKey);
+        //    }
+        //}
+        public bool SetPrimaryKey(DataColumn[] fieldsKey)
         {
             if (fieldsKey != null && fieldsKey.Length > 0)
             {
                 this._PrimaryKey = KeySet.BuildKeys(m_data, fieldsKey);
+                this._Modified = DateTime.Now;
             }
+            return _PrimaryKey!=null && _PrimaryKey.Count > 0;
         }
-       
+
+        public bool SetPrimaryKey(string[] fieldsKey)
+        {
+            if (fieldsKey != null && fieldsKey.Length > 0)
+            {
+                this._PrimaryKey = KeySet.BuildKeys(m_data, fieldsKey);
+                this._Modified = DateTime.Now;
+            }
+            return _PrimaryKey != null && _PrimaryKey.Count > 0;
+
+        }
+
         KeySet _PrimaryKey;
         /// <summary>
         /// Get PrimaryKey as EntityKeys
@@ -655,6 +762,27 @@ namespace Nistec.Data.Entities
             }
             internal set { _PrimaryKey = value; }
         }
+
+        DateTime _Modified;
+        /// <summary>
+        /// Get PrimaryKey as EntityKeys
+        /// </summary>
+        [EntityProperty(EntityPropertyType.NA)]
+        public DateTime Modified
+        {
+            get
+            {
+                return _Modified;
+            }
+            internal set { _Modified = value; }
+        }
+
+        [EntityProperty(EntityPropertyType.NA)]
+        public string MappingName
+        {
+            get; set;
+        }
+
         /// <summary>
         /// Gets the number of key/value pairs contained in the System.Collections.Hashtable.
         /// </summary>
@@ -663,6 +791,43 @@ namespace Nistec.Data.Entities
             get { return iData.Count; }
         }
 
+        /// <summary>
+        /// Gets or sets the value associated with the specified field.
+        /// </summary>
+        /// <param name="field"></param>
+        /// <returns></returns>
+        [NoSerialize]
+        [EntityProperty(EntityPropertyType.NA)]
+        public object this[string field]
+        {
+            get { return GetValue(field); }
+            set
+            {
+                ValidateReadOnly();
+
+                if (m_data == null)
+                {
+                    throw new ArgumentException("Invalid Data ", field);
+                }
+                if (!m_data.ContainsKey(field))
+                {
+                    if (!m_allowNew)
+                    {
+                        throw new ArgumentException("Invalid fielde:" + field);
+                    }
+                    AddChangesNew(field);
+                }
+                else if (!CompareValues(field, value))
+                {
+                    AddChanges(field);
+                }
+                m_data[field] = value;
+                this._Modified = DateTime.Now;
+            }
+        }
+        #endregion
+
+        #region add\remove
         /// <summary>
         ///  Determines whether the System.Collections.Hashtable contains a specific key.
         /// </summary>
@@ -688,15 +853,42 @@ namespace Nistec.Data.Entities
         /// </summary>
         /// <param name="field"></param>
         /// <param name="value"></param>
-        public void Add(string field, object value)
+        /// <param name="allowOverride"></param>
+        public bool Add(string field, object value, bool allowOverride = true)
         {
-            this[field] = value;// GenericTypes.NZ(value, null);
-        }
+            //m_data.Add(field, value);
+            ValidateReadOnly();
 
-        public void Remove(string field)
+            if (m_data == null)
+            {
+                throw new ArgumentException("Invalid Data ", field);
+            }
+            if (!m_data.ContainsKey(field))
+            {
+                if (!m_allowNew)
+                {
+                    throw new ArgumentException("Invalid fielde:" + field);
+                }
+                AddChangesNew(field);
+                allowOverride = true;
+            }
+            else if (!CompareValues(field, value) && allowOverride)
+            {
+                AddChanges(field);
+            }
+            if (allowOverride)
+            {
+                m_data[field] = value;
+                this._Modified = DateTime.Now;
+                return true;
+            }
+            return false;
+        }
+        
+        public bool Remove(string field)
         {
             AddChanges(field);
-            m_data.Remove(field);
+            return m_data.Remove(field);
         }
 
         /// <summary>
@@ -706,44 +898,6 @@ namespace Nistec.Data.Entities
         {
             m_data.Clear();
             FieldsChanged.Clear();
-        }
-
-        /// <summary>
-        /// Gets or sets the value associated with the specified field.
-        /// </summary>
-        /// <param name="field"></param>
-        /// <returns></returns>
-        [EntityProperty(EntityPropertyType.NA)]
-        public object this[string field]
-        {
-            get { return GetValue(field); }
-            set
-            {
-                ValidateReadOnly();
-   
-                if (m_data == null)
-                {
-                    throw new ArgumentException("Invalid Data ", field);
-                }
-                if (!m_data.ContainsKey(field))
-                {
-                    if (!m_allowNew)
-                    {
-                        throw new ArgumentException("Invalid fielde:" + field);
-                    }
-                    AddNewField(field);
-                }
-                else if (!CompareValues(field, value))
-                {
-                    AddChanges(field);
-                }
-                m_data[field] = value;
-            }
-        }
-        [EntityProperty(EntityPropertyType.NA)]
-        public string MappingName
-        {
-            get;set;
         }
 
         #endregion
@@ -759,14 +913,20 @@ namespace Nistec.Data.Entities
             get { if (_FieldsChanged == null) { _FieldsChanged = new Dictionary<string, object>(); } return _FieldsChanged; }
         }
 
-        void AddNewField(string field)
+        void AddChangesNew(string field)
         {
             FieldsChanged.Add(field, EntityNewField);
+            this._Modified = DateTime.Now;
         }
-
+        void AddChanges(string field, object value)
+        {
+            FieldsChanged.Add(field, value);
+            this._Modified = DateTime.Now;
+        }
         void AddChanges(string field)
         {
             FieldsChanged[field] = GetValue(field);
+            this._Modified = DateTime.Now;
         }
         /// <summary>
         /// Clear all changes
@@ -778,6 +938,7 @@ namespace Nistec.Data.Entities
                 Restor();
             }
             FieldsChanged.Clear();
+            m_Size = 0;
         }
 
         /// <summary>
@@ -1166,21 +1327,38 @@ namespace Nistec.Data.Entities
 
         #region ISerialJson
 
-        public string EntityWrite(IJsonSerializer serializer)
+        public string EntityWrite(IJsonSerializer serializer, bool pretty=false)
         {
-            return Record.EntityWrite(serializer);
+            return Record.EntityWrite(serializer, pretty);
         }
 
         public object EntityRead(string json, IJsonSerializer serializer)
         {
-            return Record.EntityRead(json, serializer);
+           return Record.EntityRead(json, serializer);
         }
 
-        
+
         #endregion
 
         #region IEntityDictionary
 
+        public DynamicEntity ToEntity()
+        {
+            return new DynamicEntity(m_data);
+        }
+
+        public string ToJson(bool recordOnly = false, bool pretty = false)
+        {
+            if (recordOnly)
+                return EntityWrite(null, pretty);
+            return JsonSerializer.Serialize(this, pretty);
+        }
+
+        public IDictionary<string,object> ToDictionary()
+        {
+            return m_data;
+
+        }
         public IDictionary EntityDictionary()
         {
             return m_data;
@@ -1193,17 +1371,51 @@ namespace Nistec.Data.Entities
             get { return m_Type ?? typeof(GenericEntity); }
         }
 
-       
+        int m_Size;
+        public int Size()
+        {
+            if (m_data == null)
+                return 0;
+            if (m_Size == 0)
+            {
+                m_Size = BinarySerializer.SizeOf(m_data);
+            }
+            return m_Size;
+        }
+
         public void EntityWrite(Stream stream, IBinaryStreamer streamer)
         {
-            Record.EntityWrite(stream, streamer);
+            if (streamer == null)
+                streamer = new BinaryStreamer(stream);
+            streamer.WriteString(this.MappingName);
+            streamer.WriteValue(this.Modified);
+            streamer.WriteValue(this.PrimaryKey);
+            streamer.WriteValue(this.m_allowNew);
+            streamer.WriteValue(this.m_Size);
+            streamer.WriteValue(this.m_data);
+            streamer.Flush();
+
         }
 
         public void EntityRead(Stream stream, IBinaryStreamer streamer)
         {
-            Record.EntityRead(stream, streamer);
+            if (streamer == null)
+                streamer = new BinaryStreamer(stream);
+            this.MappingName=streamer.ReadString();
+            this.Modified=streamer.ReadValue<DateTime>();
+            this.PrimaryKey = streamer.ReadValue<KeySet>();
+            this.m_allowNew=streamer.ReadValue<bool>();
+            this.m_Size=streamer.ReadValue<int>();
+            this.m_data=(GenericRecord)streamer.ReadValue();
         }
- 
+
+        public NetStream ToStream()
+        {
+            NetStream stream = new NetStream();
+            EntityWrite(stream, null);
+            return stream;
+        }
+
         [EntityProperty(EntityPropertyType.NA)]
         public GenericRecord Record
         {

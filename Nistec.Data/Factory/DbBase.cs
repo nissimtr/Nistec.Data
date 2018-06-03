@@ -28,7 +28,7 @@ using Nistec.Data.Entities;
 using System.Collections.Generic;
 using Nistec.Data;
 using Nistec.Data.Advanced;
-
+using Nistec.Runtime;
 
 namespace Nistec.Data.Factory
 {
@@ -332,7 +332,7 @@ namespace Nistec.Data.Factory
             try
             {
                 string sql =SqlFormatter.AggregateString(AggregateMode, Field, Table, Where);
-                T def = Activator.CreateInstance<T>();
+                T def = ActivatorUtil.CreateInstance<T>();
 
                 if (!string.IsNullOrEmpty(Where))
                 {
@@ -370,7 +370,7 @@ namespace Nistec.Data.Factory
         /// </summary>
         internal void Init<T>() where T : IDbContext
         {
-            IDbContext db = System.Activator.CreateInstance<T>();
+            IDbContext db = ActivatorUtil.CreateInstance<T>();
             m_connectionString = db.ConnectionString;
             m_DBProvider = db.Provider;
             m_connection = DbFactory.CreateConnection(m_connectionString, m_DBProvider);
@@ -467,12 +467,35 @@ namespace Nistec.Data.Factory
             }
         }
 
-    
+
         #endregion
-    
+
         #region lookup query
 
-      
+
+        /// <summary>
+        /// Execute lookup function
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="Field">field name for return value</param>
+        /// <param name="Table">Table name or View name</param>
+        /// <param name="Where">Sql Where string,each paramet name should start with @ </param>
+        /// <param name="returnIfNull">Default value to return if no recored affected</param>
+        /// <param name="parameters">Values of Parameters, use method DataParameter.Get(params object[] keyValueParameters)</param>
+        /// <returns></returns>
+        protected virtual T LookupQuery<T>(string Field, string Table, string Where, T returnIfNull, IDbDataParameter[] parameters)
+        {
+            try
+            {
+                Type retType = typeof(T);// method.ReturnType;
+                string sql = SqlFormatter.SelectString(Field, Table, Where);
+                return ExecuteScalarInternal<T>(sql, parameters, returnIfNull, CommandType.Text, 0);
+            }
+            catch (Exception)
+            {
+                return returnIfNull;// throw ex;
+            }
+        }
 
         /// <summary>
         /// Execute lookup function

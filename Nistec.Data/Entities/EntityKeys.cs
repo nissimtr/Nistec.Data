@@ -58,6 +58,26 @@ namespace Nistec.Data.Entities
             return DataParameter.CreateParameters(key);
         }
 
+        public static string GetPrimaryKey(this NameValueArgs keyValueArgs)
+        {
+
+            if (keyValueArgs == null)
+            {
+                throw new ArgumentNullException("keyValueArgs");
+            }
+
+            int count = keyValueArgs.Count;
+            int i = 0;
+            object[] values = new object[count];
+            foreach (var entry in keyValueArgs)
+            {
+                values[i] = entry.Value;
+                i++;
+            }
+
+            return KeySet.FormatPrimaryKey(values);
+        }
+
     }
 
     /// <summary>
@@ -82,11 +102,38 @@ namespace Nistec.Data.Entities
                              select property.ColumnName).ToArray();
             this.AddRange(keys);
         }
+
+        public EntityKeys(IEntity entity) 
+        {
+            this.AddRange(EntityPropertyBuilder.GetEntityPrimaryFields(entity));
+        }
+
+        public EntityKeys(object obj)
+        {
+
+            var props = DataProperties.GetEntityProperties(obj.GetType());
+
+            foreach (var pa in props)
+            {
+                PropertyInfo property = pa.Property;
+                EntityPropertyAttribute attr = pa.Attribute;
+                if (attr != null)
+                {
+                    if (attr.ParameterType == EntityPropertyType.Key || attr.ParameterType == EntityPropertyType.Identity)
+                    {
+                        string key = attr.IsColumnDefined ? attr.Column : pa.Property.Name;
+
+                        this.Add(key);
+                    }
+                }
+            }
+        }
+
         #endregion
 
         #region methods
 
-     
+
         /// <summary>
         /// Set DataTable primary key 
         /// </summary>
@@ -98,10 +145,20 @@ namespace Nistec.Data.Entities
                 return;
             }
             List<DataColumn> columns = new List<DataColumn>();
-            for (int i = 0; i < this.Count; i++)
+
+            foreach(DataColumn col in dt.Columns)
             {
-                columns.Add(dt.Columns[this[i]]);
+                if(this.IndexOf(col.ColumnName)>=0)
+                {
+                    columns.Add(col);
+                }
             }
+
+
+            //for (int i = 0; i < this.Count; i++)
+            //{
+            //    columns.Add(dt.Columns[this[i]]);
+            //}
          
             dt.PrimaryKey = columns.ToArray();
         }
@@ -112,40 +169,44 @@ namespace Nistec.Data.Entities
         /// <returns></returns>
         public override string ToString()
         {
-            if (Count == 0)
-            {
-                return "";
-            }
-            return KeySet.FormatPrimaryKey(this.ToArray()); ;
+            //if (Count == 0)
+            //{
+            //    return "";
+            //}
+            //return KeySet.FormatPrimaryKey(this.ToArray());
+
+            //return ToString(KeySet.Separator);
+
+            return string.Join(",", this);
         }
 
-        public string ToString(string separator)
-        {
-            if (Count == 0)
-            {
-                return "";
-            }
-            return string.Join(separator, this);
-        }
+        //public string ToString(string separator)
+        //{
+        //    if (Count == 0)
+        //    {
+        //        return "";
+        //    }
+        //    return string.Join(separator, this);
+        //}
 
-        public string CreateEntityPrimaryKey(object instance, bool sorted = false)
-        {
-            IEnumerable<object> values = AttributeProvider.GetPropertiesValues(instance, this.ToArray(), sorted);
-            return KeySet.FormatPrimaryKey(values.ToArray());
-        }
+        //public string CreateEntityPrimaryKey(object instance, bool sorted = false)
+        //{
+        //    IEnumerable<object> values = AttributeProvider.GetPropertiesValues(instance, this.ToArray(), sorted);
+        //    return KeySet.FormatPrimaryKey(values.ToArray());
+        //}
 
-        public string CreateEntityPrimaryKey(IDictionary<string, object> record, bool sorted = false)
-        {
-            IEnumerable<object> values = (sorted) ?
-                from p in record.Where(p => this.Contains(p.Key)).OrderBy(p => p.Key)
-                select p.Value
-                :
-                from p in record.Where(p => this.Contains(p.Key))
-                select p.Value;
-            return KeySet.FormatPrimaryKey(values.ToArray());
-        }
+        //public string CreateEntityPrimaryKey(IDictionary<string, object> record, bool sorted = false)
+        //{
+        //    IEnumerable<object> values = (sorted) ?
+        //        from p in record.Where(p => this.Contains(p.Key)).OrderBy(p => p.Key)
+        //        select p.Value
+        //        :
+        //        from p in record.Where(p => this.Contains(p.Key))
+        //        select p.Value;
+        //    return KeySet.FormatPrimaryKey(values.ToArray());
+        //}
 
-    
+
         #endregion
 
         #region static BuildKeys
@@ -163,38 +224,99 @@ namespace Nistec.Data.Entities
             return EntityKeys.Get(arr);
         }
 
-        public static EntityKeys BuildKeys<T>()
+        public static EntityKeys Get<T>()
         {
-            Type type = typeof(T);
-            return BuildKeys(type);
+            return Get(typeof(T));
         }
 
-        public static EntityKeys BuildKeys(Type type)
+        public static string[] ColumnsToArray(DataColumn[] columns)
         {
-
-            PropertyInfo[] properties = type.GetProperties();
-
-            EntityKeys keys = new EntityKeys();
-
-            foreach (PropertyInfo property in properties)
+            List<string> keys = new List<string>();
+            foreach (DataColumn col in columns)
             {
-
-                EntityPropertyAttribute attr =
-                Attribute.GetCustomAttribute(property, typeof(EntityPropertyAttribute)) as EntityPropertyAttribute;
-                if (attr == null)
-                {
-                    continue;
-                }
-                EntityPropertyType attrType = attr.ParameterType;
-
-                if (attrType == EntityPropertyType.Identity || attrType == EntityPropertyType.Key)
-                {
-                    keys.Add(property.Name);
-                }
+                    keys.Add(col.ColumnName);
             }
-
-            return keys;
+            return keys.ToArray();
         }
+
+        public static EntityKeys Get(Type type)
+        {
+
+            var k=EntityPropertyBuilder.GetEntityPrimaryFields(type);
+            EntityKeys keys = new EntityKeys(k.ToArray());
+            return keys;
+
+            //PropertyInfo[] properties = type.GetProperties();
+
+            //EntityKeys keys = new EntityKeys();
+
+            //foreach (PropertyInfo property in properties)
+            //{
+
+            //    EntityPropertyAttribute attr =
+            //    Attribute.GetCustomAttribute(property, typeof(EntityPropertyAttribute)) as EntityPropertyAttribute;
+            //    if (attr == null)
+            //    {
+            //        continue;
+            //    }
+            //    EntityPropertyType attrType = attr.ParameterType;
+
+            //    if (attrType == EntityPropertyType.Identity || attrType == EntityPropertyType.Key)
+            //    {
+            //        keys.Add(property.Name);
+            //    }
+            //}
+
+            //return keys;
+        }
+
+
+        //public static string FormatPrimaryKey<T>(IEntity entity, IEnumerable<string> keys, bool sortedByFields = false)where T:IEntityItem
+        //{
+        //    IEnumerable<object> values = EntityPropertyBuilder.SelectEntityValues<T>(entity, keys, sortedByFields);
+        //    return KeySet.FormatPrimaryKey(KeySet.Separator, values.ToArray());
+        //}
+
+        //public static string FormatPrimaryKey<T>(IEntityItem entity) where T : IEntityItem
+        //{
+        //    IEnumerable<object> values = EntityPropertyBuilder.SelectEntityValues<T>(entity);
+        //    return KeySet.FormatPrimaryKey(KeySet.Separator, values.ToArray());
+        //}
+
+        //public static string GetEntityPrimaryKey<T>(IEntityItem entity) where T : IEntityItem
+        //{
+
+        //    var fields = EntityMappingAttribute.Primary<T>(false);
+
+        //    if (fields == null)
+        //    {
+        //        var values = (from PropertyAttributeInfo<EntityPropertyAttribute> p in DataProperties.GetEntityProperties(typeof(T))
+        //                         let key = p.Attribute.IsColumnDefined ? p.Attribute.Column : p.Property.Name
+        //                         let val = p.Property.GetValue(entity, null)
+        //                         where p.Attribute.ParameterType == EntityPropertyType.Key || p.Attribute.ParameterType == EntityPropertyType.Identity
+        //                         orderby p.Attribute.Order  //orderby key
+        //                         select val).ToArray();
+        //        return KeySet.FormatPrimaryKey(values);
+        //    }
+        //    else
+        //    {
+        //        var keyvalues = (from PropertyAttributeInfo<EntityPropertyAttribute> p in DataProperties.GetEntityProperties(typeof(T))
+        //                         let key = p.Attribute.IsColumnDefined ? p.Attribute.Column : p.Property.Name
+        //                         let val = p.Property.GetValue(entity, null)
+        //                         where fields.Contains(key) && p.Attribute.ParameterType == EntityPropertyType.Key || p.Attribute.ParameterType == EntityPropertyType.Identity
+        //                         select new { key, val }).ToDictionary(c => c.key, c => c.val);
+
+
+        //        List<object> values = new List<object>();
+        //        for (int i = 0; i < fields.Length; i++)
+        //        {
+        //            values.Add(keyvalues[fields[i]]);
+        //        }
+        //        return KeySet.FormatPrimaryKey(values.ToArray());
+        //    }
+
+        //}
+
         #endregion
 
         #region KeyFields
@@ -206,8 +328,9 @@ namespace Nistec.Data.Entities
             {
                 if (_FieldsKey == null)
                 {
-                    _FieldsKey = new KeySet(this.ToArray());
-                 }
+                    _FieldsKey = new KeySet();// this.ToArray());
+                    _FieldsKey.AddKeys(this.ToArray());
+                }
                 return _FieldsKey;
             }
         }
@@ -237,6 +360,82 @@ namespace Nistec.Data.Entities
 
 
         #endregion
+
+        public string GetPrimaryKey(string[] keyValueArgs)
+        {
+
+            if (keyValueArgs == null)
+            {
+                throw new ArgumentNullException("keyValueArgs");
+            }
+            int length = this.Count;
+            int count = keyValueArgs.Length;
+            if (count % 2 != 0)
+            {
+                throw new ArgumentException("values parameter not correct, Not match key value arguments");
+            }
+            if ((length * 2) < count)
+            {
+                throw new ArgumentOutOfRangeException("values parameter Not match to fieldsKey range");
+            }
+
+            object[] values = new object[length];
+
+            for (int i = 0; i < count; i++)
+            {
+                string key = keyValueArgs[i];
+                int index = this.IndexOf(key);
+                ++i;
+                if (index >= 0)
+                {
+                    values[index] = keyValueArgs[i];
+                }
+            }
+
+            return KeySet.FormatPrimaryKey(values);
+        }
+
+        public string GetPrimaryKey(NameValueArgs keyValueArgs)
+        {
+
+            if (keyValueArgs == null)
+            {
+                throw new ArgumentNullException("keyValueArgs");
+            }
+            int length = this.Count;
+
+            int count = keyValueArgs.Count;
+            if (length < count)
+            {
+                throw new ArgumentOutOfRangeException("values parameter Not match to fieldsKey range");
+            }
+
+            object[] values = new object[length];
+            foreach (var entry in keyValueArgs)
+            {
+                int index = this.IndexOf(entry.Key);
+                if (index >= 0)
+                {
+                    values[index] = entry.Value;
+                }
+            }
+
+            return KeySet.FormatPrimaryKey(values);
+        }
+
+        public string GetPrimaryKey(string queryString)
+        {
+
+            if (queryString == null)
+            {
+                throw new ArgumentNullException("queryString");
+            }
+
+            NameValueArgs nv = NameValueArgs.ParseQueryString(queryString);
+
+            return GetPrimaryKey(nv);
+        }
+
     }
 
 }

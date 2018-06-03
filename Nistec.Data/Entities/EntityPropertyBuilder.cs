@@ -34,7 +34,7 @@ using System.Collections.Specialized;
 namespace Nistec.Data.Entities
 {
 
-     internal static class EntityPropertyBuilder
+     public static class EntityPropertyBuilder
     {
                  
 
@@ -114,12 +114,12 @@ namespace Nistec.Data.Entities
          }
 
         /// <summary>
-        /// Create <see cref="GenricRecord"/> from EntityContext instance.
+        /// Create <see cref="GenericRecord"/> from EntityContext instance.
         /// </summary>
         /// <param name="instance"></param>
         /// <param name="EnablePropertyTypeView"></param>
         /// <returns></returns>
-         public static GenericRecord CreateGenericRecord(object instance, bool EnablePropertyTypeView)//, bool setValue)// = true)//IEntity
+        public static GenericRecord CreateGenericRecord(object instance, bool EnablePropertyTypeView)//, bool setValue)// = true)//IEntity
          {
 
              if (instance == null)
@@ -351,52 +351,251 @@ namespace Nistec.Data.Entities
             }
         }
 
-        public static string[] GetEntityKeys(object instance)
+        //public static string[] GetEntityKeys(object instance)
+        //{
+
+        //    var props = DataProperties.GetEntityProperties(instance.GetType());
+        //    List<string> keys = new List<string>();
+
+        //    foreach (var pa in props)
+        //    {
+        //        PropertyInfo property = pa.Property;
+        //        EntityPropertyAttribute attr = pa.Attribute;
+        //        if (attr != null)
+        //        {
+        //            if (attr.ParameterType == EntityPropertyType.Key || attr.ParameterType == EntityPropertyType.Identity)
+        //            {
+        //                string key = attr.IsColumnDefined ? attr.Column : pa.Property.Name;
+
+        //                keys.Add(key);
+        //            }
+        //        }
+
+        //    }
+        //    return keys.ToArray();
+        //}
+        //public static EntityKeys GetEntityPrimaryKey(object instance)
+        //{
+        //   EntityKeys keys = new EntityKeys();
+
+        //    var props = DataProperties.GetEntityProperties(instance.GetType());
+
+
+        //    foreach (var pa in props)
+        //    {
+        //        PropertyInfo property = pa.Property;
+        //        EntityPropertyAttribute attr = pa.Attribute;
+        //        if (attr != null)
+        //        {
+        //            if (attr.ParameterType == EntityPropertyType.Key || attr.ParameterType == EntityPropertyType.Identity)
+        //            {
+        //                string key = attr.IsColumnDefined ? attr.Column : pa.Property.Name;
+
+        //                keys.Add(key);
+        //            }
+        //        }
+
+        //    }
+        //    return keys;
+        //}
+
+
+        public static IEnumerable<object> SelectEntityValues<T>(IEntityItem entity) where T : IEntityItem
         {
-
-            var props = DataProperties.GetEntityProperties(instance.GetType());
-            List<string> keys = new List<string>();
-
-            foreach (var pa in props)
-            {
-                PropertyInfo property = pa.Property;
-                EntityPropertyAttribute attr = pa.Attribute;
-                if (attr != null)
-                {
-                    if (attr.ParameterType == EntityPropertyType.Key || attr.ParameterType == EntityPropertyType.Identity)
-                    {
-                        string key = attr.IsColumnDefined ? attr.Column : pa.Property.Name;
-
-                        keys.Add(key);
-                    }
-                }
-
-            }
-            return keys.ToArray();
+                return from p in DataProperties.GetEntityProperties(typeof(T))
+                       let val = p.Property.GetValue(entity, null)
+                       select new {val};
         }
-        public static EntityKeys GetEntityPrimaryKey(object instance)
+        public static IEnumerable<object> SelectEntityValues<T>(IEntityItem entity, IEnumerable<string> fields, bool sortedByFields) where T : IEntityItem
         {
-           EntityKeys keys = new EntityKeys();
-
-            var props = DataProperties.GetEntityProperties(instance.GetType());
-
-
-            foreach (var pa in props)
+            if (sortedByFields)
+                return from f in fields
+                       join p in DataProperties.GetEntityProperties(typeof(T))
+                            on f equals p.Attribute.IsColumnDefined ? p.Attribute.Column : p.Property.Name
+                       let val = p.Property.GetValue(entity, null)
+                       select new { val };
+            else
+                return from p in DataProperties.GetEntityProperties(typeof(T))
+                       join f in fields
+                            on p.Attribute.IsColumnDefined ? p.Attribute.Column : p.Property.Name equals f
+                       let val = p.Property.GetValue(entity, null)
+                       select new { val };
+        }
+        public static IDictionary<string, object> SelectEntityKeyValues<T>(IEntityItem entity, IEnumerable<string> fields, bool sortedByFields) where T : IEntityItem
+        {
+            if (sortedByFields)
             {
-                PropertyInfo property = pa.Property;
-                EntityPropertyAttribute attr = pa.Attribute;
-                if (attr != null)
-                {
-                    if (attr.ParameterType == EntityPropertyType.Key || attr.ParameterType == EntityPropertyType.Identity)
-                    {
-                        string key = attr.IsColumnDefined ? attr.Column : pa.Property.Name;
+                return (from f in fields
+                        join p in DataProperties.GetEntityProperties(typeof(T))
+                             on f equals p.Attribute.IsColumnDefined ? p.Attribute.Column : p.Property.Name
+                        let val = p.Property.GetValue(entity, null)
+                        let key = f
+                        select new { key, val }).ToDictionary(c => c.key, c => c.val);
+            }
+            else {
+                return (from p in DataProperties.GetEntityProperties(typeof(T))
+                        join f in fields
+                             on p.Attribute.IsColumnDefined ? p.Attribute.Column : p.Property.Name equals f
+                        let val = p.Property.GetValue(entity, null)
+                        let key = f
+                        select new { key, val }).ToDictionary(c => c.key, c => c.val);
+            }
+        }
 
-                        keys.Add(key);
-                    }
-                }
+        public static IEnumerable<object> SelectEntityPrimaryValues<T>(IEntityItem entity) where T : IEntityItem
+        {
+            return from p in DataProperties.GetEntityProperties(typeof(T)).Where(a => a.Attribute.ParameterType == EntityPropertyType.Key || a.Attribute.ParameterType == EntityPropertyType.Identity)
+                   let val = p.Property.GetValue(entity, null)
+                   select new { val };
+        }
+        public static IDictionary<string, object> SelectEntityPrimaryKeyValues<T>(IEntityItem entity) where T : IEntityItem
+        {
+            return (from p in DataProperties.GetEntityProperties(typeof(T)).Where(a => a.Attribute.ParameterType == EntityPropertyType.Key || a.Attribute.ParameterType == EntityPropertyType.Identity)
+                   let val = p.Property.GetValue(entity, null)
+                   let key = p.Attribute.IsColumnDefined ? p.Attribute.Column : p.Property.Name
+                   select new { key, val }).ToDictionary(c => c.key, c => c.val);
+        }
+
+        public static string GetEntityPrimaryKey<T>(IEntityItem entity, IEnumerable<string> fields, bool sortedByFields) where T : IEntityItem
+        {
+            if (sortedByFields)
+            {
+                var keys = (from f in fields
+                            join p in DataProperties.GetEntityProperties(typeof(T))
+                                 on f equals p.Attribute.IsColumnDefined ? p.Attribute.Column : p.Property.Name
+                            let val = p.Property.GetValue(entity, null)
+                            select new
+                            {
+                                val
+                            });
+
+                return KeySet.FormatPrimaryKey(keys.ToArray());
 
             }
-            return keys;
+            else
+            {
+                var keys = (from p in DataProperties.GetEntityProperties(typeof(T))
+                            join f in fields
+                                 on p.Attribute.IsColumnDefined ? p.Attribute.Column : p.Property.Name equals f
+                            let val = p.Property.GetValue(entity, null)
+                            select new
+                            {
+                                val
+                            });
+
+                return KeySet.FormatPrimaryKey(keys.ToArray());
+
+            }
+
+        }
+
+        public static string GetEntityPrimaryKey<T>(IEntityItem entity) where T : IEntityItem
+        {
+
+            var fields= EntityMappingAttribute.Primary<T>(false);
+            if (fields == null || fields.Length == 0)
+            {
+
+                var keys = (from PropertyAttributeInfo<EntityPropertyAttribute> p in DataProperties.GetEntityProperties(typeof(T))
+                            let key = p.Attribute.IsColumnDefined ? p.Attribute.Column : p.Property.Name
+                            let val = p.Property.GetValue(entity, null)
+                            where p.Attribute.ParameterType == EntityPropertyType.Key || p.Attribute.ParameterType == EntityPropertyType.Identity
+                            //orderby key
+                            select val).ToArray();
+
+                return KeySet.FormatPrimaryKey(keys);
+            }
+            else
+            {
+                return GetEntityPrimaryKey<T>(entity, fields, true);
+            }
+        }
+
+        public static string GetEntityPrimaryKey(IEntityItem entity)
+        {
+
+            var keys = (from PropertyAttributeInfo<EntityPropertyAttribute> p in DataProperties.GetEntityProperties(entity.GetType())
+                        let key = p.Attribute.IsColumnDefined ? p.Attribute.Column : p.Property.Name
+                        let val = p.Property.GetValue(entity, null)
+                        where p.Attribute.ParameterType == EntityPropertyType.Key || p.Attribute.ParameterType == EntityPropertyType.Identity
+                        //orderby key
+                        select val).ToArray();
+
+            return KeySet.FormatPrimaryKey(keys);
+
+        }
+
+        public static string GetEntityPrimaryKey(IEntityItem entity, string[] fieldsKey)
+        {
+            if(entity==null)
+            {
+                throw new ArgumentNullException("entity");
+            }
+            if (fieldsKey == null)
+            {
+                throw new ArgumentNullException("fieldsKey");
+            }
+            int length = fieldsKey.Length;
+            object[] values = new object[length];
+            foreach (var p in DataProperties.GetEntityProperties(entity.GetType()))
+            {
+                var key = p.Attribute.IsColumnDefined ? p.Attribute.Column : p.Property.Name;
+                int index = fieldsKey.IndexOf(key);
+                if (index >= 0)
+                {
+                    var val = p.Property.GetValue(entity, null);
+                    values[index] = val;
+                }
+            }
+
+            return KeySet.FormatPrimaryKey(values);
+        }
+
+        public static IEnumerable<string> GetEntityPrimaryFields<T>() where T : IEntityItem
+        {
+            return (from PropertyAttributeInfo<EntityPropertyAttribute> p in DataProperties.GetEntityProperties(typeof(T))
+                        let key = p.Attribute.IsColumnDefined ? p.Attribute.Column : p.Property.Name
+                        where p.Attribute.ParameterType == EntityPropertyType.Key || p.Attribute.ParameterType == EntityPropertyType.Identity
+                        //orderby key
+                        select key);
+        }
+        public static IEnumerable<string> GetEntityPrimaryFields(IEntityItem entity) 
+        {
+            return (from PropertyAttributeInfo<EntityPropertyAttribute> p in DataProperties.GetEntityProperties(entity.GetType())
+                        let key = p.Attribute.IsColumnDefined ? p.Attribute.Column : p.Property.Name
+                        where p.Attribute.ParameterType == EntityPropertyType.Key || p.Attribute.ParameterType == EntityPropertyType.Identity
+                        //orderby key
+                        select key);
+        }
+        public static IEnumerable<string> GetEntityPrimaryFields(Type type)
+        {
+            return (from PropertyAttributeInfo<EntityPropertyAttribute> p in DataProperties.GetEntityProperties(type)
+                    let key = p.Attribute.IsColumnDefined ? p.Attribute.Column : p.Property.Name
+                    where p.Attribute.ParameterType == EntityPropertyType.Key || p.Attribute.ParameterType == EntityPropertyType.Identity
+                    //orderby key
+                    select key);
+        }
+
+        public static KeySet GetEntityKeySet<T>(IEntityItem entity) where T : IEntityItem
+        {
+            KeySet keyset = new KeySet( SelectEntityPrimaryKeyValues<T>(entity));
+            return keyset;
+
+            //var props = DataProperties.GetEntityProperties(typeof(T)).Where(a => a.Attribute.ParameterType == EntityPropertyType.Key || a.Attribute.ParameterType == EntityPropertyType.Identity);
+
+            //foreach (var pa in props)
+            //{
+            //    PropertyInfo property = pa.Property;
+            //    EntityPropertyAttribute attr = pa.Attribute;
+            //    if (attr != null)
+            //    {
+            //        string key = attr.IsColumnDefined ? attr.Column : pa.Property.Name;
+            //        object val = pa.Property.GetValue(entity, null);
+            //        keys.Add(key, val);
+            //    }
+
+            //}
+            //return keys;
         }
 
         public static KeySet GetEntityKeySet<T>(GenericRecord gr) where T : IEntityItem
@@ -447,7 +646,7 @@ namespace Nistec.Data.Entities
             }
             return keys;
         }
-
+        
         public static object[] GetEntityKeyValueByOrder<T>(T instance, bool keyTypesOnly=true) where T : IEntityItem
         {
             List<object> keyValues = new List<object>();
@@ -465,7 +664,7 @@ namespace Nistec.Data.Entities
                     {
                         if (attr.ParameterType == EntityPropertyType.Key || attr.ParameterType == EntityPropertyType.Identity)
                         {
-                            string key = attr.IsColumnDefined ? attr.Column : pa.Property.Name;
+                            string key = attr.GetParamName(pa.Property.Name);// attr.IsColumnDefined ? attr.Column : pa.Property.Name;
                             object val = property.GetValue(instance, null);
 
                             keyValues.Add(key);
@@ -474,7 +673,7 @@ namespace Nistec.Data.Entities
                     }
                     else
                     {
-                        string key = attr.IsColumnDefined ? attr.Column : pa.Property.Name;
+                        string key = attr.GetParamName(pa.Property.Name);//attr.IsColumnDefined ? attr.Column : pa.Property.Name;
                         object val = property.GetValue(instance, null);
 
                         keyValues.Add(key);
@@ -501,7 +700,7 @@ namespace Nistec.Data.Entities
                 {
                     if (attr.ParameterType == EntityPropertyType.Key || attr.ParameterType == EntityPropertyType.Identity)
                     {
-                        string key = attr.IsColumnDefined ? attr.Column : pa.Property.Name;
+                        string key = attr.GetParamName(pa.Property.Name);//attr.IsColumnDefined ? attr.Column : pa.Property.Name;
                         object val = property.GetValue(instance, null);
 
                         keyValues.Add(key);
@@ -529,7 +728,7 @@ namespace Nistec.Data.Entities
                 {
                     if (attr.ParameterType == EntityPropertyType.Key || attr.ParameterType == EntityPropertyType.Identity)
                     {
-                        string key = attr.IsColumnDefined ? attr.Column : pa.Property.Name;
+                        string key = attr.GetParamName(pa.Property.Name);//attr.IsColumnDefined ? attr.Column : pa.Property.Name;
                         object val=property.GetValue(instance, null);
                         keyValues.Add(new DataParameter(key,val));
                     }
@@ -545,7 +744,7 @@ namespace Nistec.Data.Entities
             var props = DataProperties.GetProperties(type);
             return props.Select(l => l.Name).ToArray();
         }
-        public static EntityKeys SetEntityContextWithKey(IEntity context, object instance)
+        public static KeySet SetEntityContextWithKey(IEntity context, object instance)
         {
             //rcd
             GenericRecord values = context.EntityRecord;
@@ -561,18 +760,19 @@ namespace Nistec.Data.Entities
 
         }
 
-        public static EntityKeys SetEntityContextWithKey(EntityAttribute keyattr, object instance, GenericRecord values)
+        public static KeySet SetEntityContextWithKey(EntityAttribute keyattr, object instance, GenericRecord values)
         {
-
-            EntityKeys keys = null;
+            KeySet keys = new KeySet();
+            //EntityKeys keys = null;
             bool hassAttrib = false;
             if (keyattr != null)
             {
                 hassAttrib = true;
-                keys = new EntityKeys(keyattr.EntityKey);
+                //keys = new EntityKeys(keyattr.EntityKey);
+                keys.AddKeys(keyattr.EntityKey);
             }
-            else
-                keys = new EntityKeys();
+            //else
+            //    keys = new EntityKeys();
 
 
             var props = DataProperties.GetEntityProperties(instance.GetType());
@@ -601,21 +801,31 @@ namespace Nistec.Data.Entities
 
                     if (attr.ParameterType == EntityPropertyType.Key || attr.ParameterType == EntityPropertyType.Identity)
                     {
-                        //if (value != null)
-                        keys.FieldsKey[field] = value;//.ToString();
+                        if (hassAttrib)
+                        {
+                            if (keys.ContainsKey(field))
+                                keys[field] = value;
+                        }
+                        else
+                        {
+                            //if (value != null)
+                            keys[field] = value;//.ToString();
+                        }
+                        //keys.FieldsKey[field] = value;//.ToString();
                     }
 
                 }
             }
-            if (!hassAttrib)
-                keys.CreateByKeySet();//.SetKeyInternal();
+            //if (!hassAttrib)
+            //    keys.CreateByKeySet();//.SetKeyInternal();
 
             return keys;
         }
 
-        public static EntityKeys SetEntityContextWithKey(object instance, GenericRecord values)
+        public static KeySet SetEntityContextWithKey(object instance, GenericRecord values)
         {
-            EntityKeys keys = new EntityKeys();
+            //EntityKeys keys = new EntityKeys();
+            KeySet keys = new KeySet();
             var props = DataProperties.GetEntityProperties(instance.GetType());
             foreach (var pa in props)
             {
@@ -643,20 +853,22 @@ namespace Nistec.Data.Entities
 
                     if (attr.ParameterType == EntityPropertyType.Key || attr.ParameterType == EntityPropertyType.Identity)
                     {
-                        keys.FieldsKey[field] = value;//.ToString();
+                        keys[field] = value;//.ToString();
+                        //keys.FieldsKey[field] = value;//.ToString();
                     }
 
                 }
             }
 
-            keys.CreateByKeySet();//.SetKeyInternal();
+           // keys.CreateByKeySet();//.SetKeyInternal();
 
             return keys;
         }
 
-        public static EntityKeys SetEntityContextWithKey(object instance, IGenericEntity values)
+        public static KeySet SetEntityContextWithKey(object instance, IGenericEntity values)
         {
-            EntityKeys keys = new EntityKeys();
+            //EntityKeys keys = new EntityKeys();
+            KeySet keys = new KeySet();
             var props = DataProperties.GetEntityProperties(instance.GetType());
 
             foreach (var pa in props)
@@ -686,13 +898,13 @@ namespace Nistec.Data.Entities
                     if (attr.ParameterType == EntityPropertyType.Key || attr.ParameterType == EntityPropertyType.Identity)
                     {
                         //if (value != null)
-                            keys.FieldsKey[field] = value;//.ToString();
-
+                            keys[field] = value;//.ToString();
+                           //keys.FieldsKey[field] = value;//.ToString();
                     }
 
                 }
             }
-            keys.CreateByKeySet();
+            //keys.CreateByKeySet();
             return keys;
         }
 

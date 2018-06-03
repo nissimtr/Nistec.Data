@@ -95,6 +95,7 @@ namespace Nistec.Data.Entities
 
 		private string m_name = "";
         private string m_column = "";
+        private string m_paramName = "";
         private string m_caption = "";
         private string m_ResourceKey;
         private int m_order = 0;
@@ -223,7 +224,8 @@ namespace Nistec.Data.Entities
         /// <param name="caption">Is a value of <see cref="Caption"/> property</param>
         /// <param name="order">Is a value of <see cref="Order"/> property</param>
         /// <param name="resourceKey">Is a value of <see cref="ResourceKey"/> property</param>
-        public EntityPropertyAttribute(string name, bool allowNull, DbType sqlDbType, int size, object asNull, EntityPropertyType parameterType, string column, string caption, int order, string resourceKey)
+        /// <param name="paramName">Is a value of <see cref="ParamName"/> property</param>
+        public EntityPropertyAttribute(string name, bool allowNull, DbType sqlDbType, int size, object asNull, EntityPropertyType parameterType, string column, string caption, int order, string resourceKey, string paramName)
         {
             Name = name;
             m_order = order;
@@ -235,6 +237,7 @@ namespace Nistec.Data.Entities
             m_column = column;
             m_caption = caption;
             m_ResourceKey = resourceKey;
+            m_paramName = paramName;
         }
 
         /// <summary>
@@ -245,8 +248,8 @@ namespace Nistec.Data.Entities
         public static CustomAttributeBuilder GetAttributeBuilder(EntityPropertyAttribute attr)
         {
             string name = attr.m_name;
-            Type[] arrParamTypes = new Type[] { typeof(string), typeof(bool), typeof(object), typeof(DbType), typeof(int), typeof(object), typeof(EntityPropertyType), typeof(string), typeof(string), typeof(int), typeof(string) };
-            object[] arrParamValues = new object[] { name, attr.AllowNull, attr.SqlDbType, attr.Size, attr.AsNull, attr.ParameterType, attr.Column, attr.Caption, attr.Order, attr.ResourceKey };
+            Type[] arrParamTypes = new Type[] { typeof(string), typeof(bool), typeof(object), typeof(DbType), typeof(int), typeof(object), typeof(EntityPropertyType), typeof(string), typeof(string), typeof(int), typeof(string), typeof(string) };
+            object[] arrParamValues = new object[] { name, attr.AllowNull, attr.SqlDbType, attr.Size, attr.AsNull, attr.ParameterType, attr.Column, attr.Caption, attr.Order, attr.ResourceKey,attr.ParamName };
             ConstructorInfo ctor = typeof(EntityPropertyAttribute).GetConstructor(arrParamTypes);
             return new CustomAttributeBuilder(ctor, arrParamValues);
         }
@@ -327,6 +330,14 @@ namespace Nistec.Data.Entities
 			get { return m_parameterType; }
 			set { m_parameterType = value; }
 		}
+        /// <summary>
+		/// Parameter Name
+		/// </summary>
+        public string ParamName
+        {
+            get { return m_paramName; }
+            set { m_paramName = value; }
+        }
 
         /// <summary>
         /// Get indecate if propertyType is NA
@@ -411,6 +422,11 @@ namespace Nistec.Data.Entities
         {
             return enableAttributeColumn && !string.IsNullOrEmpty(Column) ? Column : propertyName;
         }
+
+        public string GetParamName(string propertyName)
+        {
+            return IsParamNameDefined ? ParamName : GetColumn(propertyName);
+        }
         #endregion
 
         #region Is defined properties
@@ -454,10 +470,16 @@ namespace Nistec.Data.Entities
         {
             get { return m_column != null && m_column.Length > 0; }
         }
-
-		/// <summary>
-		/// Is Size Defined
-		/// </summary>
+        /// <summary>
+        /// Is parameter name Defined
+        /// </summary>
+        public bool IsParamNameDefined
+        {
+            get { return m_paramName != null && m_paramName.Length > 0; }
+        }
+        /// <summary>
+        /// Is Size Defined
+        /// </summary>
         public bool IsSizeDefined
 		{
 			get { return m_size > 0; }

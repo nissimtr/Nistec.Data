@@ -1,4 +1,5 @@
-﻿using Nistec.Data.Advanced;
+﻿using Nistec.Data.Ado;
+using Nistec.Data.Advanced;
 using Nistec.Data.Factory;
 using Nistec.Generic;
 using Nistec.Runtime;
@@ -15,10 +16,22 @@ using System.Text;
 
 namespace Nistec.Data.Entities
 {
-    public abstract class DbContextCommand
+    public abstract class DbContextCommand 
     {
 
+        /// <summary>
+        /// The time (in seconds) to wait for a connection to open. The default value is 15 seconds.
+        /// </summary>
+        public const int DefaultConnectionTimeout = 15;
+
+        /// <summary>
+        /// The time (in seconds) to wait for a connection to open. The default value is 30 seconds.
+        /// </summary>
+        public const int DefaultCommandTimeout = 30;
+
+
         IDbConnection _Connection;
+        IDbTransaction _Transaction;
 
         #region IDbConnection
 
@@ -36,7 +49,7 @@ namespace Nistec.Data.Entities
         //    return Create(db.ConnectionString, db.Provider);
         //}
 
-      
+
         ///// <summary>
         ///// Create IDbCmd
         ///// </summary>
@@ -163,17 +176,23 @@ namespace Nistec.Data.Entities
         #endregion
 
         #region Ctor
+
         /// <summary>
         /// ctor
         /// </summary>
-        public DbContextCommand() { }
+        public DbContextCommand()
+        {
+            AddWithKey = false;
+            ConnectionTimeout = DefaultConnectionTimeout;
+            CommandTimeout = DefaultCommandTimeout;
+            OwnsConnection = false;
+        }
         /// <summary>
         /// ctor
         /// </summary>
         /// <param name="cnn"></param>
-        public DbContextCommand(IDbConnection cnn)
+        public DbContextCommand(IDbConnection cnn):this()
         {
-            OwnsConnection = false;
             Database = cnn.Database;
             ConnectionString = cnn.ConnectionString;
             Provider = GetProvider(cnn);
@@ -185,7 +204,20 @@ namespace Nistec.Data.Entities
         /// ctor DbContextCommand
         /// </summary>
         /// <param name="connectionKey"></param>
-        public DbContextCommand(string connectionKey)
+        /// <param name="createFromProvider"></param>
+        public DbContextCommand(string connectionKey, bool createFromProvider = false) : this()
+        {
+            if (createFromProvider)
+                CreateFromProvider(connectionKey);
+            else
+                CreateFromConfig(connectionKey);
+
+            _Connection = CreateConnection();
+            if (_Connection != null)
+                Database = _Connection.Database;
+        }
+
+        protected void CreateFromConfig(string connectionKey)
         {
             ConnectionStringSettings cnn = NetConfig.ConnectionContext(connectionKey);
             if (cnn == null)
@@ -193,21 +225,29 @@ namespace Nistec.Data.Entities
                 throw new Exception("ConnectionStringSettings configuration not found");
             }
             Provider = DbFactory.GetProvider(cnn.ProviderName);
-            OwnsConnection = false;
             ConnectionName = cnn.Name;
             ConnectionString = cnn.ConnectionString;
-            _Connection = CreateConnection();
-            if (_Connection!=null)
-            Database = _Connection.Database;
         }
+
+        protected void CreateFromProvider(string connectionKey)
+        {
+            var cp = ConnectionSettings.Instance.Get(connectionKey);
+            if (cp == null)
+            {
+                throw new InvalidOperationException("Invalid connection provider in ConnectionSettings collection");
+            }
+            Provider = cp.Provider;
+            ConnectionName = cp.FriendlyName;
+            ConnectionString = cp.ConnectionString;
+        }
+
         /// <summary>
         /// ctor DbContextCommand
         /// </summary>
         /// <param name="connectionString"></param>
         /// <param name="provider"></param>
-        public DbContextCommand(string connectionString, DBProvider provider)
+        public DbContextCommand(string connectionString, DBProvider provider) : this()
         {
-            OwnsConnection = false;
             ConnectionString = connectionString;
             Provider = provider;
             _Connection = CreateConnection();
@@ -300,7 +340,7 @@ namespace Nistec.Data.Entities
         /// </summary>
         internal void Init<T>() where T : IDbContext
         {
-            IDbContext db = System.Activator.CreateInstance<T>();
+            IDbContext db = ActivatorUtil.CreateInstance<T>();
             ConnectionString = db.ConnectionString;
             Provider = db.Provider;
             OwnsConnection = false;
@@ -357,7 +397,6 @@ namespace Nistec.Data.Entities
         /// Create Command
         /// </summary>
         /// <param name="cmdText"></param>
-        /// <param name="cnn"></param>
         /// <param name="parameters">SqlParameter array key value.</param>
         /// <returns></returns>
         protected virtual IDbCommand CreateCommand(string cmdText, IDbDataParameter[] parameters)
@@ -384,10 +423,51 @@ namespace Nistec.Data.Entities
                 }
                 return cmd;
             }
-
         }
 
-       
+        /// <summary>
+        /// Create Command
+        /// </summary>
+        /// <param name="cmdText"></param>
+        /// <param name="parameters">SqlParameter array key value.</param>
+        /// <param name="commandType"></param>
+        /// <param name="commandTimeOut"></param>
+        /// <returns></returns>
+        protected virtual IDbCommand CreateCommand(string cmdText, IDbDataParameter[] parameters, CommandType commandType = CommandType.Text, int commandTimeOut = 0)
+        {
+            SqlFormatter.ValidateSql(cmdText, null);
+
+            if (_Connection is SqlConnection)
+            {
+                SqlCommand cmd = new SqlCommand(cmdText, _Connection as SqlConnection);
+                if (parameters != null && parameters.Length > 0)
+                {
+                    DataParameter.AddSqlParameters(cmd, parameters);
+                    //cmd.Parameters.AddRange(parameters);
+                }
+                cmd.CommandType = commandType;
+                if (commandTimeOut > 0)
+                {
+                    cmd.CommandTimeout = commandTimeOut;
+                }
+                return cmd;
+            }
+            else
+            {
+                IDbCommand cmd = _Connection.CreateCommand();
+                cmd.CommandText = cmdText;
+                if (parameters != null && parameters.Length > 0)
+                {
+                    DataParameter.AddParameters(cmd, parameters);
+                }
+                cmd.CommandType = commandType;
+                if (commandTimeOut > 0)
+                {
+                    cmd.CommandTimeout = commandTimeOut;
+                }
+                return cmd;
+            }
+        }
 
         #endregion
 
@@ -433,13 +513,22 @@ namespace Nistec.Data.Entities
                 return;
             }
 
+            if (_Transaction != null)
+            {
+                _Transaction.Dispose();
+                _Transaction = null;
+            }
             if (_Connection != null)
             {
                 if (_Connection.State != ConnectionState.Closed)
                     _Connection.Close();
+
+                if (dispose)
+                {
+                    _Connection.Dispose();
+                    _Connection = null;
+                }
             }
-            if (dispose)
-                _Connection.Dispose();
         }
 
        
@@ -450,6 +539,11 @@ namespace Nistec.Data.Entities
         /// </summary>
         protected void ConnectionClose()
         {
+            if (_Transaction != null)
+            {
+                _Transaction.Dispose();
+                _Transaction = null;
+            }
             if (_Connection != null)
             {
                 if (_Connection.State != ConnectionState.Closed)
@@ -499,6 +593,49 @@ namespace Nistec.Data.Entities
 
             }
         }
+
+        /// <summary>
+        /// Get or Set the time to wait while trying to establish a connection before terminating the attempt and generating an error.
+        /// The time (in seconds) to wait for a connection to open. The default value is 15 seconds.
+        /// </summary>
+        public int ConnectionTimeout
+        {
+            get;
+            set;
+        }
+        /// <summary>
+        /// Get or Set the time to wait while trying to establish a connection before terminating the attempt and generating an error.
+        /// The time (in seconds) to wait for a connection to open. The default value is 30 seconds.
+        /// </summary>
+        public int CommandTimeout
+        {
+            get;
+            set;
+        }
+
+
+        /// <summary>
+        ///     Adds the necessary columns and primary key information to complete the schema.
+        ///     For more information about how primary key information is added to a System.Data.DataTable,
+        ///     see System.Data.IDataAdapter.FillSchema(System.Data.DataSet,System.Data.SchemaType).To
+        ///     function properly with the .NET Framework Data Provider for OLE DB, AddWithKey
+        ///     requires that the native OLE DB provider obtains necessary primary key information
+        ///     by setting the DBPROP_UNIQUEROWS property, and then determines which columns
+        ///     are primary key columns by examining DBCOLUMN_KEYCOLUMN in the IColumnsRowset.
+        ///     As an alternative, the user may explicitly set the primary key constraints on
+        ///     each System.Data.DataTable. This ensures that incoming records that match existing
+        ///     records are updated instead of appended. When using AddWithKey, the .NET Framework
+        ///     Data Provider for SQL Server appends a FOR BROWSE clause to the statement being
+        ///     executed. The user should be aware of potential side effects, such as interference
+        ///     with the use of SET FMTONLY ON statements. See SQL Server Books Online for more
+        ///     information.
+        /// </summary>
+        public bool AddWithKey
+        {
+            get;
+            set;
+        }
+        
 
         /// <summary>
         /// Get or Set if <see cref="DbContextCommand"/> own the Connection, Default is false
@@ -561,10 +698,19 @@ namespace Nistec.Data.Entities
             protected set { _Connection = value; }
         }
 
+        public IDbTransaction Transaction
+        {
+            get
+            {
+                return _Transaction;
+            }
+            //protected set { _Transaction = value; }
+        }
+
         #endregion
 
         #region Execute none query
-                
+
         /// <summary>
         /// Executes a command NonQuery and returns the number of rows affected.
         /// </summary>
@@ -611,6 +757,7 @@ namespace Nistec.Data.Entities
                 ConnectionAutoClose();
             }
         }
+
         /// <summary>
         /// Executes a command NonQuery and returns <see cref="EntityCommandResult"/> OutptResults and the number of rows affected.
         /// </summary>
@@ -652,12 +799,12 @@ namespace Nistec.Data.Entities
             }
         }
 
-                /// <summary>
+        /// <summary>
         /// Executes a command NonQuery and returns the ReturnValue from StoredProcedure.
         /// </summary>
         /// <param name="cmdText">Sql command.</param>
         /// <param name="parameters">SqlParameter array key value.</param>
-        /// <param name="commandType">Specifies how a command string is interpreted.</param>
+        /// <param name="returnIfNull">Specifies default value to return if null.</param>
         /// <param name="commandTimeOut">Set the command time out, default =0</param>
         /// <returns></returns> 
         public int ExecuteCommandReturnValue(string cmdText, IDbDataParameter[] parameters, int returnIfNull, int commandTimeOut = 0)
@@ -733,7 +880,168 @@ namespace Nistec.Data.Entities
             }
             return new EntityCommandResult(affectedRecords, outputValues,null);
         }
-      
+
+        #endregion
+
+        #region Execute none query Trans
+
+        /// <summary>
+        /// Executes a command NonQuery and returns the number of rows affected.
+        /// </summary>
+        /// <param name="cmdText">Sql command.</param>
+        /// <returns></returns> 
+        public int ExecuteTransCommandNonQuery(string cmdText, Func<int, bool> transAction)
+        {
+            return ExecuteTransCommandNonQuery(cmdText, null, transAction);
+        }
+
+        /// <summary>
+        /// Executes a command NonQuery and returns the number of rows affected.
+        /// </summary>
+        /// <param name="cmdText">Sql command.</param>
+        /// <param name="parameters">SqlParameter array key value.</param>
+        /// <param name="commandType">Specifies how a command string is interpreted.</param>
+        /// <param name="commandTimeOut">Set the command time out, default =0</param>
+        /// <returns></returns> 
+        public int ExecuteTransCommandNonQuery(string cmdText, IDbDataParameter[] parameters, Func<int, bool> transAction, CommandType commandType = CommandType.Text, int commandTimeOut = 0, IsolationLevel level = IsolationLevel.Serializable)
+        {
+            if (cmdText == null)
+            {
+                throw new ArgumentNullException("ExecuteNonQuery.commandText");
+            }
+            int res = 0;
+            try
+            {
+                ConnectionOpen();
+                _Transaction = Connection.BeginTransaction(level);
+               
+                using (IDbCommand cmd = CreateCommand(cmdText, parameters, commandType, commandTimeOut))
+                {
+                    cmd.Transaction = _Transaction;
+                    res = cmd.ExecuteNonQuery();
+                }
+                if (!OwnsConnection)
+                {
+                    if (transAction.Invoke(res))
+                    {
+                        _Transaction.Commit();
+                    }
+                }
+                return res;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            finally
+            {
+                ConnectionAutoClose();
+            }
+        }
+        /// <summary>
+        /// Executes a command NonQuery and returns <see cref="EntityCommandResult"/> OutptResults and the number of rows affected.
+        /// </summary>
+        /// <param name="cmdText">Sql command.</param>
+        /// <param name="parameters">SqlParameter array key value.</param>
+        /// <param name="commandType">Specifies how a command string is interpreted.</param>
+        /// <param name="commandTimeOut">Set the command time out, default =0</param>
+        /// <returns></returns> 
+        public EntityCommandResult ExecuteTransCommandOutput(string cmdText, IDbDataParameter[] parameters, Action<int, IDbTransaction> transAction, CommandType commandType = CommandType.Text, int commandTimeOut = 0, IsolationLevel level = IsolationLevel.Serializable)
+        {
+            if (cmdText == null)
+            {
+                throw new ArgumentNullException("ExecuteNonQuery.ExecuteCommandOutput.cmdText");
+            }
+            try
+            {
+
+                ConnectionOpen();
+                _Transaction = Connection.BeginTransaction(level);
+                int res = 0;
+                using (IDbCommand cmd = CreateCommand(cmdText, parameters, commandType, commandTimeOut))
+                {
+                    res = cmd.ExecuteNonQuery();
+                    transAction.Invoke(res, _Transaction);
+                    return RenderOutpuResult(cmd, res);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            finally
+            {
+                ConnectionAutoClose();
+            }
+        }
+
+        /// <summary>
+        /// Executes a command NonQuery and returns the ReturnValue from StoredProcedure.
+        /// </summary>
+        /// <param name="cmdText">Sql command.</param>
+        /// <param name="parameters">SqlParameter array key value.</param>
+        /// <param name="returnIfNull">Specifies default value to return if null.</param>
+        /// <param name="commandTimeOut">Set the command time out, default =0</param>
+        /// <returns></returns> 
+        public int ExecuteTransCommandReturnValue(string cmdText, IDbDataParameter[] parameters, Action<int, IDbTransaction> transAction, int returnIfNull, int commandTimeOut = 0, IsolationLevel level = IsolationLevel.Serializable)
+        {
+            if (cmdText == null)
+            {
+                throw new ArgumentNullException("ExecuteNonQuery.ExecuteCommandOutput.cmdText");
+            }
+            if (parameters == null || parameters.Length == 0)
+            {
+                throw new ArgumentNullException("ExecuteNonQuery.ExecuteCommandOutput.parameters");
+            }
+
+            try
+            {
+
+                var retuenParam = parameters.Where(p => p.Direction == ParameterDirection.ReturnValue).FirstOrDefault();
+                if (retuenParam == null)
+                {
+                    throw new ArgumentException("Invalid ReturnValue Parameter");
+                }
+                ConnectionOpen();
+                _Transaction = Connection.BeginTransaction(level);
+                //T res = default(T);
+                using (IDbCommand cmd = CreateCommand(cmdText, parameters, CommandType.StoredProcedure, commandTimeOut))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    if (commandTimeOut > 0)
+                    {
+                        cmd.CommandTimeout = commandTimeOut;
+                    }
+                    var res = cmd.ExecuteNonQuery();
+                    var result = retuenParam.Value;
+                    transAction.Invoke(res, _Transaction);
+                    return GenericTypes.Convert<int>(result, returnIfNull);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            finally
+            {
+                ConnectionAutoClose();
+            }
+        }
+
+
+        protected EntityCommandResult RenderOutpuResultTrans(IDbCommand command, int affectedRecords)
+        {
+            var outputValues = new Dictionary<string, object>();
+            foreach (IDbDataParameter prm in command.Parameters)
+            {
+                if (prm.Direction != ParameterDirection.Input)
+                {
+                    outputValues.Add(prm.ParameterName.Replace("@", ""), prm.Value);
+                }
+            }
+            return new EntityCommandResult(affectedRecords, outputValues, null);
+        }
+
         #endregion
 
         #region CommandScalar
@@ -1190,6 +1498,13 @@ namespace Nistec.Data.Entities
                         return dt.Rows[0].ToEntity<T>();
                     return (T)result;
                 }
+                else if (typeof(IKeyValueItem).IsAssignableFrom(type))
+                {
+                    DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
+                    if (dt != null)//&& dt.Rows.Count > 0)
+                        result = KeyValueItem.Create(dt.Rows[0]);
+                    return (T)result;
+                }
                 else if (type == typeof(GenericRecord))
                 {
                     DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
@@ -1308,6 +1623,25 @@ namespace Nistec.Data.Entities
                     DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
                     if (dt != null)//&& dt.Rows.Count > 0)
                         result = dt.EntityList<TItem>();
+                    return (TResult)result;
+                }
+                else if (AdapterFactory.IsAssignableOfList(type, typeof(IKeyValueItem)))
+                {
+                    DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
+                    if (dt != null)//&& dt.Rows.Count > 0)
+                        result = KeyValueItem.CreateList(dt);
+                    return (TResult)result;
+                }
+                else if (AdapterFactory.IsAssignableOfList(type, typeof(TItem)))
+                {
+                    DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
+                    if (dt != null)//&& dt.Rows.Count > 0)
+                    {
+                        if (Serialization.SerializeTools.IsSimple(typeof(TItem)))
+                            result = dt.ToSimpleList<TItem>(null);
+                        else
+                            result = dt.EntityList<TItem>();
+                    }
                     return (TResult)result;
                 }
                 else if (type == typeof(GenericRecord))

@@ -32,7 +32,7 @@ namespace Nistec.Data.Entities.Cache
     /// EntityCache
     /// </summary>
     [Serializable]
-    public abstract class EntityCache<K, T> : Dictionary<K, T>, IEntityCache, IEntityCache<T>
+    public abstract class EntityCache<T> : Dictionary<string, T>, IEntityCache, IEntityCache<T> where T : IEntityItem
     {
 
         public const int DefaultInitialCapacity = 100;
@@ -82,16 +82,16 @@ namespace Nistec.Data.Entities.Cache
             //throw ex;
         }
 
-       
+
         /// <summary>
         /// GetKey with number of options
         /// </summary>
         /// <param name="option"></param>
         /// <param name="item"></param>
         /// <returns></returns>
-        protected virtual K GetKey(int option, params string[] item)
+        protected virtual string GetKey(int option, params string[] item)
         {
-            return default(K);
+            return null;
         }
 
         /// <summary>
@@ -99,12 +99,12 @@ namespace Nistec.Data.Entities.Cache
         /// </summary>
         /// <param name="item"></param>
         /// <returns></returns>
-        protected virtual K GetKey(params string[] item)
+        protected virtual string GetKey(params string[] item)
         {
             return CreateKey(string.Join("_", item));
         }
 
-       
+
 
         /// <summary>
         /// Reset cache
@@ -123,9 +123,9 @@ namespace Nistec.Data.Entities.Cache
             InitCache();
         }
 
-        protected virtual K CreateKey(object key)
+        protected virtual string CreateKey(string key)
         {
-            return (K)key;
+            return key;
         }
 
 
@@ -134,18 +134,21 @@ namespace Nistec.Data.Entities.Cache
         /// </summary>
         /// <param name="item"></param>
         /// <returns></returns>
-        protected virtual K CreateKey(T item)
+        protected virtual string CreateKey(T item) 
         {
+            var key = EntityPropertyBuilder.GetEntityPrimaryKey<T>(item);
 
-            K key = GetKey(EntityKeys.BuildKeys<T>().ToArray());//EntityKeys.BuildKeyValues(item).ToArray());
+            //K key = GetKey(EntityKeys.BuildKeys<T>().ToArray());//EntityKeys.BuildKeyValues(item).ToArray());
             return key;
         }
 
-        protected K CreateDataKey(DataRow dr)
+       
+        protected string CreateDataKey(DataRow dr)
         {
             int count= DataKeys.Count;
             if(count<=0)
-                return CreateKey(dr);
+                EntityPropertyBuilder.GetEntityPrimaryKey<T>(dr.ToEntity<T>(),DataKeys,true);
+            //return CreateKey(dr.ToEntity<T>);
 
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < count; i++)
@@ -182,7 +185,7 @@ namespace Nistec.Data.Entities.Cache
             int count = dt.Rows.Count;
             foreach (DataRow dr in dt.Rows)
             {
-                K key = CreateDataKey(dr);
+                string key = CreateDataKey(dr);
                 this[key] = CreateCacheItem(dr);
             }
         }
@@ -191,7 +194,7 @@ namespace Nistec.Data.Entities.Cache
         /// Create cache from IDictionary
         /// </summary>
         /// <param name="d"></param>
-        protected virtual void CreateCache(IDictionary d)
+        protected virtual void CreateCache(IDictionary<string,T> d)
         {
             Reset();
 
@@ -199,9 +202,9 @@ namespace Nistec.Data.Entities.Cache
                 return;
 
             int count = d.Count;
-            foreach (DictionaryEntry entry in d)
+            foreach (var entry in d)
             {
-                this[(K)entry.Key] = (T)entry.Value;
+                this[entry.Key] = (T)entry.Value;
             }
         }
 
@@ -219,7 +222,7 @@ namespace Nistec.Data.Entities.Cache
             int count = entities.Length;
             foreach (T entry in entities)
             {
-                K key = CreateKey(entry);
+                string key = CreateKey(entry);
                 this[key] = (T)entry;
             }
         }
@@ -227,7 +230,6 @@ namespace Nistec.Data.Entities.Cache
         /// <summary>
         /// Get Item by key with number of options
         /// </summary>
-        /// <param name="options"></param>
         /// <param name="key"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
@@ -241,7 +243,7 @@ namespace Nistec.Data.Entities.Cache
             {
                 InitCache();
             }
-            K ky = default(K);
+            string ky = null;//default(K);
 
             try
             {
@@ -293,7 +295,6 @@ namespace Nistec.Data.Entities.Cache
         /// <summary>
         /// Get Item by key with number of options
         /// </summary>
-        /// <param name="options"></param>
         /// <param name="key"></param>
         /// <returns>return null or empty if not exists</returns>
         public T FindItem(params string[] key)
@@ -306,7 +307,7 @@ namespace Nistec.Data.Entities.Cache
             {
                 InitCache();
             }
-            K ky = default(K);
+            string ky = null;
 
             if (DataKeys.Count <= 1)
             {
