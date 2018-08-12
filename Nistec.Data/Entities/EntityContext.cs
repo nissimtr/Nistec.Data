@@ -50,7 +50,7 @@ namespace Nistec.Data.Entities
         }
         public static IList<T> ExecEntityList(params object[] keyvalueParameters)
         {
-            using (IDbContext Db = DbContext.Create<Dbc>())
+            using (var Db = DbContext.Get<Dbc>())
             {
                 return Db.EntityProcList<T>(keyvalueParameters);
             }
@@ -139,7 +139,7 @@ namespace Nistec.Data.Entities
 
         public virtual IList<T> ExecList(params object[] keyvalueParameters)
         {
-            using (IDbContext Db = DbContext.Create<Dbc>())
+            using (var Db = DbContext.Get<Dbc>())
             {
                 return Db.EntityProcList<T>(keyvalueParameters);
             }
@@ -219,6 +219,43 @@ namespace Nistec.Data.Entities
         #endregion
 
         #region Get
+
+        public virtual T ExecOrGet(params object[] keyvalueParameters)
+        {
+            //int ttl = 3;
+            //string key = DbContextCache.GetKey<TaskComment>(Settings.ProjectName, EntityCacheGroups.Task, 0, userId);
+            //return DbContextCache.EntityList<DbSystem, TaskComment>(key, ttl, new object[] { "Task_Id", taskId });
+
+            //var list = TryFromCach(keyvalueParameters);
+
+            var proc = EntityMappingAttribute.Proc<T>(ProcedureType.GetRecord);
+            if (proc != null)
+            {
+                using (IDbContext Db = DbContext.Create<Dbc>())
+                {
+                    return Db.ExecuteSingle<T>(proc, keyvalueParameters);
+                }
+            }
+            else
+            {
+                using (IDbContext Db = DbContext.Create<Dbc>())
+                {
+                    return Db.EntityGet<T>(keyvalueParameters);
+                }
+            }
+        }
+        public virtual T ExecGet(params object[] keyvalueParameters)
+        {
+            //int ttl = 3;
+            //string key = DbContextCache.GetKey<TaskComment>(Settings.ProjectName, EntityCacheGroups.Task, 0, userId);
+            //return DbContextCache.EntityList<DbSystem, TaskComment>(key, ttl, new object[] { "Task_Id", taskId });
+
+            using (var Db = DbContext.Get<Dbc>())
+            {
+                return Db.EntityProcGet<T>(keyvalueParameters);
+            }
+        }
+
         public T Get(params object[] keyvalueParameters)
         {
             using (IDbContext Db = DbContext.Create<Dbc>())
@@ -226,6 +263,7 @@ namespace Nistec.Data.Entities
                 return Current = Db.EntityGet<T>(keyvalueParameters);
             }
         }
+
         public string GetJson(params object[] keyvalueParameters)
         {
             using (IDbContext Db = DbContext.Create<Dbc>())

@@ -632,6 +632,27 @@ namespace Nistec.Data.Entities
             }
         }
 
+        public IDictionary<string,T> QueryDictionary<T>(string keyField,string valueField, params object[] keyValueParameters)
+        {
+            ValidateContext();
+            try
+            {
+                var cmd =(DbContext) Context();
+                if (SourceType == EntitySourceType.Procedure)
+                {
+                    return cmd.ExecuteDictionary<T>(keyField, valueField, MappingName, keyValueParameters);
+                }
+                else
+                {
+                    return cmd.QueryDictionary<T>(keyField, valueField, MappingName, keyValueParameters);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new EntityException(ex.Message);
+            }
+        }
+
         public string QueryJsonRecord(params object[] keyValueParameters)
         {
             ValidateContext();

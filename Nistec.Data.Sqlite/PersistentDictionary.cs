@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Nistec.Data.Entities;
+using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.Linq;
@@ -181,7 +182,7 @@ namespace Nistec.Data.Sqlite
                         if (_CommitMode == CommitMode.OnMemory)
                         {
                             var cmdText = DbUpsertCommand();
-                            res = ExecuteAsync(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name));
+                            ExecuteTask(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name));
                         }
                         res = 1;
                         iscommited = true;
@@ -241,7 +242,7 @@ namespace Nistec.Data.Sqlite
                         if (_CommitMode == CommitMode.OnMemory)
                         {
                             var cmdText = DbUpdateCommand();
-                            res = ExecuteAsync(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name));
+                            ExecuteTask(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name));
                         }
                         res = 1;
                         iscommited = true;
@@ -308,7 +309,7 @@ namespace Nistec.Data.Sqlite
                             if (_CommitMode == CommitMode.OnMemory)
                             {
                                 var cmdText = DbAddCommand();
-                                var res = ExecuteAsync(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name));
+                                ExecuteTask(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name));
                                 iscommited = true;
                             }
                         }
@@ -383,7 +384,7 @@ namespace Nistec.Data.Sqlite
                             if (_CommitMode == CommitMode.OnMemory)
                             {
                                 var cmdText = DbDeleteCommand();
-                                var res = ExecuteAsync(cmdText, DataParameter.Get<SQLiteParameter>("key", key));
+                                ExecuteTask(cmdText, DataParameter.Get<SQLiteParameter>("key", key));
                             }
                             iscommited = true;
                         }
@@ -465,7 +466,7 @@ namespace Nistec.Data.Sqlite
                             if (_CommitMode == CommitMode.OnMemory)
                             {
                                 var cmdText = DbUpdateCommand();
-                                var res = ExecuteAsync(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", newValue.body, "name", newValue.name));
+                                ExecuteTask(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", newValue.body, "name", newValue.name));
                             }
                             iscommited = true;
                         }

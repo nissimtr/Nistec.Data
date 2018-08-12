@@ -886,6 +886,43 @@ namespace Nistec.Data.Entities
         #region Execute none query Trans
 
         /// <summary>
+        /// Commit transactin, return 1 for commit, -1 if rollback succefully, -2 if rolback failed  
+        /// </summary>
+        /// <returns>return 1 for commit, -1 if rollback succefully, -2 if rolback failed</returns>
+        public int Commit(IDbTransaction transaction)
+        {
+
+            try
+            {
+                transaction.Commit();
+                return 1;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Commit Exception Type: {0}", ex.GetType());
+                Console.WriteLine("  Message: {0}", ex.Message);
+
+                // Attempt to roll back the transaction.
+                try
+                {
+                    transaction.Rollback();
+                    return -1;
+                }
+                catch (Exception ex2)
+                {
+                    // This catch block will handle any errors that may have occurred
+                    // on the server that would cause the rollback to fail, such as
+                    // a closed connection.
+                    Console.WriteLine("Rollback Exception Type: {0}", ex2.GetType());
+                    Console.WriteLine("  Message: {0}", ex2.Message);
+
+                    return -2;
+                }
+            }
+         }
+
+
+        /// <summary>
         /// Executes a command NonQuery and returns the number of rows affected.
         /// </summary>
         /// <param name="cmdText">Sql command.</param>
@@ -900,6 +937,7 @@ namespace Nistec.Data.Entities
         /// </summary>
         /// <param name="cmdText">Sql command.</param>
         /// <param name="parameters">SqlParameter array key value.</param>
+        /// <param name="transAction">trnsaction function.</param>
         /// <param name="commandType">Specifies how a command string is interpreted.</param>
         /// <param name="commandTimeOut">Set the command time out, default =0</param>
         /// <returns></returns> 
@@ -920,12 +958,18 @@ namespace Nistec.Data.Entities
                     cmd.Transaction = _Transaction;
                     res = cmd.ExecuteNonQuery();
                 }
+                //if (!OwnsConnection)
+                //{
+                //    if (transAction.Invoke(res))
+                //    {
+                //        _Transaction.Commit();
+                //    }
+                //}
                 if (!OwnsConnection)
                 {
-                    if (transAction.Invoke(res))
-                    {
-                        _Transaction.Commit();
-                    }
+                    int reesult = Commit(_Transaction);
+                    //continue action after commited
+                    transAction.Invoke(reesult);
                 }
                 return res;
             }

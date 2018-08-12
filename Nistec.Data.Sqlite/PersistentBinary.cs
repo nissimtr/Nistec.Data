@@ -1,4 +1,5 @@
-﻿using Nistec.Serialization;
+﻿using Nistec.Data.Entities;
+using Nistec.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
@@ -51,7 +52,7 @@ namespace Nistec.Data.Sqlite
         const string sqlinsertOrIgnore = "insert or ignore into {0}(key, body, name) values(@key, @body, @name)";
         const string sqlinsertOrReplace = "insert or replace into {0}(key, body, name) values(@key, @body, @name)";
         const string sqlselect = "select {1} from {0} where key=@key";
-
+        const string sqlselectall = "select {1} from {0}";
 
         protected override string DbCreateCommand()
         {
@@ -80,6 +81,9 @@ namespace Nistec.Data.Sqlite
 
         protected override string DbSelectCommand(string select, string where)
         {
+            if(where==null)
+                return string.Format(sqlselectall, Name, select);
+
             return string.Format(sqlselect, Name, select, where);
         }
 
@@ -178,7 +182,7 @@ namespace Nistec.Data.Sqlite
                                 return item;
                             });
                             var cmdText = DbUpsertCommand();
-                            res = ExecuteAsync(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name));
+                            ExecuteTask(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name));
                             res = 1;
                             iscommited = true;
                         }
@@ -246,7 +250,7 @@ namespace Nistec.Data.Sqlite
                         {
                             dictionary[key] = item;
                             var cmdText = DbUpdateCommand();
-                            res = ExecuteAsync(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name));
+                            ExecuteTask(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name));
                             res = 1;
                             iscommited = true;
                         }
@@ -333,7 +337,8 @@ namespace Nistec.Data.Sqlite
                             if (dictionary.TryAdd(key, item))
                             {
                                 var cmdText = DbAddCommand();
-                                var res = ExecuteAsync(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name));
+                                //var res = ExecuteAsync(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name));
+                                ExecuteTask(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name));
                                 iscommited = true;
                             }
                         }
@@ -409,7 +414,7 @@ namespace Nistec.Data.Sqlite
                             if (dictionary.TryRemove(key, out outval))
                             {
                                 var cmdText = DbDeleteCommand();
-                                var res = ExecuteAsync(cmdText, DataParameter.Get<SQLiteParameter>("key", key));
+                                ExecuteTask(cmdText, DataParameter.Get<SQLiteParameter>("key", key));
                                 iscommited = true;
                             }
                         }
@@ -492,7 +497,7 @@ namespace Nistec.Data.Sqlite
                             if (dictionary.TryUpdate(key, newItem, comparisonValue))
                             {
                                 var cmdText = DbUpdateCommand();
-                                var res = ExecuteAsync(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", newValue.body, "name", newValue.name));
+                                ExecuteTask(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", newValue.body, "name", newValue.name));
                                 iscommited = true;
                             }
                         }

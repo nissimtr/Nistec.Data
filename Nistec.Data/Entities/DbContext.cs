@@ -136,20 +136,20 @@ namespace Nistec.Data.Entities
         /// <param name="keyValueParameters"></param>
         /// <returns></returns>
         IList<T> EntityList<T>(params object[] keyValueParameters) where T : IEntityItem;
-        /// <summary>
-        /// Exec Entity using <see cref="EntityMappingAttribute"/> mapping name and keys filter.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="keyValueParameters"></param>
-        /// <returns></returns>
-        T EntityProcGet<T>(params object[] keyValueParameters) where T : IEntityItem;
-        /// <summary>
-        /// Exec Entity using <see cref="EntityMappingAttribute"/> mapping name and keys filter.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="keyValueParameters"></param>
-        /// <returns></returns>
-        IList<T> EntityProcList<T>(params object[] keyValueParameters) where T : IEntityItem;
+        ///// <summary>
+        ///// Exec Entity using <see cref="EntityMappingAttribute"/> mapping name and keys filter.
+        ///// </summary>
+        ///// <typeparam name="T"></typeparam>
+        ///// <param name="keyValueParameters"></param>
+        ///// <returns></returns>
+        //T EntityProcGet<T>(params object[] keyValueParameters) where T : IEntityItem;
+        ///// <summary>
+        ///// Exec Entity using <see cref="EntityMappingAttribute"/> mapping name and keys filter.
+        ///// </summary>
+        ///// <typeparam name="T"></typeparam>
+        ///// <param name="keyValueParameters"></param>
+        ///// <returns></returns>
+        //IList<T> EntityProcList<T>(params object[] keyValueParameters) where T : IEntityItem;
         /// <summary>
         /// Get Entity using <see cref="EntityMappingAttribute"/> mapping name and keys filter.
         /// </summary>
@@ -182,13 +182,13 @@ namespace Nistec.Data.Entities
         /// <param name="entity"></param>
         /// <returns></returns>
         EntityCommandResult EntitySave<T>(T entity) where T : IEntityItem;
-        
+
         /// <summary>
         /// Save entity changes to update or insert if not exists.(EntitySaveChanges)
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="entity"></param>
-        /// <param name="entity"></param>
+        /// <param name="InsertIfNotExists"></param>
         /// <returns></returns>
         EntityCommandResult EntitySaveChanges<T>(T entity, bool InsertIfNotExists=true) where T : IEntityItem;
         
@@ -2035,6 +2035,30 @@ namespace Nistec.Data.Entities
         #endregion
 
         #region Advanced
+
+        /// <summary>
+        /// Executes CommandType.Text and returns Dictionary.
+        /// </summary>
+        /// <param name="keyField"></param>
+        /// <param name="valueField"></param>
+        /// <param name="mappingName"></param>
+        /// <param name="nameValueParameters"></param>
+        /// <returns></returns>
+        public IDictionary<string, T> QueryDictionary<T>(string keyField,string valueField, string mappingName, params object[] nameValueParameters)
+        {
+            if (keyField == null || valueField == null || mappingName==null)
+            {
+                throw new ArgumentNullException("ExecuteDictionary.commandText");
+            }
+
+            string commandText = SqlFormatter.CreateCommandText(keyField +","+ valueField, mappingName, nameValueParameters);
+
+            DataTable dt = ExecuteCommand<DataTable>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text, CommandTimeout, AddWithKey);
+            if (dt == null)
+                return null;
+            return dt.ToDictionary<string,T>(keyField, valueField);// DataUtil.DatatableToDictionary(dt, Pk);
+        }
+
         /// <summary>
         /// Executes CommandType.Text and returns Dictionary.
         /// </summary>
@@ -2071,6 +2095,27 @@ namespace Nistec.Data.Entities
             if (dt == null)
                 return null;
             return dt.ToListDictionary();//DataUtil.DatatableToDictionary(dt, Pk);
+        }
+
+        /// <summary>
+        /// Executes StoredProcedure and returns Dictionary.
+        /// </summary>
+        /// <param name="keyField"></param>
+        /// <param name="valueField"></param>
+        /// <param name="procName"></param>
+        /// <param name="nameValueParameters"></param>
+        /// <returns></returns>
+        public IDictionary<string, T> ExecuteDictionary<T>(string keyField, string valueField, string procName, params object[] nameValueParameters)
+        {
+            //if (commandText == null)
+            //{
+            //    throw new ArgumentNullException("ExecuteDictionary.commandText");
+            //}
+            DataTable dt = ExecuteCommand<DataTable>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure, CommandTimeout, AddWithKey);
+            if (dt == null)
+                return null;
+            return dt.ToDictionary<string,T>(keyField, valueField);
+
         }
 
         /// <summary>
@@ -2130,7 +2175,25 @@ namespace Nistec.Data.Entities
             return JsonSerializer.Serialize(dt.Select());
             //return dt.ToJson();
         }
+        /// <summary>
+        /// Executes CommandType.StoredProcedure and returns Json array.
+        /// </summary>
+        /// <param name="procName">Command text or mapping name</param>
+        /// <param name="nameValueParameters"></param>
+        /// <returns></returns>
+        public string ExecuteJsonArray(string procName, params object[] nameValueParameters)
+        {
+            if (procName == null)
+            {
+                throw new ArgumentNullException("QueryJsonArray.procName");
+            }
 
+            DataTable dt = ExecuteCommand<DataTable>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure, CommandTimeout, AddWithKey);
+            if (dt == null)
+                return null;
+            return JsonSerializer.Serialize(dt.Select());
+            //return dt.ToJson();
+        }
         /// <summary>
         /// Executes StoredProcedure and returns Json.
         /// </summary>

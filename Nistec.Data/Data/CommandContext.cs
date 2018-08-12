@@ -1,6 +1,6 @@
 ﻿//licHeader
 //===============================================================================================================
-// System  : Nistec.Cache - Nistec.Cache Class Library
+// System  : Nistec.Queue - Nistec.Queue Class Library
 // Author  : Nissim Trujman  (nissim@nistec.net)
 // Updated : 01/07/2015
 // Note    : Copyright 2007-2015, Nissim Trujman, All rights reserved

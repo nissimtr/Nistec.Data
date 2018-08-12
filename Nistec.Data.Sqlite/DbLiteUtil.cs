@@ -49,6 +49,7 @@ namespace Nistec.Data.Sqlite
             SQLiteConnection.CreateFile(filename);//("MyDatabase.sqlite");
         }
 
+       
         public const string ProviderName = "SQLite";
 
         public static string GetConnectionString(string filename)

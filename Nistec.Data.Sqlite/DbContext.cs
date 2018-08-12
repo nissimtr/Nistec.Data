@@ -42,7 +42,7 @@ namespace Nistec.Data.Sqlite
 
             Console.Write(dt.TableName);
     */
-    public class DbLite : Nistec.Data.Entities.DbContextCommand, IDisposable, Nistec.Data.Entities.IDbContext
+    public class DbLite : DbContextCommand, IDisposable, IDbContext
     {
 
         public const string ProviderName = "SQLite";
@@ -778,7 +778,7 @@ namespace Nistec.Data.Sqlite
                 throw new ArgumentNullException("EntityDelete.nameValueParameters");
             }
             string commandText = SqlFormatter.DeleteCommand(mappingName, nameValueParameters);
-            return ExecuteCommandNonQuery(commandText, DataParameter.GetSql(nameValueParameters));
+            return ExecuteCommandNonQuery(commandText, DataParameter.Get<SQLiteParameter>(nameValueParameters));
         }
 
         /// <summary>
@@ -801,7 +801,7 @@ namespace Nistec.Data.Sqlite
                 throw new ArgumentNullException("EntityDelete.nameValueParameters");
             }
             string commandText = SqlFormatter.DeleteCommand(mappingName, nameValueParameters);
-            return ExecuteCommandNonQuery(commandText, DataParameter.GetSql(nameValueParameters));
+            return ExecuteCommandNonQuery(commandText, DataParameter.Get<SQLiteParameter>(nameValueParameters));
         }
 
 
@@ -817,7 +817,7 @@ namespace Nistec.Data.Sqlite
         /// <returns><see cref="EntityCommandResult"/></returns> 
         public EntityCommandResult ExecuteOutput(string procName, params object[] keyValueDirectionParameters)
         {
-            return ExecuteCommandOutput(procName, DataParameter.GetSqlWithDirection(keyValueDirectionParameters), CommandType.StoredProcedure);
+            return ExecuteCommandOutput(procName, DataParameter.GetWithDirection<SQLiteParameter>(keyValueDirectionParameters), CommandType.StoredProcedure);
         }
 
         /// <summary>
@@ -829,7 +829,9 @@ namespace Nistec.Data.Sqlite
         /// <returns><see cref="int"/></returns> 
         public int ExecuteReturnValue(string procName, int returnIfNull, params object[] nameValueParameters)
         {
-            return ExecuteCommandReturnValue(procName, DataParameter.GetSqlWithReturnValue(nameValueParameters), returnIfNull);
+            throw new NotSupportedException("ExecuteReturnValue");
+
+            //return ExecuteCommandReturnValue(procName, DataParameter.GetSqlWithReturnValue(nameValueParameters), returnIfNull);
         }
 
 
@@ -841,7 +843,7 @@ namespace Nistec.Data.Sqlite
         /// <returns></returns>
         public int ExecuteNonQuery(string procName, params object[] nameValueParameters)
         {
-            return ExecuteCommandNonQuery(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure);
+            return ExecuteCommandNonQuery(procName, DataParameter.Get<SQLiteParameter>(nameValueParameters), CommandType.StoredProcedure);
         }
         /// <summary>
         /// Executes StoredProcedure and returns T value such as (String|Number|DateTime) or any primitive type.
@@ -853,7 +855,7 @@ namespace Nistec.Data.Sqlite
         /// <returns></returns>
         public T ExecuteScalar<T>(string procName, T returnIfNull, params object[] nameValueParameters)
         {
-            return ExecuteCommandScalar<T>(procName, DataParameter.GetSql(nameValueParameters), returnIfNull, CommandType.StoredProcedure, 0);
+            return ExecuteCommandScalar<T>(procName, DataParameter.Get<SQLiteParameter>(nameValueParameters), returnIfNull, CommandType.StoredProcedure, 0);
         }
 
         /// <summary>
@@ -865,7 +867,7 @@ namespace Nistec.Data.Sqlite
         /// <returns></returns>
         public T ExecuteSingle<T>(string procName, params object[] nameValueParameters)
         {
-            return ExecuteCommand<T>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure);
+            return ExecuteCommand<T>(procName, DataParameter.Get<SQLiteParameter>(nameValueParameters), CommandType.StoredProcedure);
         }
 
 
@@ -878,7 +880,7 @@ namespace Nistec.Data.Sqlite
         /// <returns></returns>
         public IList<T> ExecuteList<T>(string procName, params object[] nameValueParameters)
         {
-            return ExecuteCommand<T, IList<T>>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure);
+            return ExecuteCommand<T, IList<T>>(procName, DataParameter.Get<SQLiteParameter>(nameValueParameters), CommandType.StoredProcedure);
         }
 
 
@@ -901,7 +903,7 @@ namespace Nistec.Data.Sqlite
                 throw new ArgumentNullException("ExecuteCommand.commandText");
             }
 
-            return ExecuteCommand<T>(commandText, DataParameter.GetSql(nameValueParameters), commandType);
+            return ExecuteCommand<T>(commandText, DataParameter.Get<SQLiteParameter>(nameValueParameters), commandType);
         }
 
 
@@ -919,7 +921,7 @@ namespace Nistec.Data.Sqlite
                 throw new ArgumentNullException("ExecuteCommand.commandText");
             }
 
-            return ExecuteCommandNonQuery(commandText, DataParameter.GetSql(nameValueParameters), commandType);
+            return ExecuteCommandNonQuery(commandText, DataParameter.Get<SQLiteParameter>(nameValueParameters), commandType);
         }
 
         #endregion
@@ -936,7 +938,7 @@ namespace Nistec.Data.Sqlite
         /// <returns></returns>
         public T QueryScalar<T>(string commandText, T returnIfNull, params object[] nameValueParameters)
         {
-            return ExecuteCommandScalar<T>(commandText, DataParameter.GetSql(nameValueParameters), returnIfNull, CommandType.Text, 0);
+            return ExecuteCommandScalar<T>(commandText, DataParameter.Get<SQLiteParameter>(nameValueParameters), returnIfNull, CommandType.Text, 0);
         }
 
         /// <summary>
@@ -948,7 +950,7 @@ namespace Nistec.Data.Sqlite
         /// <returns></returns>
         public T QuerySingle<T>(string commandText, params object[] nameValueParameters)
         {
-            return ExecuteCommand<T>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text);
+            return ExecuteCommand<T>(commandText, DataParameter.Get<SQLiteParameter>(nameValueParameters), CommandType.Text);
         }
 
 
@@ -961,7 +963,7 @@ namespace Nistec.Data.Sqlite
         /// <returns></returns>
         public IList<T> Query<T>(string commandText, params object[] nameValueParameters)
         {
-            return ExecuteCommand<T, IList<T>>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text);
+            return ExecuteCommand<T, IList<T>>(commandText, DataParameter.Get<SQLiteParameter>(nameValueParameters), CommandType.Text);
         }
         #endregion
 
@@ -980,7 +982,7 @@ namespace Nistec.Data.Sqlite
             }
             commandText = SqlFormatter.GetCommandText(commandText, nameValueParameters);
 
-            DataTable dt = ExecuteCommand<DataTable>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text);
+            DataTable dt = ExecuteCommand<DataTable>(commandText, DataParameter.Get<SQLiteParameter>(nameValueParameters), CommandType.Text);
             if (dt == null)
                 return null;
             return dt.ToListDictionary();// DataUtil.DatatableToDictionary(dt, Pk);
@@ -994,7 +996,7 @@ namespace Nistec.Data.Sqlite
         /// <returns></returns>
         public IList<Dictionary<string, object>> ExecuteDictionary(string procName, params object[] nameValueParameters)
         {
-            DataTable dt = ExecuteCommand<DataTable>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure);
+            DataTable dt = ExecuteCommand<DataTable>(procName, DataParameter.Get<SQLiteParameter>(nameValueParameters), CommandType.StoredProcedure);
             if (dt == null)
                 return null;
             return dt.ToListDictionary();//DataUtil.DatatableToDictionary(dt, Pk);
@@ -1014,7 +1016,7 @@ namespace Nistec.Data.Sqlite
             }
             commandText = SqlFormatter.GetCommandText(commandText, nameValueParameters);
 
-            return ExecuteCommand<JsonResults>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text);
+            return ExecuteCommand<JsonResults>(commandText, DataParameter.Get<SQLiteParameter>(nameValueParameters), CommandType.Text);
         }
 
         /// <summary>
@@ -1031,7 +1033,7 @@ namespace Nistec.Data.Sqlite
             }
             commandText = SqlFormatter.GetCommandText(commandText, nameValueParameters);
 
-            DataTable dt = ExecuteCommand<DataTable>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text);
+            DataTable dt = ExecuteCommand<DataTable>(commandText, DataParameter.Get<SQLiteParameter>(nameValueParameters), CommandType.Text);
             if (dt == null)
                 return null;
             return JsonSerializer.Serialize(dt);
@@ -1045,7 +1047,7 @@ namespace Nistec.Data.Sqlite
         /// <returns></returns>
         public string ExecuteJson(string procName, params object[] nameValueParameters)
         {
-            DataTable dt = ExecuteCommand<DataTable>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure);
+            DataTable dt = ExecuteCommand<DataTable>(procName, DataParameter.Get<SQLiteParameter>(nameValueParameters), CommandType.StoredProcedure);
             if (dt == null)
                 return null;
             //return dt.ToJson();
@@ -1068,7 +1070,7 @@ namespace Nistec.Data.Sqlite
             }
             commandText = SqlFormatter.GetCommandText(commandText, nameValueParameters);
 
-            DataTable dt = ExecuteCommand<DataTable>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text);
+            DataTable dt = ExecuteCommand<DataTable>(commandText, DataParameter.Get<SQLiteParameter>(nameValueParameters), CommandType.Text);
             if (dt == null || dt.Rows.Count == 0)
                 return null;
             return JsonSerializer.Serialize(dt.Rows[0]);
@@ -1087,7 +1089,7 @@ namespace Nistec.Data.Sqlite
             //{
             //    throw new ArgumentNullException("QueryJsonRecord.commandText");
             //}
-            DataTable dt = ExecuteCommand<DataTable>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure);
+            DataTable dt = ExecuteCommand<DataTable>(procName, DataParameter.Get<SQLiteParameter>(nameValueParameters), CommandType.StoredProcedure);
             if (dt == null || dt.Rows.Count == 0)
                 return null;
             //return dt.ToJson();
@@ -1107,7 +1109,7 @@ namespace Nistec.Data.Sqlite
                 throw new ArgumentNullException("QueryDictionaryRecord.commandText");
             }
             commandText = SqlFormatter.GetCommandText(commandText, nameValueParameters);
-            DataRow dr = ExecuteCommand<DataRow>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text);
+            DataRow dr = ExecuteCommand<DataRow>(commandText, DataParameter.Get<SQLiteParameter>(nameValueParameters), CommandType.Text);
             if (dr == null)
                 return null;
             return dr.ToDictionary();
@@ -1121,7 +1123,7 @@ namespace Nistec.Data.Sqlite
         /// <returns></returns>
         public IDictionary<string, object> ExecuteDictionaryRecord(string procName, params object[] nameValueParameters)
         {
-            DataRow dr = ExecuteCommand<DataRow>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure);
+            DataRow dr = ExecuteCommand<DataRow>(procName, DataParameter.Get<SQLiteParameter>(nameValueParameters), CommandType.StoredProcedure);
             if (dr == null)
                 return null;
             return dr.ToDictionary();
@@ -1140,7 +1142,7 @@ namespace Nistec.Data.Sqlite
                 throw new ArgumentNullException("ExecuteDataTable.commandText");
             }
             commandText = SqlFormatter.GetCommandText(commandText, nameValueParameters);
-            return ExecuteCommand<DataTable>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text);
+            return ExecuteCommand<DataTable>(commandText, DataParameter.Get<SQLiteParameter>(nameValueParameters), CommandType.Text);
         }
 
 
@@ -1152,7 +1154,7 @@ namespace Nistec.Data.Sqlite
         /// <returns></returns>
         public DataTable ExecuteDataTable(string procName, params object[] nameValueParameters)
         {
-            return ExecuteCommand<DataTable>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure);
+            return ExecuteCommand<DataTable>(procName, DataParameter.Get<SQLiteParameter>(nameValueParameters), CommandType.StoredProcedure);
         }
         /// <summary>
         /// Executes StoredProcedure and returns DataSet.
@@ -1162,7 +1164,7 @@ namespace Nistec.Data.Sqlite
         /// <returns></returns>
         public DataSet ExecuteDataSet(string procName, params object[] nameValueParameters)
         {
-            return ExecuteCommand<DataSet>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure);
+            return ExecuteCommand<DataSet>(procName, DataParameter.Get<SQLiteParameter>(nameValueParameters), CommandType.StoredProcedure);
         }
 
         /// <summary>
@@ -1178,7 +1180,7 @@ namespace Nistec.Data.Sqlite
             {
                 throw new ArgumentNullException("QueryReader.commandText");
             }
-            return ExecuteReader(commandText, behavior, DataParameter.GetSql(nameValueParameters));
+            return ExecuteReader(commandText, behavior, DataParameter.Get<SQLiteParameter>(nameValueParameters));
         }
 
         #endregion

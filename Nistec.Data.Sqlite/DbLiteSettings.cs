@@ -10,6 +10,7 @@ namespace Nistec.Data.Sqlite
     public class DbLiteSettings
     {
         public const string DefaultPassword = "giykse876435365&%$^#%@$#@)_(),kxa;l bttsklf12[]}{}{)(*XCJHG^%%";
+        public const string InMemoryFilename = ":memory:";
 
         public DbLiteSettings()
         {
@@ -20,6 +21,7 @@ namespace Nistec.Data.Sqlite
             //CacheSize = 16777216;
             FailIfMissing = false;
             ReadOnly = false;
+            InMemory = false;
 
             //PRAGMA main.locking_mode = EXCLUSIVE;
             SyncMode = SynchronizationModes.Normal;
@@ -71,7 +73,11 @@ namespace Nistec.Data.Sqlite
             Validate();
 
             SQLiteConnectionStringBuilder conString = new SQLiteConnectionStringBuilder();
-            conString.DataSource = DbFilename;
+            if (InMemory)
+                conString.DataSource = InMemoryFilename;
+            else
+                conString.DataSource = DbFilename;
+
             conString.DefaultTimeout = DefaultTimeout;
             conString.SyncMode = SyncMode;
             conString.JournalMode = JournalMode;
@@ -90,7 +96,7 @@ namespace Nistec.Data.Sqlite
         public int CacheSize { get; set; }
         public bool FailIfMissing { get; set; }
         public bool ReadOnly { get; set; }
-
+        public bool InMemory { get; set; }
 
         /// <summary>
         /// Get The config full file path.

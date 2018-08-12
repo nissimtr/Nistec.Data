@@ -132,6 +132,7 @@ namespace Nistec.Data.Sqlite
         public event GenericEventHandler<string,int> LoadCompleted;
         //public event GenericEventHandler<string, T> ItemLoaded;
         public event GenericEventHandler<string, string, T> ItemChanged;
+        public event EventHandler ClearCompleted;
 
         public Action<T> ItemLoaded { get; set; }
 
@@ -147,6 +148,13 @@ namespace Nistec.Data.Sqlite
             if (BeginLoading != null)
             {
                 BeginLoading(this, EventArgs.Empty);
+            }
+        }
+        protected virtual void OnClearCompleted()
+        {
+            if (ClearCompleted != null)
+            {
+                ClearCompleted(this, EventArgs.Empty);
             }
         }
         protected virtual void OnLoadCompleted(string message, int count)
@@ -291,14 +299,22 @@ namespace Nistec.Data.Sqlite
 
         private void Init()
         {
+            string filename = null;
             try
             {
-                string filename = this.Settings.DbFilename;
+                if (this.Settings.InMemory)
+                {
+                    //filename = DbLiteSettings.InMemoryFilename;
+                    throw new Exception("PersistentDictionary do not supported in memory db");
+                }
+                else
+                {
+                    filename = this.Settings.DbFilename;
 
-                DbLiteUtil.CreateFolder(Settings.DbPath);
-
-                DbLiteUtil.CreateFile(filename);
-                DbLiteUtil.ValidateConnection(filename, true);
+                    DbLiteUtil.CreateFolder(Settings.DbPath);
+                    DbLiteUtil.CreateFile(filename);
+                    DbLiteUtil.ValidateConnection(filename, true);
+                }
                 ConnectionString = Settings.GetConnectionString();
                 EnableCompress = Settings.EnableCompress;
                 CompressLevel = Settings.ValidCompressLevel;
@@ -399,9 +415,11 @@ namespace Nistec.Data.Sqlite
                             foreach (var entry in list)
                             {
                                 var val = FromPersistItem(entry);
-
-                                dictionary[entry.key] = val;
-                                OnItemLoaded(val);
+                                if (val != null)
+                                {
+                                    dictionary[entry.key] = val;
+                                    OnItemLoaded(val);
+                                }
                             }
                         }
 
@@ -1079,7 +1097,7 @@ namespace Nistec.Data.Sqlite
                 }
                 if (iscommited)
                 {
-                    OnItemChanged("Clear", null, default(T));
+                    OnClearCompleted(); //OnItemChanged("Clear", null, default(T));
                 }
             }
             catch (Exception ex)
@@ -1553,6 +1571,36 @@ namespace Nistec.Data.Sqlite
             }
         }
 
+        public IEnumerable<IPersistEntity> QueryDictionaryItems()
+        {
+
+            List<IPersistEntity> list = new List<IPersistEntity>();
+            try
+            {
+                if (dictionary != null && dictionary.Count > 0)
+                {
+                    foreach (var g in this.dictionary)
+                    {
+                        list.Add(new PersistItem() { body = g.Value, key = g.Key, name = this.Name, timestamp = DateTime.Now });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            return list;
+        }
+        public IList<PersistItem> QueryItems(string select, string where, params object[] keyValueParameters)
+        {
+            using (var db = new DbLite(ConnectionString, DBProvider.SQLite))
+            {
+                var sql = DbSelectCommand(select, where);
+                var list = db.Query<PersistItem>(sql, keyValueParameters);
+                return list;
+            }
+        }
+
         public IList<T> Query(string select, string where, params object[] keyValueParameters)
         {
             IList<T> list = new List<T>();
@@ -1670,7 +1718,11 @@ namespace Nistec.Data.Sqlite
             return Nistec.Generic.NetZipp.UnZip(compressed);
         }
 
-      
+
+        public Task ExecuteTask(string cmdText, IDbDataParameter[] parameters)
+        {
+            return Task.Factory.StartNew<int>(() => Execute(cmdText, parameters));
+        }
 
         public int ExecuteAsync(string cmdText, IDbDataParameter[] parameters)
         {

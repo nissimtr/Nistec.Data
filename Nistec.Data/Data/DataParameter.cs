@@ -843,8 +843,9 @@ namespace Nistec.Data
 
             return list.ToArray();
         }
+              
 
-        public static SqlParameter[] GetSqlWithDirection(params object[] keyValueDirectionParameters)
+        public static SqlParameter[] GetSqlWithDirection(params object[] keyValueDirectionParameters) 
         {
             if (keyValueDirectionParameters == null)
                 return null;
@@ -875,12 +876,80 @@ namespace Nistec.Data
 
             return list.ToArray();
         }
+       
+        public static T[] GetWithDirection<T>(params object[] keyValueDirectionParameters) where T : IDbDataParameter
+        {
+            if (keyValueDirectionParameters == null)
+                return null;
+            int count = keyValueDirectionParameters.Length;
+            if (count % 3 != 0)
+            {
+                throw new ArgumentException("values parameter not correct, Not match key value arguments");
+            }
+            List<T> list = new List<T>();
+            for (int i = 0; i < count; i++)
+            {
+                T p = ActivatorUtil.CreateInstance<T>();
+                string key = keyValueDirectionParameters[i].ToString();
+                object value = keyValueDirectionParameters[++i];
+                p.ParameterName = key;
+                p.Value = value;
+                p.DbType = GetDbTypeFromObject(value);
 
+                //var p = new SqlParameter(keyValueDirectionParameters[i].ToString(), keyValueDirectionParameters[++i]);
+                switch ((int)keyValueDirectionParameters[++i])
+                {
+                    case 2://Output
+                        p.Direction = System.Data.ParameterDirection.Output;
+                        break;
+                    case 3://InputOutput
+                        p.Direction = System.Data.ParameterDirection.InputOutput; break;
+                    case 6://ReturnValue
+                        p.Direction = System.Data.ParameterDirection.ReturnValue;
+                        break;
+                    default://Input = 1,
+                        break;
+                }
+                list.Add(p);
+            }
+
+            return list.ToArray();
+        }
+     
         public static SqlParameter[] GetSqlWithReturnValue(params object[] keyValueParameters)
         {
             List<SqlParameter> list=GetSqlList(keyValueParameters);
             AddReturnValueParameter(list, "ReturnVal");
             return list.ToArray();
+        }
+     
+
+        public static List<T> GetList<T>(params object[] keyValueParameters) where T : IDbDataParameter
+        {
+            if (keyValueParameters == null)
+                return null;
+            int count = keyValueParameters.Length;
+            if (count % 2 != 0)
+            {
+                throw new ArgumentException("values parameter not correct, Not match key value arguments");
+            }
+            List<T> list = new List<T>();
+            for (int i = 0; i < count; i++)
+            {
+                T instance = ActivatorUtil.CreateInstance<T>();
+                string key = keyValueParameters[i].ToString();
+                object value = keyValueParameters[++i];
+                instance.ParameterName = key;
+                instance.Value = value;
+                instance.DbType = GetDbTypeFromObject(value);
+
+                list.Add(instance);
+
+                //var p = new SqlParameter(keyValueParameters[i].ToString(), keyValueParameters[++i]);
+                //list.Add(p);
+            }
+
+            return list;
         }
 
         public static List<SqlParameter> GetSqlList(params object[] keyValueParameters)
@@ -914,6 +983,8 @@ namespace Nistec.Data
             p.Direction = ParameterDirection.ReturnValue;
             list.Add(p);
         }
+
+       
         public static SqlParameter[] GetSqlWithType(params string[] keyValueTypeParameters)
         {
             if (keyValueTypeParameters == null)

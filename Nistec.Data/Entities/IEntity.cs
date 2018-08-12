@@ -186,4 +186,14 @@ namespace Nistec.Data.Entities
 
         int SaveChanges();
     }
- }
+
+    public interface IPersistEntity : IEntityItem
+    {
+        string key { get; }
+        //public object body { get; set; }
+        string name { get; }
+        DateTime timestamp { get; }
+
+        object value();
+    }
+}
