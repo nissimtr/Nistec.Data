@@ -114,10 +114,10 @@ namespace DataEntityDemo.Controller
             var cmd = DbFactory.Create<AdventureWorks>();
 
 
-            var contact = cmd.ExecuteCommand<ContactItem>("SELECT * FROM Person.Contact where ContactID=@ContactID", DataParameter.Get("ContactID", 5));
+            var contact = cmd.ExecuteCommand<ContactItem>("SELECT * FROM Person.Contact where ContactID=@ContactID", DataParameter.GetSql("ContactID", 5));
             Console.WriteLine(contact.ToString());
 
-            var mss = cmd.ExecuteCommand<ContactItem,ContactItem[]>("SELECT * FROM Person.Contact where Title=@Title", DataParameter.Get("Title", "Ms."));
+            var mss = cmd.ExecuteCommand<ContactItem,ContactItem[]>("SELECT * FROM Person.Contact where Title=@Title", DataParameter.GetSql("Title", "Ms."));
             Console.WriteLine(mss.Count().ToString());
         }
 

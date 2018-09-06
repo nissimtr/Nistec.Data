@@ -147,12 +147,12 @@ namespace DataEntityDemo.Sql
 
         public ContactItem GetContact(int contactId)
         {
-          return  base.ExecuteCommand<ContactItem>("SELECT * FROM Person.Contact where ContactID=@ContactID", DataParameter.Get("ContactID", contactId));
+          return  base.ExecuteCommand<ContactItem>("SELECT * FROM Person.Contact where ContactID=@ContactID", DataParameter.GetSql("ContactID", contactId));
         }
 
         public ContactItem[] GetContactsListByTitle(string Title)
         {
-            return base.ExecuteCommand<ContactItem, ContactItem[]>("SELECT * FROM Person.Contact where Title=@Title", DataParameter.Get("Title", Title));
+            return base.ExecuteCommand<ContactItem, ContactItem[]>("SELECT * FROM Person.Contact where Title=@Title", DataParameter.GetSql("Title", Title));
         }
 	}
     
