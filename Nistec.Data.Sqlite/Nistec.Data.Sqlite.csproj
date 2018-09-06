@@ -87,13 +87,13 @@
     <Folder Include="SQLite\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Nistec.Data\Nistec.Data.csproj">
-      <Project>{d5fd6c68-86ea-48bf-8f6d-29ce57419500}</Project>
-      <Name>Nistec.Data</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Nistec.Lib\Nistec.Lib.csproj">
       <Project>{54f52ed5-aecd-47c6-93d8-7b3358ba7f8c}</Project>
       <Name>Nistec.Lib</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Nistec.Data\Nistec.Data.csproj">
+      <Project>{d5fd6c68-86ea-48bf-8f6d-29ce57419500}</Project>
+      <Name>Nistec.Data</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
