@@ -66,7 +66,65 @@ namespace Nistec.Data.Entities
             Title = title;
             OutputId = GetIdentityValue<int>();
         }
-        
+
+        public EntityCommandResult GetResult(string title, string lang = "he")
+        {
+            Status = AffectedRecords > 1 ? 1 : AffectedRecords;
+            Message = GetResultMessage(Status, title, lang);
+            Title = title;
+            OutputId = GetIdentityValue<int>();
+            return this;
+        }
+
+        public static string GetResultMessage(int status, string action, string lang = "he")
+        {
+            string supix = "";
+
+            if (lang == "he")
+            {
+
+                if (status == 401)
+                    supix = "משתמש אינו מורשה";
+                else if (status == 0)
+                    supix = "לא בוצע";
+                else if (status > 0)
+                    supix = "בוצע בהצלחה";
+                else if (status < 0)
+                    supix = "אירעה שגיאה, לא בוצע";
+                else
+                    supix = "לא נמצאו נתונים";
+            }
+            else
+            {
+                if (status == 401)
+                    supix = "Unauthorized";
+                else if (status == 0)
+                    supix = "Nothing was done";
+                else if (status > 0)
+                    supix = "Done successfully";
+                else if (status < 0)
+                    supix = "Error occurred, Done failed";
+                else
+                    supix = "Data not found";
+            }
+            return action + " " + supix;
+        }
+        public static string GetResultMessage(bool result, string action, string lang = "he")
+        {
+            string supix = "";
+
+            if (lang == "he")
+            {
+                supix = (result) ? "בוצע בהצלחה" : "לא בוצע";
+            }
+            else
+            {
+                supix = (result) ? "Done successfully" : "Done failed";
+            }
+            return action + " " + supix;
+        }
+
+
         public string ToJson()
         {
            return  JsonSerializer.Serialize(this);
@@ -101,6 +159,7 @@ namespace Nistec.Data.Entities
             AffectedRecords = affectedRecords;
             OutputValues = outputValues;
             IdentityField = identityField;
+            Status = AffectedRecords > 1 ? 1 : AffectedRecords;
         }
         public EntityCommandResult(int affectedRecords, int outputValue, string identityField)
         {
@@ -108,6 +167,7 @@ namespace Nistec.Data.Entities
             OutputValues = new Dictionary<string,object>();
             OutputValues[identityField] = outputValue;
             IdentityField = identityField;
+            Status = AffectedRecords > 1 ? 1 : AffectedRecords;
         }
 
     }
