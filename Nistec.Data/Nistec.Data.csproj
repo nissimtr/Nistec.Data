@@ -100,6 +100,7 @@
     <Compile Include="Data\KeyValueItem.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Data\KeyValueList.cs" />
     <Compile Include="Data\SqlFormatter.cs" />
     <Compile Include="Data\Struct.cs" />
     <Compile Include="Entities\Active\ActiveEntity.cs">

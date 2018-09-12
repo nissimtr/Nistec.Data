@@ -1853,19 +1853,33 @@ namespace Nistec.Data.Entities
             return ExecuteCommand<T, IList<T>>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure, CommandTimeout, AddWithKey);
         }
 
-     
+        /// <summary>
+        /// Executes StoredProcedure and returns KeyValueList.
+        /// </summary>
+        /// <param name="procName"></param>
+        /// <param name="nameValueParameters"></param>
+        /// <returns></returns>
+        public KeyValueList ExecuteKeyValueList(string procName, params object[] nameValueParameters)
+        {
+            //if (commandText == null)
+            //{
+            //    throw new ArgumentNullException("ExecuteQuery.commandText");
+            //}
+            return ExecuteCommand<KeyValueList>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure, CommandTimeout, AddWithKey);
+        }
+
         #endregion
 
         #region Execute Command
 
-       /// <summary>
-       /// Executes sql as NonQuery Command  and returns T value.
-       /// </summary>
-       /// <typeparam name="T"></typeparam>
-       /// <param name="commandText"></param>
-       /// <param name="commandType"></param>
-       /// <param name="nameValueParameters"></param>
-       /// <returns></returns>
+        /// <summary>
+        /// Executes sql as NonQuery Command  and returns T value.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="commandText"></param>
+        /// <param name="commandType"></param>
+        /// <param name="nameValueParameters"></param>
+        /// <returns></returns>
         public T ExecuteCommand<T>(string commandText, CommandType commandType, object[] nameValueParameters)
         {
             if (commandText == null)
@@ -2032,6 +2046,22 @@ namespace Nistec.Data.Entities
             //}
             return ExecuteCommand<T, IList<T>>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text, CommandTimeout, AddWithKey);
         }
+
+        /// <summary>
+        /// Executes CommandType.Text and returns KeyValueList.
+        /// </summary>
+        /// <param name="commandText"></param>
+        /// <param name="nameValueParameters"></param>
+        /// <returns></returns>
+        public KeyValueList QueryKeyValueList(string commandText, params object[] nameValueParameters)
+        {
+            //if (commandText == null)
+            //{
+            //    throw new ArgumentNullException("Query.commandText");
+            //}
+            return ExecuteCommand<KeyValueList>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text, CommandTimeout, AddWithKey);
+        }
+
         #endregion
 
         #region Advanced
@@ -2234,6 +2264,26 @@ namespace Nistec.Data.Entities
                 return null;
             return JsonSerializer.Serialize(dt.Rows[0]);
             //return dt.ToJson();
+        }
+
+        
+        /// <summary>
+        /// Executes StoredProcedure and returns JsonResults.
+        /// </summary>
+        /// <param name="procName"></param>
+        /// <param name="nameValueParameters"></param>
+        /// <returns></returns>
+        public JsonResults ExecuteJsonResult(string procName, params object[] nameValueParameters)
+        {
+            if (procName == null)
+            {
+                throw new ArgumentNullException("ExecuteJsonResult.procName");
+            }
+            //DataTable dt = ExecuteCommand<DataTable>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure, CommandTimeout, AddWithKey);
+            //if (dt == null || dt.Rows.Count == 0)
+            //    return null;
+            //return dt.ToJson();
+            return ExecuteCommand<JsonResults>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure, CommandTimeout, AddWithKey);
         }
 
         /// <summary>

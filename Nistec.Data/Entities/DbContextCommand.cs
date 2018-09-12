@@ -1535,6 +1535,13 @@ namespace Nistec.Data.Entities
                         result = dt.Select();
                     return (T)result;
                 }
+                else if (type == typeof(KeyValueList))
+                {
+                    DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
+                    if (dt != null)//&& dt.Rows.Count > 0)
+                        result = KeyValueList.CreateList(dt);
+                    return (T)result;
+                }
                 else if (typeof(IEntityItem).IsAssignableFrom(type))
                 {
                     DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
@@ -1646,6 +1653,13 @@ namespace Nistec.Data.Entities
                     DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
                     if (dt != null && dt.Rows.Count > 0)
                         result = dt.Select();
+                    return (TResult)result;
+                }
+                else if (type == typeof(KeyValueList))
+                {
+                    DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
+                    if (dt != null)//&& dt.Rows.Count > 0)
+                        result = KeyValueList.CreateList(dt);
                     return (TResult)result;
                 }
                 else if (typeof(IEntityItem).IsAssignableFrom(type))

@@ -29,8 +29,26 @@ using Nistec.Generic;
 
 namespace Nistec.Data.Entities
 {
+    public enum RequiredOperation
+    {
+        NA = 0,
+        Update = 1,
+        Insert = 2,
+        Delete = 3,
+        Upsert = 4,
+        Updel = 5,
+        All = 6
+    }
+    public enum EntityOperation
+    {
+        NA = 0,
+        Update = 1,
+        Insert = 2,
+        Delete = 3,
+        Upsert = 4
+    }
 
-     public class EntityDictionary
+    public class EntityDictionary
     {
         static Dictionary<string, string> dic;
 
@@ -102,6 +120,7 @@ namespace Nistec.Data.Entities
         private string m_lang = "";
         private string m_defaultLang = "en";
         bool m_Required = false;
+        RequiredOperation m_RequiredOperation = RequiredOperation.NA;
         private string m_RequiredVar;
         private object m_MinValue;
         private object m_MaxValue;
@@ -151,8 +170,8 @@ namespace Nistec.Data.Entities
         public static CustomAttributeBuilder GetAttributeBuilder(ValidatorAttribute attr)
         {
             string name = attr.m_name;
-            Type[] arrParamTypes = new Type[] { typeof(string), typeof(bool), typeof(object), typeof(object) };
-            object[] arrParamValues = new object[] { name, attr.Required, attr.MinValue, attr.MaxValue};
+            Type[] arrParamTypes = new Type[] { typeof(string), typeof(bool), typeof(object), typeof(object), typeof(object) };
+            object[] arrParamValues = new object[] { name, attr.Required, attr.MinValue, attr.MaxValue, attr.RequiredOperation};
             ConstructorInfo ctor = typeof(ValidatorAttribute).GetConstructor(arrParamTypes);
             return new CustomAttributeBuilder(ctor, arrParamValues);
         }
@@ -197,6 +216,16 @@ namespace Nistec.Data.Entities
         }
 
         /// <summary>
+        /// Indicate if parameter is required by operation.
+        /// </summary>
+        public RequiredOperation RequiredOperation
+        {
+            get { return m_RequiredOperation; }
+            set { m_RequiredOperation = value; }
+        }
+
+
+        /// <summary>
         /// Indicate if parameter required is vari.
         /// </summary>
         public string RequiredVar
@@ -226,6 +255,12 @@ namespace Nistec.Data.Entities
         #endregion
 
         #region Is defined properties
+
+        public bool IsRequiredOperationDefined
+        {
+            get { return m_RequiredOperation !=  RequiredOperation.NA; }
+
+        }
 
         public bool IsRequiredVarDefined
         {
@@ -307,6 +342,7 @@ namespace Nistec.Data.Entities
 
         public string Title { get; set; }
         public string Lang { get; private set; }
+        public EntityOperation EntityOperation { get; set; }
 
         public string RequieredFormat { get; set; }
         public string RangeFormat { get; set; }
@@ -410,17 +446,42 @@ namespace Nistec.Data.Entities
                 sb.AppendFormat(RequieredFormat + CrLf, field);
         }
 
+        protected bool ValidateOperation(ValidatorAttribute attr, bool isValid=false)
+        {
+
+            switch (EntityOperation)
+            {
+                case EntityOperation.NA:
+                    return isValid;
+                case EntityOperation.Delete:
+                    return !(attr.RequiredOperation == Entities.RequiredOperation.Delete || attr.RequiredOperation == Entities.RequiredOperation.Updel || attr.RequiredOperation == Entities.RequiredOperation.All);
+                case EntityOperation.Upsert:
+                    return !(attr.RequiredOperation == Entities.RequiredOperation.Upsert || attr.RequiredOperation == Entities.RequiredOperation.All);
+                case EntityOperation.Update:
+                    return !(attr.RequiredOperation == Entities.RequiredOperation.Update || attr.RequiredOperation == Entities.RequiredOperation.Upsert || attr.RequiredOperation == Entities.RequiredOperation.Updel || attr.RequiredOperation == Entities.RequiredOperation.All);
+                case EntityOperation.Insert:
+                    return !(attr.RequiredOperation == Entities.RequiredOperation.Insert || attr.RequiredOperation == Entities.RequiredOperation.Upsert || attr.RequiredOperation == Entities.RequiredOperation.All);
+                default:
+                    return isValid;
+            }
+        }
         public void Required(string value, ValidatorAttribute attr)
         {
             if (Types.IsEmpty(value))
-                sb.AppendFormat(RequieredFormat + CrLf, attr.GetName(Lang));
+            {
+                bool isValid = ValidateOperation(attr);
+                if (!isValid)
+                    sb.AppendFormat(RequieredFormat + CrLf, attr.GetName(Lang));
+            }
         }
 
         public void Required<T>(T value, ValidatorAttribute attr)
         {
             if (Types.IsEmpty(value))
             {
-                sb.AppendFormat(RequieredFormat + CrLf, attr.GetName(Lang));
+                bool isValid = ValidateOperation(attr);
+                if (!isValid)
+                    sb.AppendFormat(RequieredFormat + CrLf, attr.GetName(Lang));
             }
         }
 
@@ -782,6 +843,33 @@ namespace Nistec.Data.Entities
             var map = EntityMappingAttribute.Get<T>();
             string title = map.EntityName ?? map.MappingName;
             EntityValidator validator = new EntityValidator(title, map.Lang);
+            validator.ValidateEntity(Entity, args);
+            return validator;
+        }
+
+        public static EntityValidator ValidateEntity(object Entity, string title, string lang, EntityOperation operation, object[] args = null)
+        {
+            if (Entity == null)
+            {
+                throw new EntityException("EntityValidator.Error Invalid Entity");
+            }
+            EntityValidator validator = new EntityValidator(title, lang);
+            validator.EntityOperation = operation;
+
+            validator.ValidateEntity(Entity, args);
+            return validator;
+        }
+
+        public static EntityValidator ValidateEntityItem<T>(T Entity, EntityOperation operation, object[] args = null) where T : IEntityItem
+        {
+            if (Entity == null)
+            {
+                throw new EntityException("EntityValidator.Error Invalid Entity");
+            }
+            var map = EntityMappingAttribute.Get<T>();
+            string title = map.EntityName ?? map.MappingName;
+            EntityValidator validator = new EntityValidator(title, map.Lang);
+            validator.EntityOperation = operation;
             validator.ValidateEntity(Entity, args);
             return validator;
         }
