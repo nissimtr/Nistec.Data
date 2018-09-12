@@ -33,7 +33,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Nistec.Lib">
-      <HintPath>..\Nistec.Bin-4.0.2.0\Nistec.Lib.dll</HintPath>
+      <HintPath>..\..\..\References\Debug\Nistec.Lib.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
