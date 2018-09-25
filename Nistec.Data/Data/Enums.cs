@@ -301,13 +301,13 @@ namespace Nistec.Data
 
     #endregion
 
-    public enum PermsLevel
-    {
-        DenyAll = 0,
-        ReadOnly = 1,
-        EditOnly = 2,
-        FullControl = 3
-    }
+    //public enum PermsLevel
+    //{
+    //    DenyAll = 0,
+    //    ReadOnly = 1,
+    //    EditOnly = 2,
+    //    FullControl = 3
+    //}
 
     public enum Aggregate
     {

@@ -1262,7 +1262,7 @@ namespace Nistec.Data.Entities
                      {
                          cmd.CommandTimeout = commandTimeOut;
                      }
-                     return ExecuteDataOrScalar<TItem, TResult>(cmd, null, addWithKey);
+                     return ExecuteDataList<TItem, TResult>(cmd, null, addWithKey);
                  }
             }
             catch (Exception ex)
@@ -1542,6 +1542,13 @@ namespace Nistec.Data.Entities
                         result = KeyValueList.CreateList(dt);
                     return (T)result;
                 }
+                //else if (typeof(INameValue).IsAssignableFrom(type))
+                //{
+                //    DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
+                //    if (dt != null && dt.Rows.Count > 0)
+                //        result = dt.ToNameValue();
+                //    return (T)result;
+                //}
                 else if (typeof(IEntityItem).IsAssignableFrom(type))
                 {
                     DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
@@ -1605,7 +1612,89 @@ namespace Nistec.Data.Entities
             return InternalCmd.ReturnValue<T>(result);
         }
 
+        /// <summary>
+        /// Executes command and returns T value (DataSet|DataTable|DataRow|IEntityItem|List of IEntityItem) or any type for scalar.
+        /// </summary>
+        /// <typeparam name="TItem"></typeparam>
+        /// <typeparam name="TResult"></typeparam>
+        /// <param name="cmd"></param>
+        /// <param name="mappingName"></param>
+        /// <param name="addWithKey">Adds the primary key columns to complete the schema.</param>
+        /// <returns></returns>
+        protected TResult ExecuteDataList<TItem, TResult>(IDbCommand cmd, string mappingName, bool addWithKey)
+        {
+            Type type = typeof(TResult);
+            Type titem = typeof(TItem);
+            object result = null;
+            try
+            {
+               if (AdapterFactory.IsAssignableOfList(type, typeof(DataRow)))
+                {
+                    DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
+                    if (dt != null && dt.Rows.Count > 0)
+                    {
+                        IList<DataRow> list = dt.Select().ToList();
+                        return (TResult)list;
+                    }
+                    return (TResult)result;
+                }
+                else if (AdapterFactory.IsAssignableOfList(type, typeof(IEntityItem)))
+                {
+                    DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
+                    if (dt != null)//&& dt.Rows.Count > 0)
+                        result = dt.EntityList<TItem>();
+                    return (TResult)result;
+                }
+                else if (AdapterFactory.IsAssignableOfList(type, typeof(IKeyValueItem)))
+                {
+                    DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
+                    if (dt != null)//&& dt.Rows.Count > 0)
+                        result = KeyValueItem.CreateList(dt);
+                    return (TResult)result;
+                }
+                else if (AdapterFactory.IsAssignableOfList(type, typeof(TItem)))
+                {
+                    DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
+                    if (dt != null)//&& dt.Rows.Count > 0)
+                    {
+                        if (Serialization.SerializeTools.IsSimple(typeof(TItem)))
+                            result = dt.ToSimpleList<TItem>(null);
+                        else
+                            result = dt.EntityList<TItem>();
+                    }
+                    return (TResult)result;
+                }
+                else if (AdapterFactory.IsAssignableOfList(type, typeof(GenericRecord)))
+                {
+                    DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
+                    if (dt != null && dt.Rows.Count > 0)
+                        result = GenericRecord.ParseList(dt);
+                    return (TResult)result;
+                }
+                else //if (type == typeof(object))
+                {
+                    DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
+                    if (dt != null && dt.Rows.Count > 0)
+                    {
+                        if (Serialization.SerializeTools.IsSimple(typeof(TItem)))
+                            result = dt.ToSimpleList<TItem>(null);
+                        else
+                            result = dt.EntityList<TItem>();
+                    }
+                    return (TResult)result;
 
+                    //result = cmd.ExecuteScalar();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new DalException(ex.Message);
+            }
+
+            //return InternalCmd.ReturnValue<TResult>(result);
+        }
+
+        /*
         /// <summary>
         /// Executes command and returns T value (DataSet|DataTable|DataRow|IEntityItem|List of IEntityItem) or any type for scalar.
         /// </summary>
@@ -1618,6 +1707,7 @@ namespace Nistec.Data.Entities
         protected TResult ExecuteDataOrScalar<TItem, TResult>(IDbCommand cmd, string mappingName, bool addWithKey)
         {
             Type type = typeof(TResult);
+            Type titem = typeof(TItem);
             object result = null;
             try
             {
@@ -1660,6 +1750,13 @@ namespace Nistec.Data.Entities
                     DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
                     if (dt != null)//&& dt.Rows.Count > 0)
                         result = KeyValueList.CreateList(dt);
+                    return (TResult)result;
+                }
+                else if (typeof(INameValue).IsAssignableFrom(type))
+                {
+                    DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
+                    if (dt != null && dt.Rows.Count > 0)
+                        result = dt.ToNameValue();
                     return (TResult)result;
                 }
                 else if (typeof(IEntityItem).IsAssignableFrom(type))
@@ -1738,7 +1835,6 @@ namespace Nistec.Data.Entities
                     }
                     return (TResult)result;
                 }
-
                 else //if (type == typeof(object))
                 {
                     result = cmd.ExecuteScalar();
@@ -1751,7 +1847,7 @@ namespace Nistec.Data.Entities
 
             return InternalCmd.ReturnValue<TResult>(result);
         }
-
+        */
         #endregion
 
         #region Execute Reader
