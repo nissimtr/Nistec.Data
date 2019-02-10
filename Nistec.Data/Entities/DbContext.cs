@@ -712,6 +712,19 @@ namespace Nistec.Data.Entities
         }
 
         /// <summary>
+        /// Create an instance of DbContext with json date format.
+        /// </summary>
+        /// <typeparam name="Dbc"></typeparam>
+        /// <param name="dateFormat"></param>
+        /// <returns></returns>
+        public static DbContext Get<Dbc>(JsonDateFormat dateFormat) where Dbc : IDbContext
+        {
+            var db= DbContextAttribute.Create<Dbc>();
+            db.JsonSettings = JsonSerializer.DefaultSettingsFormat(dateFormat);
+            return db;
+        }
+
+        /// <summary>
         /// Create an instance of IDbContext
         /// </summary>
         /// <typeparam name="Dbc"></typeparam>
@@ -849,7 +862,7 @@ namespace Nistec.Data.Entities
         //    }
         //}
         #endregion
-
+         
         #region EntityLang
 
         ILocalizer m_EntityLang;
@@ -1759,7 +1772,7 @@ namespace Nistec.Data.Entities
             return ExecuteCommandNonQuery(commandText, DataParameter.GetSql(nameValueParameters));
             //}
         }
-        
+
 
         #endregion
 
@@ -1769,7 +1782,7 @@ namespace Nistec.Data.Entities
         /// Executes a command NonQuery and returns <see cref="EntityCommandResult"/> OutptResults and the number of rows affected.
         /// </summary>
         /// <param name="procName"></param>
-        /// <param name="nameValueParameters"></param>
+        /// <param name="keyValueDirectionParameters"></param>
         /// <returns><see cref="EntityCommandResult"/></returns> 
         public EntityCommandResult ExecuteOutput(string procName, params object[] keyValueDirectionParameters)
         {
@@ -2182,7 +2195,7 @@ namespace Nistec.Data.Entities
             DataTable dt = ExecuteCommand<DataTable>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text, CommandTimeout, AddWithKey);
             if (dt == null)
                 return null;
-            return JsonSerializer.Serialize(dt);
+            return JsonSerializer.Serialize(dt,JsonSettings);
             //return dt.ToJson();
         }
         /// <summary>
@@ -2202,7 +2215,7 @@ namespace Nistec.Data.Entities
             DataTable dt = ExecuteCommand<DataTable>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text, CommandTimeout, AddWithKey);
             if (dt == null)
                 return null;
-            return JsonSerializer.Serialize(dt.Select());
+            return JsonSerializer.Serialize(dt.Select(), JsonSettings);
             //return dt.ToJson();
         }
         /// <summary>
@@ -2221,7 +2234,7 @@ namespace Nistec.Data.Entities
             DataTable dt = ExecuteCommand<DataTable>(procName, DataParameter.GetSql(nameValueParameters), CommandType.StoredProcedure, CommandTimeout, AddWithKey);
             if (dt == null)
                 return null;
-            return JsonSerializer.Serialize(dt.Select());
+            return JsonSerializer.Serialize(dt.Select(), JsonSettings);
             //return dt.ToJson();
         }
         /// <summary>
@@ -2240,7 +2253,7 @@ namespace Nistec.Data.Entities
             if (dt == null)
                 return null;
             //return dt.ToJson();
-            return JsonSerializer.Serialize(dt);
+            return JsonSerializer.Serialize(dt, JsonSettings);
         }
 
 
@@ -2262,7 +2275,7 @@ namespace Nistec.Data.Entities
             DataTable dt = ExecuteCommand<DataTable>(commandText, DataParameter.GetSql(nameValueParameters), CommandType.Text, CommandTimeout, AddWithKey);
             if (dt == null || dt.Rows.Count == 0)
                 return null;
-            return JsonSerializer.Serialize(dt.Rows[0]);
+            return JsonSerializer.Serialize(dt.Rows[0], JsonSettings);
             //return dt.ToJson();
         }
 
@@ -2302,7 +2315,7 @@ namespace Nistec.Data.Entities
             if (dt == null || dt.Rows.Count == 0)
                 return null;
             //return dt.ToJson();
-            return JsonSerializer.Serialize(dt.Rows[0]);
+            return JsonSerializer.Serialize(dt.Rows[0], JsonSettings);
         }
 
         /// <summary>

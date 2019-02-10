@@ -707,6 +707,12 @@ namespace Nistec.Data.Entities
             //protected set { _Transaction = value; }
         }
 
+        [EntityProperty(EntityPropertyType.NA)]
+        public virtual JsonSettings JsonSettings
+        {
+            get; set;
+        }
+
         #endregion
 
         #region Execute none query
@@ -1574,7 +1580,7 @@ namespace Nistec.Data.Entities
                 {
                     DataTable dt = ExecuteDataTable(cmd, mappingName, addWithKey);
                     if (dt != null && dt.Rows.Count > 0)
-                        result = dt.ToJsonResult();
+                        result = dt.ToJsonResult(this.JsonSettings);
                     return (T)result;
                 }
                 else if (typeof(IDataTableAdaptor).IsAssignableFrom(type))
