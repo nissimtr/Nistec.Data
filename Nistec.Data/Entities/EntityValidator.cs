@@ -124,8 +124,9 @@ namespace Nistec.Data.Entities
         private string m_RequiredVar;
         private object m_MinValue;
         private object m_MaxValue;
+        private string m_regex;
         //bool m_Exists  = false;
-        
+
         #endregion
 
         #region Constructors
@@ -206,6 +207,15 @@ namespace Nistec.Data.Entities
             set { m_defaultLang = value; }
         }
 
+        /// <summary>
+        /// Parameter RegexPattern.
+        /// </summary>
+        public string RegexPattern
+        {
+            get { return m_regex == null ? string.Empty : m_regex; }
+            set { m_regex = value; }
+
+        }
         /// <summary>
         /// Indicate if parameter is required.
         /// </summary>
@@ -308,6 +318,14 @@ namespace Nistec.Data.Entities
             get { return m_MinValue != null && m_MaxValue!=null; }
         }
 
+        /// <summary>
+        /// Is Regex Defined
+        /// </summary>
+        public bool IsRegexDefined
+        {
+            get { return m_regex != null && m_regex.Length > 0; }
+        }
+
         //public bool IsExistsDefined
         //{
         //    get { return m_MinValue != null && m_MaxValue != null; }
@@ -346,6 +364,7 @@ namespace Nistec.Data.Entities
 
         public string RequieredFormat { get; set; }
         public string RangeFormat { get; set; }
+        public string RegexFormat { get; set; }
         public string CrLf { get; set; }
 
         
@@ -419,10 +438,12 @@ namespace Nistec.Data.Entities
                 case "he":
                     RequieredFormat = "חובה לציין {0}";
                     RangeFormat = "מחוץ לטווח {0}";
+                    RegexFormat = "ערך לא תקין {0}";
                     break;
                 default:
                     RequieredFormat = "{0} Is Required.";
                     RangeFormat = "{0} Is out of range.";
+                    RegexFormat = "Incorrect value {0}";
                     break;
             }
             CrLf = "\r\n";
@@ -625,6 +646,15 @@ namespace Nistec.Data.Entities
                 sb.AppendFormat(RangeFormat + CrLf, field);
         }
 
+        public void ValidateRegex(object value, string pattern, ValidatorAttribute attr)
+        {
+            string field = attr.GetName(Lang);
+            if (Types.IsEmpty(value) || Types.IsEmpty(pattern))
+                sb.AppendFormat(RegexFormat + CrLf, field);
+            else if(!Regx.RegexValidateIgnoreCase(pattern, value.ToString()))
+                sb.AppendFormat(RegexFormat + CrLf, field);
+        }
+
         public void ValidateRange(object value, object min, object max, string field)
         {
             if (value == null || min == null || max == null)
@@ -774,10 +804,15 @@ namespace Nistec.Data.Entities
                         this.ValidateMax(val, attr.MaxValue, attr);
                     }
 
-                    if (attr.IsRangeDefined)
+                    if (attr.IsRegexDefined)
                     {
-                        this.ValidateRange(val, attr.MinValue, attr.MaxValue, attr);
+                        this.ValidateRegex(val, attr.RegexPattern, attr);
                     }
+
+                    //if (attr.IsRangeDefined)
+                    //{
+                    //    this.ValidateRange(val, attr.MinValue, attr.MaxValue, attr);
+                    //}
                 }
             }
             
