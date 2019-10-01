@@ -177,7 +177,7 @@ namespace Nistec.Data.Entities
         {
             //int ttl = 3;
             //string key = DbContextCache.GetKey<TaskComment>(Settings.ProjectName, EntityCacheGroups.Task, 0, userId);
-            //return DbContextCache.EntityList<DbSystem, TaskComment>(key, ttl, new object[] { "Task_Id", taskId });
+            //return DbContextCache.EntityList<DbTeam, TaskComment>(key, ttl, new object[] { "Task_Id", taskId });
 
             //var list = TryFromCach(keyvalueParameters);
 
@@ -224,7 +224,7 @@ namespace Nistec.Data.Entities
         {
             //int ttl = 3;
             //string key = DbContextCache.GetKey<TaskComment>(Settings.ProjectName, EntityCacheGroups.Task, 0, userId);
-            //return DbContextCache.EntityList<DbSystem, TaskComment>(key, ttl, new object[] { "Task_Id", taskId });
+            //return DbContextCache.EntityList<DbTeam, TaskComment>(key, ttl, new object[] { "Task_Id", taskId });
 
             //var list = TryFromCach(keyvalueParameters);
 
@@ -248,7 +248,7 @@ namespace Nistec.Data.Entities
         {
             //int ttl = 3;
             //string key = DbContextCache.GetKey<TaskComment>(Settings.ProjectName, EntityCacheGroups.Task, 0, userId);
-            //return DbContextCache.EntityList<DbSystem, TaskComment>(key, ttl, new object[] { "Task_Id", taskId });
+            //return DbContextCache.EntityList<DbTeam, TaskComment>(key, ttl, new object[] { "Task_Id", taskId });
 
             using (var Db = DbContext.Get<Dbc>())
             {

@@ -171,7 +171,7 @@ namespace Nistec.Data.Entities
         //public IList<T> GetList(string refId, int pid, int userId, int ttl)
         //{
         //    string key = DbContextCache.GetKey<MediaFile>(Settings.ProjectName, EntityCacheGroups.Task, 0, userId);
-        //    return DbContextCache.EntityList<DbSystem, MediaFile>(key, ttl, "RefId", refId);
+        //    return DbContextCache.EntityList<DbTeam, MediaFile>(key, ttl, "RefId", refId);
         //}
 
         public static IList<T> GetList(params object[] keyvalueParameters)
