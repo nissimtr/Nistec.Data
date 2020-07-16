@@ -938,7 +938,9 @@ namespace Nistec.Data.Sqlite
         /// <returns></returns>
         public T QueryScalar<T>(string commandText, T returnIfNull, params object[] nameValueParameters)
         {
-            return ExecuteCommandScalar<T>(commandText, DataParameter.Get<SQLiteParameter>(nameValueParameters), returnIfNull, CommandType.Text, 0);
+            var param = nameValueParameters == null ? null : DataParameter.Get<SQLiteParameter>(nameValueParameters);
+
+            return ExecuteCommandScalar<T>(commandText, param, returnIfNull, CommandType.Text, 0);
         }
 
         /// <summary>
@@ -950,6 +952,7 @@ namespace Nistec.Data.Sqlite
         /// <returns></returns>
         public T QuerySingle<T>(string commandText, params object[] nameValueParameters)
         {
+            var param = nameValueParameters == null ? null : DataParameter.Get<SQLiteParameter>(nameValueParameters);
             return ExecuteCommand<T>(commandText, DataParameter.Get<SQLiteParameter>(nameValueParameters), CommandType.Text);
         }
 
@@ -963,7 +966,9 @@ namespace Nistec.Data.Sqlite
         /// <returns></returns>
         public IList<T> Query<T>(string commandText, params object[] nameValueParameters)
         {
-            return ExecuteCommand<T, IList<T>>(commandText, DataParameter.Get<SQLiteParameter>(nameValueParameters), CommandType.Text);
+            var param = nameValueParameters == null ? null : DataParameter.Get<SQLiteParameter>(nameValueParameters);
+
+            return ExecuteCommand<T, IList<T>>(commandText, param, CommandType.Text);
         }
         #endregion
 
