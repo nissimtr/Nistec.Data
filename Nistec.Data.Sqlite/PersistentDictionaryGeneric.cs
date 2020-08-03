@@ -419,6 +419,8 @@ namespace Nistec.Data.Sqlite
                                 {
                                     dictionary[entry.key] = val;
                                     OnItemLoaded(val);
+                                    //if (onTake != null)
+                                    //    onTake(val);
                                 }
                             }
                         }
