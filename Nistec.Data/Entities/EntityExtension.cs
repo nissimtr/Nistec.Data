@@ -424,7 +424,7 @@ namespace Nistec.Data.Entities
         }
         #endregion
 
-        public static T ToEntity<T>(string commaString, char splitterList = '|', char spliterKeyValue = '=', bool enableAttributeColumn = false)
+        public static T ToEntity<T>(string commaString, char splitterList = '|', char spliterKeyValue = '=')
         {
             var collection= KeyValueUtil.ParseCommaString(commaString, splitterList, spliterKeyValue);
 
@@ -461,6 +461,12 @@ namespace Nistec.Data.Entities
             return instance;
         }
 
+        public static T Create<T>(string commaString, char splitterList = '|', char spliterKeyValue = '=', bool enableAttributeColumn = false) where T : IEntityItem
+        {
+            var collection = KeyValueUtil.ParseCommaString(commaString, splitterList, spliterKeyValue);
+
+            return Create<T>(collection);
+        }
         public static T Create<T>(this NameValueCollection form, bool enableAttributeColumn=false) where T:IEntityItem
         {
 
