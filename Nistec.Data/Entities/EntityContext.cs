@@ -31,6 +31,7 @@ using Nistec.Runtime;
 using Nistec.IO;
 using Nistec.Generic;
 using Nistec.Serialization;
+using System.Collections.Specialized;
 
 namespace Nistec.Data.Entities
 {
@@ -1352,7 +1353,7 @@ namespace Nistec.Data.Entities
         }
 
       
-        public static T Create<T>(System.Collections.Specialized.NameValueCollection form)
+        public static T Create<T>(NameValueCollection form) where T : IEntityItem
         {
             return EntityExtension.Create<T>(form);
 

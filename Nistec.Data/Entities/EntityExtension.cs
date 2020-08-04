@@ -34,6 +34,7 @@ using Nistec.Runtime;
 using System.IO;
 using Nistec.Serialization;
 using System.Collections.Concurrent;
+using System.Collections.Specialized;
 
 namespace Nistec.Data.Entities
 {
@@ -423,7 +424,44 @@ namespace Nistec.Data.Entities
         }
         #endregion
 
-        public static T Create<T>(this System.Collections.Specialized.NameValueCollection form, bool enableAttributeColumn=false)
+        public static T ToEntity<T>(string commaString, char splitterList = '|', char spliterKeyValue = '=', bool enableAttributeColumn = false)
+        {
+            var collection= KeyValueUtil.ParseCommaString(commaString, splitterList, spliterKeyValue);
+
+            return ToEntity<T>(collection);
+        }
+
+        public static T ToEntity<T>(NameValueCollection form)
+        {
+
+            T instance = ActivatorUtil.CreateInstance<T>();
+
+            PropertyInfo[] props = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance, false);
+
+            foreach (var property in props)
+            {
+
+                if (!property.CanRead)
+                {
+                    continue;
+                }
+
+                if (property.CanWrite)
+                {
+
+                    object value = form.Get(property.Name);
+                    if (value == null)
+                    {
+                        value = GenericTypes.Default(property.GetType());
+                    }
+                    property.SetValue(instance, Types.ChangeType(value, property.PropertyType), null);
+                }
+            }
+
+            return instance;
+        }
+
+        public static T Create<T>(this NameValueCollection form, bool enableAttributeColumn=false) where T:IEntityItem
         {
 
             T instance = ActivatorUtil.CreateInstance<T>();

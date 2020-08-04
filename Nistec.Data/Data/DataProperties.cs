@@ -70,18 +70,47 @@ namespace Nistec.Data
             return props.FirstOrDefault();
         }
         
-        public static IEnumerable<PropertyAttributeInfo<EntityPropertyAttribute>> GetEntityProperties(Type type, bool ignorePropertyAttribute = true)
+        public static IEnumerable<PropertyAttributeInfo<EntityPropertyAttribute>> GetEntityProperties(Type type, bool ignorePropertyAttribute = true, bool eableCache=true)
         {
             string typename = type.FullName;
+            IEnumerable<PropertyAttributeInfo<EntityPropertyAttribute>> props = null;
 
-            Dictionary<string, PropertyAttributeInfo<EntityPropertyAttribute>> td = null;
-            if (_propertyEntityCache.TryGetValue(typename, out td))
-            {
-                return td.Values.ToArray();
+            if (eableCache) { 
+                Dictionary<string, PropertyAttributeInfo<EntityPropertyAttribute>> td = null;
+                if (_propertyEntityCache.TryGetValue(typename, out td))
+                {
+                    return td.Values.ToArray();
+                }
+                else
+                {
+                    if (ignorePropertyAttribute)
+                    {
+                        props = from p in type.GetProperties(BindingFlags.Public | BindingFlags.Instance, false)
+                                let attr = p.GetCustomAttributes(typeof(EntityPropertyAttribute), true)
+                                //where attr.Length == 1
+                                select new PropertyAttributeInfo<EntityPropertyAttribute>() { Property = p, Attribute = attr.Length < 1 ? EntityPropertyAttribute.Default : (EntityPropertyAttribute)attr.FirstOrDefault() };
+                    }
+                    else
+                    {
+                        props = from p in type.GetProperties(BindingFlags.Public | BindingFlags.Instance, false)
+                                let attr = p.GetCustomAttributes(typeof(EntityPropertyAttribute), true)
+                                where attr.Length == 1
+                                select new PropertyAttributeInfo<EntityPropertyAttribute>() { Property = p, Attribute = (EntityPropertyAttribute)attr.First() };
+                        //props=props.OrderBy(p => p.Attribute.Order);
+                    }
+                    td = new Dictionary<string, PropertyAttributeInfo<EntityPropertyAttribute>>();
+
+                    foreach (var p in props)//.OrderBy(p=> p.Attribute.Order))
+                    {
+                        td.Add(p.Property.Name, p);
+                    }
+                    if (td.Count > 0)
+                        _propertyEntityCache.TryAdd(typename, td);
+                    return td.Values.ToArray();
+                }
             }
             else
             {
-                IEnumerable<PropertyAttributeInfo<EntityPropertyAttribute>> props = null;
                 if (ignorePropertyAttribute)
                 {
                     props = from p in type.GetProperties(BindingFlags.Public | BindingFlags.Instance, false)
@@ -97,15 +126,7 @@ namespace Nistec.Data
                             select new PropertyAttributeInfo<EntityPropertyAttribute>() { Property = p, Attribute = (EntityPropertyAttribute)attr.First() };
                     //props=props.OrderBy(p => p.Attribute.Order);
                 }
-                td = new Dictionary<string, PropertyAttributeInfo<EntityPropertyAttribute>>();
-               
-                foreach (var p in props)//.OrderBy(p=> p.Attribute.Order))
-                {
-                    td.Add(p.Property.Name, p);
-                }
-                if (td.Count > 0)
-                    _propertyEntityCache.TryAdd(typename, td);
-                return td.Values.ToArray();
+                return props;
             }
         }
 
