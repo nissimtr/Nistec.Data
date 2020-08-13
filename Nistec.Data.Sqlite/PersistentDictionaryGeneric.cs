@@ -37,6 +37,7 @@ using System.Threading.Tasks;
 using System.Data;
 using Nistec.Serialization;
 using Nistec.IO;
+using Nistec.Data.Persistance;
 
 namespace Nistec.Data.Sqlite
 {
@@ -505,8 +506,9 @@ namespace Nistec.Data.Sqlite
                         });
                         if (_CommitMode == CommitMode.OnMemory)
                         {
-                            var task = new PersistanceTask()
+                            var task = new PersistentTask()
                             {
+                                DdProvider = DBProvider.SQLite,
                                 CommandText = DbUpsertCommand(),//key, value),
                                 CommandType = "DbUpsert",
                                 ConnectionString = ConnectionString,
@@ -571,8 +573,9 @@ namespace Nistec.Data.Sqlite
                         dictionary[key] = value;
                         if (_CommitMode == CommitMode.OnMemory)
                         {
-                            var task = new PersistanceTask()
+                            var task = new PersistentTask()
                             {
+                                DdProvider = DBProvider.SQLite,
                                 CommandText = DbUpdateCommand(),//key, value),
                                 CommandType = "DbUpdate",
                                 ConnectionString = ConnectionString,
@@ -643,8 +646,9 @@ namespace Nistec.Data.Sqlite
                         {
                             if (_CommitMode == CommitMode.OnMemory)
                             {
-                                var task = new PersistanceTask()
+                                var task = new PersistentTask()
                                 {
+                                    DdProvider = DBProvider.SQLite,
                                     CommandText = DbAddCommand(),//(key, value),
                                     CommandType = "DbAdd",
                                     ConnectionString = ConnectionString,
@@ -723,8 +727,9 @@ namespace Nistec.Data.Sqlite
                         {
                             if (_CommitMode == CommitMode.OnMemory)
                             {
-                                var task = new PersistanceTask()
+                                var task = new PersistentTask()
                                 {
+                                    DdProvider = DBProvider.SQLite,
                                     CommandText = DbDeleteCommand(),//key),
                                     CommandType = "DbDelete",
                                     ConnectionString = ConnectionString,
@@ -811,8 +816,9 @@ namespace Nistec.Data.Sqlite
                         {
                             if (_CommitMode == CommitMode.OnMemory)
                             {
-                                var task = new PersistanceTask()
+                                var task = new PersistentTask()
                                 {
+                                    DdProvider = DBProvider.SQLite,
                                     CommandText = DbUpdateCommand(),//key, newValue),
                                     CommandType = "DbUpdate",
                                     ConnectionString = ConnectionString,

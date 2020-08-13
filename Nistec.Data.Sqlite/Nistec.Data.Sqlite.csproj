@@ -58,9 +58,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="PersistanceTask.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="DbLiteUtil.cs" />
+    <Compile Include="PersistentTask.cs" />
     <Compile Include="PersistentBinary.cs" />
     <Compile Include="PersistentBag.cs" />
     <Compile Include="PersistentGeneric.cs" />
@@ -69,7 +69,6 @@
     <Compile Include="DbCommand.cs" />
     <Compile Include="DbContext.cs" />
     <Compile Include="PersistentDictionaryGeneric.cs" />
-    <Compile Include="PersistItem.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

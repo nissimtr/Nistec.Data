@@ -1,4 +1,5 @@
 ﻿using Nistec.Data.Entities;
+using Nistec.Data.Persistance;
 using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
@@ -175,8 +176,9 @@ namespace Nistec.Data.Sqlite
                         }
                         if (_CommitMode == CommitMode.OnMemory)
                         {
-                            var task = new PersistanceTask()
+                            var task = new PersistentTask()
                             {
+                                DdProvider = DBProvider.SQLite,
                                 CommandText = DbUpdateStateCommand(),
                                 CommandType = "DbUpdateState",
                                 ConnectionString = ConnectionString,

@@ -735,6 +735,44 @@ namespace Nistec.Data
         /// <typeparam name="T"></typeparam>
         /// <param name="keyValueParameters"></param>
         /// <returns></returns>
+        public static IDbDataParameter[] GetDbParam<T>(params object[] keyValueParameters) where T : IDbDataParameter
+        {
+
+            int count = keyValueParameters.Length;
+            if (count % 2 != 0)
+            {
+                throw new ArgumentException("values parameter not correct, Not match key value arguments");
+            }
+            List<IDbDataParameter> list = new List<IDbDataParameter>();
+            bool isSql = typeof(T) == typeof(SqlParameter);
+            for (int i = 0; i < count; i++)
+            {
+                string key = keyValueParameters[i].ToString();
+                object value = keyValueParameters[++i];
+
+                if (isSql)
+                {
+                    list.Add(new SqlParameter(key, value));
+                }
+                else
+                {
+                    T instance = ActivatorUtil.CreateInstance<T>();
+                    instance.ParameterName = key;
+                    instance.Value = value;
+                    instance.DbType = GetDbTypeFromObject(value);
+                    list.Add(instance);
+                }
+            }
+
+            return list.ToArray();
+        }
+
+        /// <summary>
+        /// Create KeyValueParameters
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="keyValueParameters"></param>
+        /// <returns></returns>
         public static T[] Get<T>(params object[] keyValueParameters) where T: IDbDataParameter
         {
 

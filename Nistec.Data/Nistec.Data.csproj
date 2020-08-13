@@ -74,6 +74,7 @@
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
     <Reference Include="System.Data" />
+    <Reference Include="System.Transactions" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
@@ -155,6 +156,13 @@
     <Compile Include="OleDb\DbCommand.cs" />
     <Compile Include="OleDb\DbAdapter.cs" />
     <Compile Include="OleDb\DbOleCmd.cs" />
+    <Compile Include="Persistance\Enums.cs" />
+    <Compile Include="Persistance\PersistentSqlCover.cs" />
+    <Compile Include="Persistance\PersistentDbTask.cs" />
+    <Compile Include="Persistance\PersistentDbBinary.cs" />
+    <Compile Include="Persistance\PersistentDbDictionary.cs" />
+    <Compile Include="Persistance\PersistentDbSettings.cs" />
+    <Compile Include="Persistance\PersistItem.cs" />
     <Compile Include="SqlClient\CommandAsync.cs" />
     <Compile Include="SqlClient\DbBulkCopy.cs" />
     <Compile Include="SqlClient\DbCommand.cs" />
