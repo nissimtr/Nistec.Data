@@ -11,7 +11,7 @@ namespace Nistec.Data.Sqlite
 
 
 
-    public class PersistentBag : PersistentDictionary<BagItem, BagItem>
+    public class PersistentBag : PersistentBase<BagItem, BagItem>
     {
 
         #region ctor

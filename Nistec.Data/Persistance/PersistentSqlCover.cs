@@ -12,6 +12,8 @@ namespace Nistec.Data.Persistance
 
     public class PersistentSqlCover<T> : PersistentDbBinary<T, SqlParameter>
     {
+        
+
         #region ctor
 
         public PersistentSqlCover(PersistentDbSettings settings)
@@ -20,25 +22,49 @@ namespace Nistec.Data.Persistance
 
         }
 
-        public PersistentSqlCover(string name, string connectionString)
-            : base(new PersistentDbSettings() { Name = name , DbProvider= DBProvider.SqlServer, ConnectionString=connectionString})
+        public PersistentSqlCover(string connectionString, DBProvider provider, string tableName)
+            : base(new PersistentDbSettings(connectionString, provider, tableName))
         {
 
         }
 
         #endregion
 
+        #region override
+
+        const string sqlfetch = "spQCover_Fetch";
+        const string sqlfetchcommit = "delete from {0} where key=@key";
+        const string sqlfetchcount = "select count(*) from {0} where name=@name";
+
+        protected virtual string DbFetchCommand()
+        {
+            return sqlfetch;
+        }
+
+        protected virtual string DbFetchCommitCommand()
+        {
+            return string.Format(sqlfetchcommit, TableName);
+        }
+
+        protected virtual string DbFetchCountCommand()
+        {
+            return string.Format(sqlfetchcount, TableName);
+        }
+
+        #endregion
 
         #region Commands
+
         /// <summary>
         ///    Adds a key/value pair to the System.Collections.Concurrent.ConcurrentDictionary
         ///     if the key does not already exist, or updates a key/value pair in the System.Collections.Concurrent.ConcurrentDictionary
         ///     if the key already exists.
         /// </summary>
         /// <param name="key">The key to be added or whose value should be updated</param>
-        /// <param name="value">The value to be added or updated for an absent key</param>
+        /// <param name="name">The section name to be added or whose value should be updated</param>
+        /// <param name="item">The value to be added or updated for an absent key</param>
         /// <returns></returns>
-        public override int AddOrUpdate(string key, T value)
+        public override int AddOrUpdate(string key, string name, T item)
         {
             int res = 0;
 
@@ -46,15 +72,15 @@ namespace Nistec.Data.Persistance
 
             try
             {
-                var body = GetDataValue(value);
+                var value = ToPersistItem(key, name,item);
+                var cmdText = DbUpsertCommand();
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
-                        using (var db = new DbContext(ConnectionString, DbProvider))
+                        using (var db = Settings.Connect())
                         {
-                            var cmdText = DbUpsertCommand();//key, value);
-                            res = db.ExecuteCommandNonQuery(cmdText, DataParameter.GetDbParam<SqlParameter>("key", key, "body", body));
+                            res = db.ExecuteCommandNonQuery(cmdText, DataParameter.GetDbParam<SqlParameter>("key", key, "body", value.body, "name", value.name));
                             iscommited = true;
                         }
                         break;
@@ -64,8 +90,8 @@ namespace Nistec.Data.Persistance
                             DdProvider = DbProvider,
                             CommandText = DbUpsertCommand(),//key, value),
                             CommandType = "DbUpsert",
-                            ConnectionString = ConnectionString,
-                            Parameters = DataParameter.GetDbParam<SqlParameter>("key", key, "body", body)
+                            ConnectionString = Settings.ConnectionString,
+                            Parameters = DataParameter.GetDbParam<SqlParameter>("key", key, "body", value.body, "name", value.name)
                         };
                         task.ExecuteTask(_EnableTasker);
                         res = 1;
@@ -75,7 +101,7 @@ namespace Nistec.Data.Persistance
 
                 if (iscommited)
                 {
-                    OnItemChanged("AddOrUpdate", null, default(T));
+                    OnItemChanged("AddOrUpdate", null, item);
                 }
             }
             catch (Exception ex)
@@ -85,6 +111,7 @@ namespace Nistec.Data.Persistance
 
             return res;
         }
+      
 
         /// <summary>
         ///    updates a key/value pair to the System.Collections.Concurrent.ConcurrentDictionary
@@ -100,12 +127,12 @@ namespace Nistec.Data.Persistance
 
             try
             {
-                var body = GetDataValue(value);
+                var body = GetDataBinary(value);
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
-                        using (var db = new DbContext(ConnectionString, DbProvider))
+                        using (var db = Settings.Connect())
                         {
                             var cmdText = DbUpdateCommand();//key, value);
                             res = db.ExecuteCommandNonQuery(cmdText, DataParameter.GetDbParam<SqlParameter>("key", key, "body", body));
@@ -119,7 +146,7 @@ namespace Nistec.Data.Persistance
                             DdProvider = DbProvider,
                             CommandText = DbUpdateCommand(),//key, value),
                             CommandType = "DbUpdate",
-                            ConnectionString = ConnectionString,
+                            ConnectionString = Settings.ConnectionString,
                             Parameters = DataParameter.GetDbParam<SqlParameter>("key", key, "body", body)
                         };
                         task.ExecuteTask(_EnableTasker);
@@ -144,6 +171,7 @@ namespace Nistec.Data.Persistance
         /// Attempts to add the specified key and value to the System.Collections.Concurrent.ConcurrentDictionary.
         /// </summary>
         /// <param name="key">The key of the element to add.</param>
+        /// <param name="name">The section name to be added or whose value should be updated</param>
         /// <param name="value">The value of the element to add. The value can be a null reference (Nothing
         ///     in Visual Basic) for reference types.</param>
         /// <returns>
@@ -152,21 +180,21 @@ namespace Nistec.Data.Persistance
         /// </returns>
         /// <exception cref="System.ArgumentNullException">key is null reference (Nothing in Visual Basic).</exception>
         /// <exception cref="System.OverflowException">The dictionary already contains the maximum number of elements, System.Int32.MaxValue.</exception>
-        public override bool TryAdd(string key, T value)
+        public override bool TryAdd(string key, string name, T value)
         {
 
             bool iscommited = false;
             try
             {
-                var body = GetDataValue(value);
+                var body = GetDataBinary(value);
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
-                        using (var db = new DbContext(ConnectionString, DBProvider.SQLite))
+                        using (var db = Settings.Connect())
                         {
                             var cmdText = DbAddCommand();//key, value);
-                            int res = db.ExecuteCommandNonQuery(cmdText, DataParameter.GetDbParam<SqlParameter>("key", key, "body", body));
+                            int res = db.ExecuteCommandNonQuery(cmdText, DataParameter.GetDbParam<SqlParameter>("key", key, "body", body, "name", name));
                             iscommited = res > 0;
                         }
                         break;
@@ -176,8 +204,8 @@ namespace Nistec.Data.Persistance
                             DdProvider = DbProvider,
                             CommandText = DbAddCommand(),//(key, value),
                             CommandType = "DbAdd",
-                            ConnectionString = ConnectionString,
-                            Parameters = DataParameter.GetDbParam<SqlParameter>("key", key, "body", body)
+                            ConnectionString = Settings.ConnectionString,
+                            Parameters = DataParameter.GetDbParam<SqlParameter>("key", key, "body", body, "name", name)
                         };
                         task.ExecuteTask(_EnableTasker);
                         iscommited = true;
@@ -228,7 +256,7 @@ namespace Nistec.Data.Persistance
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
-                        using (var db = new DbContext(ConnectionString, DbProvider))
+                        using (var db = Settings.Connect())
                         {
                             var cmdText = DbDeleteCommand();//key);
                             int res = db.ExecuteCommandNonQuery(cmdText, DataParameter.GetDbParam<SqlParameter>("key", key));
@@ -241,7 +269,7 @@ namespace Nistec.Data.Persistance
                             DdProvider = DbProvider,
                             CommandText = DbDeleteCommand(),//key),
                             CommandType = "DbDelete",
-                            ConnectionString = ConnectionString,
+                            ConnectionString = Settings.ConnectionString,
                             Parameters = DataParameter.GetDbParam<SqlParameter>("key", key)
                         };
                         task.ExecuteTask(_EnableTasker);
@@ -295,12 +323,12 @@ namespace Nistec.Data.Persistance
 
             try
             {
-                var body = GetDataValue(newValue);
+                var body = GetDataBinary(newValue);
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
-                        using (var db = new DbContext(ConnectionString, DbProvider))
+                        using (var db = Settings.Connect())
                         {
                             var cmdText = DbUpdateCommand();//key, newValue);
                             int res = db.ExecuteCommandNonQuery(cmdText, DataParameter.GetDbParam<SqlParameter>("key", key, "body", body));
@@ -314,7 +342,7 @@ namespace Nistec.Data.Persistance
                         {
                             CommandText = DbUpdateCommand(),//key, newValue),
                             CommandType = "DbUpdate",
-                            ConnectionString = ConnectionString,
+                            ConnectionString = Settings.ConnectionString,
                             Parameters = DataParameter.GetDbParam<SqlParameter>("key", key, "body", body)
                         };
                         task.ExecuteTask(_EnableTasker);
@@ -340,7 +368,7 @@ namespace Nistec.Data.Persistance
 
         #region Fetch
 
-        public virtual bool TryFetch(out IPersistBinaryItem item)
+        public virtual bool TryFetch(string name, out IPersistBinaryItem item)
         {
 
             bool iscommited = false;
@@ -350,10 +378,10 @@ namespace Nistec.Data.Persistance
             {
 
                 bool WaitForCommit = (_CommitMode == CommitMode.OnDisk) ? true : false;
-                using (var db = new DbContext(ConnectionString, DbProvider))
+                using (var db = Settings.Connect())
                 {
                     var cmdText = DbFetchCommand();//key);
-                    item = db.ExecuteCommand<PersistBinaryItem>(cmdText, DataParameter.GetDbParam<SqlParameter>("Name", Name, "WaitForCommit", WaitForCommit), CommandType.StoredProcedure);
+                    item = db.ExecuteCommand<PersistBinaryItem>(cmdText, DataParameter.GetDbParam<SqlParameter>("Name", name, "WaitForCommit", WaitForCommit), CommandType.StoredProcedure);
                     iscommited = item != null;
                 }
 
@@ -365,7 +393,7 @@ namespace Nistec.Data.Persistance
             return iscommited;
         }
 
-        public virtual bool TryFetchBulk(int Limit, out IEnumerable<IPersistBinaryItem> items)
+        public virtual bool TryFetchBulk(string name, int Limit, out IEnumerable<IPersistBinaryItem> items)
         {
 
             bool iscommited = false;
@@ -375,10 +403,10 @@ namespace Nistec.Data.Persistance
             {
                 bool WaitForCommit = (_CommitMode == CommitMode.OnDisk) ? true : false;
 
-                using (var db = new DbContext(ConnectionString, DbProvider))
+                using (var db = Settings.Connect())
                 {
                     var cmdText = DbFetchCommand();//key);
-                    items = db.ExecuteCommand<PersistBinaryItem, List<PersistBinaryItem>>(cmdText, DataParameter.GetDbParam<SqlParameter>("Name", Name, "Limit", Limit, "WaitForCommit", WaitForCommit), CommandType.StoredProcedure);
+                    items = db.ExecuteCommand<PersistBinaryItem, List<PersistBinaryItem>>(cmdText, DataParameter.GetDbParam<SqlParameter>("Name", name, "Limit", Limit, "WaitForCommit", WaitForCommit), CommandType.StoredProcedure);
 
                     iscommited = items != null;
                 }
@@ -396,7 +424,7 @@ namespace Nistec.Data.Persistance
             bool iscommited = false;
             try
             {
-                using (var db = new DbContext(ConnectionString, DbProvider))
+                using (var db = Settings.Connect())
                 {
                     var cmdText = DbFetchCommitCommand();
                     int res = db.ExecuteCommandNonQuery(cmdText, DataParameter.GetDbParam<SqlParameter>("key", key));
@@ -410,7 +438,26 @@ namespace Nistec.Data.Persistance
             return iscommited;
         }
 
+        public virtual int FetchCount(string name)
+        {
+
+            try
+            {
+                using (var db = Settings.Connect())
+                {
+                    var cmdText = DbFetchCountCommand();
+                    return db.ExecuteCommandScalar<int>(cmdText, DataParameter.GetDbParam<SqlParameter>("Name", name), 0);
+                }
+            }
+            catch (Exception ex)
+            {
+                OnErrorOcurred("FetchCount", ex.Message);
+            }
+            return 0;
+        }
+
         #endregion
+   
     }
 
 

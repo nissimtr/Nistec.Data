@@ -64,11 +64,11 @@
     <Compile Include="PersistentBinary.cs" />
     <Compile Include="PersistentBag.cs" />
     <Compile Include="PersistentGeneric.cs" />
-    <Compile Include="PersistentDictionary.cs" />
+    <Compile Include="PersistentString.cs" />
     <Compile Include="DbLiteSettings.cs" />
     <Compile Include="DbCommand.cs" />
     <Compile Include="DbContext.cs" />
-    <Compile Include="PersistentDictionaryGeneric.cs" />
+    <Compile Include="PersistentBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -78,6 +78,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="SQLite\" />
+    <Folder Include="_Exc\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Nistec.Lib\Nistec.Lib.csproj">

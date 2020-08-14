@@ -20,16 +20,16 @@ namespace Nistec.Data.Persistance
 
         }
 
-        public PersistentSqlBinary(string name)
-            : base(new PersistentDbSettings() { Name = name })
-        {
+        //public PersistentSqlBinary(string name)
+        //    : base(new PersistentDbSettings() { Name = name })
+        //{
 
-        }
+        //}
 
         #endregion
     }
 
-    public class PersistentDbBinary<T,TP> : PersistentDbDictionary<T, PersistBinaryItem, TP>   where TP : IDbDataParameter
+    public class PersistentDbBinary<T,TP> : PersistentDbBase<T, PersistBinaryItem, TP>   where TP : IDbDataParameter
     {
 
         #region ctor
@@ -40,11 +40,11 @@ namespace Nistec.Data.Persistance
 
         }
 
-        public PersistentDbBinary(string name)
-            : base(new PersistentDbSettings() { Name = name })
-        {
+        //public PersistentDbBinary(string name)
+        //    : base(new PersistentDbSettings() { Name = name })
+        //{
 
-        }
+        //}
 
         #endregion
 
@@ -66,66 +66,62 @@ namespace Nistec.Data.Persistance
         //const string sqlinsertOrReplace = "insert or replace into {0}(key, body, name) values(@key, @body, @name)";
         const string sqlselect = "select {1} from {0} where key=@key";
         const string sqlselectall = "select {1} from {0}";
-        const string sqlfetch = "spQCover_Fetch";
 
+       
         protected override string DbCreateCommand()
         {
-            return string.Format(sqlcreate, Name);
+            return string.Format(sqlcreate, TableName);
         }
         protected override string DbAddCommand()
         {
-            return string.Format(sqlinsert, Name);
+            return string.Format(sqlinsert, TableName);
         }
 
         protected override string DbDeleteCommand()
         {
 
-            return string.Format(sqldelete, Name);
+            return string.Format(sqldelete, TableName);
         }
 
         protected override string DbUpdateCommand()
         {
-            return string.Format(sqlupdate, Name);
+            return string.Format(sqlupdate, TableName);
         }
 
         protected override string DbUpsertCommand()
         {
-            return string.Format(sqlinsertOrReplace, Name);
+            return string.Format(sqlinsertOrReplace, TableName);
         }
 
         protected override string DbSelectCommand(string select, string where)
         {
             if (where == null)
-                return string.Format(sqlselectall, Name, select);
+                return string.Format(sqlselectall, TableName, select);
 
-            return string.Format(sqlselect, Name, select, where);
+            return string.Format(sqlselect, TableName, select, where);
         }
 
         protected override string DbLookupCommand()
         {
-            return string.Format(sqlselect, Name, "body");
+            return string.Format(sqlselect, TableName, "body");
         }
 
         protected override string DbUpdateStateCommand()
         {
-            return string.Format(sqlupdate, Name);
+            return string.Format(sqlupdate, TableName);
         }
+        
+        //protected override object GetDataValue(T item)
+        //{
+        //    return BinarySerializer.SerializeToBytes(item);
+        //}
 
-        protected override string DbFetchCommand()
-        {
-            return string.Format(sqlfetch, Name);
-        }
-
-        protected override string DbFetchCommitCommand()
-        {
-            return string.Format(sqldelete, Name);
-        }
-
-        protected override object GetDataValue(T item)
+        protected override byte[] GetDataBinary(T item)
         {
             return BinarySerializer.SerializeToBytes(item);
             //return value;
         }
+
         protected override string GetItemKey(PersistBinaryItem value)
         {
             return value.key;
@@ -136,13 +132,13 @@ namespace Nistec.Data.Persistance
             return BinarySerializer.Deserialize<T>(value.body);
         }
 
-        protected override PersistBinaryItem ToPersistItem(string key, T item)
+        protected override PersistBinaryItem ToPersistItem(string key,string name, T item)
         {
             return new PersistBinaryItem()
             {
                 body = BinarySerializer.SerializeToBytes(item),
                 key = key,
-                name = this.Name,
+                name = name,
                 timestamp = DateTime.Now
             };
         }
@@ -151,21 +147,22 @@ namespace Nistec.Data.Persistance
             return BinarySerializer.Deserialize<T>(value.body);
         }
 
-        
+
         #endregion
 
         #region Commands
 
 
         /// <summary>
-        ///    Adds a key/value pair to the System.Collections.Concurrent.ConcurrentDictionary<TKey,TValue>
-        ///     if the key does not already exist, or updates a key/value pair in the System.Collections.Concurrent.ConcurrentDictionary<TKey,TValue>
+        ///    Adds a key/value pair to the System.Collections.Concurrent.ConcurrentDictionary
+        ///     if the key does not already exist, or updates a key/value pair in the System.Collections.Concurrent.ConcurrentDictionary
         ///     if the key already exists.
         /// </summary>
         /// <param name="key">The key to be added or whose value should be updated</param>
+        /// <param name="name">The section name to be added or whose value should be updated</param>
         /// <param name="item">The value to be added or updated for an absent key</param>
         /// <returns></returns>
-        public override int AddOrUpdate(string key, T item)
+        public override int AddOrUpdate(string key, string name, T item)
         {
             int res = 0;
 
@@ -179,15 +176,15 @@ namespace Nistec.Data.Persistance
 
             try
             {
-                var value = ToPersistItem(key, item);
+                var body = GetDataBinary(item);
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
-                        using (var db = new DbContext(ConnectionString, DbProvider))
+                        using (var db = Settings.Connect())
                         {
                             var cmdText = DbUpsertCommand();
-                            res = db.ExecuteTransCommandNonQuery(cmdText, DataParameter.GetDbParam<TP>("key", key, "body", value.body, "name", value.name), (result) =>
+                            res = db.ExecuteTransCommandNonQuery(cmdText, DataParameter.GetDbParam<TP>("key", key, "body", body, "name", name), (result) =>
                             {
                                 if (result > 0)
                                 {
@@ -206,7 +203,7 @@ namespace Nistec.Data.Persistance
                                 return item;
                             });
                             var cmdText = DbUpsertCommand();
-                            ExecuteTask(cmdText, DataParameter.GetDbParam<TP>("key", key, "body", value.body, "name", value.name));
+                            ExecuteTask(cmdText, DataParameter.GetDbParam<TP>("key", key, "body", body, "name", name));
                             res = 1;
                             iscommited = true;
                         }
@@ -236,7 +233,7 @@ namespace Nistec.Data.Persistance
         }
 
         /// <summary>
-        ///    updates a key/value pair to the System.Collections.Concurrent.ConcurrentDictionary<TKey,TValue>
+        ///    updates a key/value pair to the System.Collections.Concurrent.ConcurrentDictionary
         ///    if the key already exists.
         /// </summary>
         /// <param name="key">The key to be added or whose value should be updated</param>
@@ -249,15 +246,15 @@ namespace Nistec.Data.Persistance
 
             try
             {
-                var value = ToPersistItem(key, item);
+                var body = GetDataBinary(item);
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
-                        using (var db = new DbContext(ConnectionString, DbProvider))
+                        using (var db = Settings.Connect())
                         {
                             var cmdText = DbUpdateCommand();
-                            res = db.ExecuteTransCommandNonQuery(cmdText, DataParameter.GetDbParam<TP>("key", key, "body", value.body, "name", value.name), (result) =>
+                            res = db.ExecuteTransCommandNonQuery(cmdText, DataParameter.GetDbParam<TP>("key", key, "body", body), (result) =>
                             {
                                 if (result > 0)
                                 {
@@ -274,7 +271,7 @@ namespace Nistec.Data.Persistance
                         {
                             dictionary[key] = item;
                             var cmdText = DbUpdateCommand();
-                            ExecuteTask(cmdText, DataParameter.GetDbParam<TP>("key", key, "body", value.body, "name", value.name));
+                            ExecuteTask(cmdText, DataParameter.GetDbParam<TP>("key", key, "body", body));
                             res = 1;
                             iscommited = true;
                         }
@@ -299,18 +296,19 @@ namespace Nistec.Data.Persistance
         }
 
         /// <summary>
-        /// Attempts to add the specified key and value to the System.Collections.Concurrent.ConcurrentDictionary<TKey,TValue>.
+        /// Attempts to add the specified key and value to the System.Collections.Concurrent.ConcurrentDictionary
         /// </summary>
         /// <param name="key">The key of the element to add.</param>
+        /// <param name="name">The section name to be added or whose value should be updated</param>
         /// <param name="item">The value of the element to add. The value can be a null reference (Nothing
         ///     in Visual Basic) for reference types.</param>
         /// <returns>
-        /// true if the key/value pair was added to the System.Collections.Concurrent.ConcurrentDictionary<TKey,TValue>
+        /// true if the key/value pair was added to the System.Collections.Concurrent.ConcurrentDictionary
         ///     successfully. If the key already exists, this method returns false.
         /// </returns>
         /// <exception cref="System.ArgumentNullException">key is null reference (Nothing in Visual Basic).</exception>
         /// <exception cref="System.OverflowException">The dictionary already contains the maximum number of elements, System.Int32.MaxValue.</exception>
-        public override bool TryAdd(string key, T item)
+        public override bool TryAdd(string key, string name, T item)
         {
 
             bool iscommited = false;
@@ -318,12 +316,12 @@ namespace Nistec.Data.Persistance
             try
             {
 
-                var value = ToPersistItem(key, item);
+                var body = GetDataBinary(item);
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
-                        using (var db = new DbContext(ConnectionString, DbProvider))
+                        using (var db = Settings.Connect())
                         {
                             var cmdText = DbAddCommand();
 
@@ -342,7 +340,7 @@ namespace Nistec.Data.Persistance
                             //});
 
 
-                            db.ExecuteTransCommandNonQuery(cmdText, DataParameter.GetDbParam<TP>("key", key, "body", value.body, "name", value.name), (result) =>
+                            db.ExecuteTransCommandNonQuery(cmdText, DataParameter.GetDbParam<TP>("key", key, "body", body, "name", name), (result) =>
                             {
                                 if (result > 0)
                                 {
@@ -361,8 +359,7 @@ namespace Nistec.Data.Persistance
                             if (dictionary.TryAdd(key, item))
                             {
                                 var cmdText = DbAddCommand();
-                                //var res = ExecuteAsync(cmdText, DataParameter.GetDbParam<TP>("key", key, "body", value.body, "name", value.name));
-                                ExecuteTask(cmdText, DataParameter.GetDbParam<TP>("key", key, "body", value.body, "name", value.name));
+                                ExecuteTask(cmdText, DataParameter.GetDbParam<TP>("key", key, "body", body, "name", name));
                                 iscommited = true;
                             }
                         }
@@ -387,14 +384,14 @@ namespace Nistec.Data.Persistance
 
         /// <summary>
         /// Summary:
-        ///     Attempts to remove and return the value with the specified key from the System.Collections.Concurrent.ConcurrentDictionary<TKey,TValue>.
+        ///     Attempts to remove and return the value with the specified key from the System.Collections.Concurrent.ConcurrentDictionary
         ///
         /// Parameters:
         ///   key:
         ///     The key of the element to remove and return.
         ///
         ///   value:
-        ///     When this method returns, value contains the object removed from the System.Collections.Concurrent.ConcurrentDictionary<TKey,TValue>
+        ///     When this method returns, value contains the object removed from the System.Collections.Concurrent.ConcurrentDictionary
         ///     or the default value of if the operation failed.
         ///
         /// Returns:
@@ -416,7 +413,7 @@ namespace Nistec.Data.Persistance
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
-                        using (var db = new DbContext(ConnectionString, DbProvider))
+                        using (var db = Settings.Connect())
                         {
                             var cmdText = DbDeleteCommand();
                             db.ExecuteTransCommandNonQuery(cmdText, DataParameter.GetDbParam<TP>("key", key), (result) =>
@@ -494,15 +491,15 @@ namespace Nistec.Data.Persistance
 
             try
             {
-                var newValue = ToPersistItem(key, newItem);
+                var newValue = GetDataBinary(newItem);
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
-                        using (var db = new DbContext(ConnectionString, DbProvider))
+                        using (var db = Settings.Connect())
                         {
                             var cmdText = DbUpdateCommand();
-                            db.ExecuteTransCommandNonQuery(cmdText, DataParameter.GetDbParam<SqlParameter>("key", key, "body", newValue.body, "name", newValue.name), (result) =>
+                            db.ExecuteTransCommandNonQuery(cmdText, DataParameter.GetDbParam<SqlParameter>("key", key, "body", newValue), (result) =>
                             {
                                 if (result > 0)
                                 {
@@ -521,7 +518,7 @@ namespace Nistec.Data.Persistance
                             if (dictionary.TryUpdate(key, newItem, comparisonValue))
                             {
                                 var cmdText = DbUpdateCommand();
-                                ExecuteTask(cmdText, DataParameter.GetDbParam<TP>("key", key, "body", newValue.body, "name", newValue.name));
+                                ExecuteTask(cmdText, DataParameter.GetDbParam<TP>("key", key, "body", newValue, "name"));
                                 iscommited = true;
                             }
                         }
@@ -557,7 +554,7 @@ namespace Nistec.Data.Persistance
         //    {
         //        try
         //        {
-        //            using (var db = new DbContext(ConnectionString, DbProvider))
+        //            using (var db = Settings.Connect())
         //            {
 
         //                var sql = "select * from " + Name;

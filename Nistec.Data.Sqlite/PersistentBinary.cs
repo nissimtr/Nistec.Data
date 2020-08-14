@@ -14,7 +14,7 @@ namespace Nistec.Data.Sqlite
 
   
 
-    public class PersistentBinary<T> : PersistentDictionary<T, PersistBinaryItem> 
+    public class PersistentBinary<T> : PersistentBase<T, PersistBinaryItem> 
     {
 
         #region ctor

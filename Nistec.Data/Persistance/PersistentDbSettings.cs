@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Nistec.Data.Entities;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -6,8 +7,72 @@ using System.Text;
 
 namespace Nistec.Data.Persistance
 {
-
     public class PersistentDbSettings
+    {
+        public PersistentDbSettings()
+        {
+            ConnectionTimeout = 5000;
+            DbProvider = DBProvider.SqlServer;
+
+            //FailIfMissing = false;
+            //ReadOnly = false;
+            //InMemory = false;
+            //SyncMode = (int)SyncModes.Normal;
+            //JournalMode = (int)JournalModeEnum.Wal;
+
+            EnableTasker = false;
+            CommitMode = CommitMode.OnDisk;
+            EnableTasker = false;
+        }
+
+        public PersistentDbSettings(string connectionString, DBProvider provider, string tableName) : this()
+        {
+            ConnectionString = connectionString;
+            DbProvider = provider;
+            TableName = tableName;
+        }
+
+        public int ConnectionTimeout { get; set; }
+        //public int SyncMode { get; set; }
+        //public int JournalMode { get; set; }
+        //public int PageSize { get; set; }
+        //public int CacheSize { get; set; }
+        //public bool FailIfMissing { get; set; }
+        //public bool ReadOnly { get; set; }
+        //public bool InMemory { get; set; }
+
+        public string ConnectionString { get; set; }
+        /// <summary>
+        /// Get or Set DBProvider.
+        /// Default is 'xPersistent';
+        /// </summary>
+        public DBProvider DbProvider { get; set; }
+
+        /// <summary>
+        /// Get or Set The Persistent Name.
+        /// Default is 'xPersistent';
+        /// </summary>
+        public string TableName { get; set; }
+        /// <summary>
+        /// Use commit mode.
+        /// Default is OnDisk;
+        /// </summary>
+        public CommitMode CommitMode { get; set; }
+
+        /// <summary>
+        /// Get or Set if enable tasker queue for CommitMode.OnMemory
+        /// </summary>
+        public bool EnableTasker { get; set; }
+
+        public DbContext Connect()
+        {
+            return new DbContext(ConnectionString, DbProvider);
+        } 
+
+    }
+
+    /*
+    public class b_PersistentDbSettings
     {
         public const string DefaultPassword = "giykse876435365&%$^#%@$#@)_(),kxa;l bttsklf12[]}{}{)(*XCJHG^%%";
         public const string InMemoryFilename = ":memory:";
@@ -15,16 +80,11 @@ namespace Nistec.Data.Persistance
         public PersistentDbSettings()//string connectionString, DBProvider provider)
         {
             DefaultTimeout = 5000;
-            //SyncMode = SynchronizationModes.Off;
-            //JournalMode = SQLiteJournalModeEnum.Memory;
-            //PageSize = 65536;
-            //CacheSize = 16777216;
             FailIfMissing = false;
             ReadOnly = false;
             InMemory = false;
 
             DbProvider =  DBProvider.SqlServer;
-            //_ConnectionString = connectionString;
 
             //PRAGMA main.locking_mode = EXCLUSIVE;
             SyncMode = (int)SyncModes.Normal;
@@ -176,4 +236,5 @@ namespace Nistec.Data.Persistance
         }
 
     }
+    */
 }

@@ -9,7 +9,7 @@ using System.Text;
 
 namespace Nistec.Data.Sqlite
 {
-    public class PersistentGeneric<T> : PersistentDictionary<T, PersistTextItem>
+    public class PersistentGeneric<T> : PersistentBase<T, PersistTextItem>
     {
 
         #region ctor

@@ -160,7 +160,7 @@
     <Compile Include="Persistance\PersistentSqlCover.cs" />
     <Compile Include="Persistance\PersistentDbTask.cs" />
     <Compile Include="Persistance\PersistentDbBinary.cs" />
-    <Compile Include="Persistance\PersistentDbDictionary.cs" />
+    <Compile Include="Persistance\PersistentDbBase.cs" />
     <Compile Include="Persistance\PersistentDbSettings.cs" />
     <Compile Include="Persistance\PersistItem.cs" />
     <Compile Include="SqlClient\CommandAsync.cs" />
