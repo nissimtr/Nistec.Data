@@ -157,13 +157,13 @@ namespace Nistec.Data.Sqlite
             try
             {
                 var value = ToPersistItem(key, item);
+                var cmdText = DbUpsertCommand();
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
                         using (var db = new DbLite(ConnectionString, DBProvider.SQLite))
                         {
-                            var cmdText = DbUpsertCommand();
                             res = db.ExecuteTransCommandNonQuery(cmdText,DataParameter.Get<SQLiteParameter>("key", key,"body", value.body, "name", value.name) , (result) =>
                             {
                                 if (result > 0)
@@ -182,7 +182,6 @@ namespace Nistec.Data.Sqlite
                             {
                                 return item;
                             });
-                            var cmdText = DbUpsertCommand();
                             ExecuteTask(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name));
                             res = 1;
                             iscommited = true;
@@ -227,13 +226,13 @@ namespace Nistec.Data.Sqlite
             try
             {
                 var value = ToPersistItem(key, item);
+                var cmdText = DbUpdateCommand();
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
                         using (var db = new DbLite(ConnectionString, DBProvider.SQLite))
                         {
-                            var cmdText = DbUpdateCommand();
                             res = db.ExecuteTransCommandNonQuery(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name), (result) =>
                             {
                                 if (result > 0)
@@ -250,7 +249,6 @@ namespace Nistec.Data.Sqlite
                     case CommitMode.OnMemory:
                         {
                             dictionary[key] = item;
-                            var cmdText = DbUpdateCommand();
                             ExecuteTask(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name));
                             res = 1;
                             iscommited = true;
@@ -296,13 +294,13 @@ namespace Nistec.Data.Sqlite
             {
 
                 var value = ToPersistItem(key, item);
+                var cmdText = DbAddCommand();
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
                         using (var db = new DbLite(ConnectionString, DBProvider.SQLite))
                         {
-                            var cmdText = DbAddCommand();
 
                             //db.ExecuteNonQueryTrans(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name), (result) =>
                             //{
@@ -337,7 +335,6 @@ namespace Nistec.Data.Sqlite
                         {
                             if (dictionary.TryAdd(key, item))
                             {
-                                var cmdText = DbAddCommand();
                                 //var res = ExecuteAsync(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name));
                                 ExecuteTask(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name));
                                 iscommited = true;
@@ -389,13 +386,13 @@ namespace Nistec.Data.Sqlite
             try
             {
                 //var value = GetPersistItem(key, item);
+                var cmdText = DbDeleteCommand();
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
                         using (var db = new DbLite(ConnectionString, DBProvider.SQLite))
                         {
-                            var cmdText = DbDeleteCommand();
                             db.ExecuteTransCommandNonQuery(cmdText, DataParameter.Get<SQLiteParameter>("key", key), (result) =>
                             {
                                 if (result > 0)
@@ -414,7 +411,6 @@ namespace Nistec.Data.Sqlite
                         {
                             if (dictionary.TryRemove(key, out outval))
                             {
-                                var cmdText = DbDeleteCommand();
                                 ExecuteTask(cmdText, DataParameter.Get<SQLiteParameter>("key", key));
                                 iscommited = true;
                             }
@@ -472,13 +468,13 @@ namespace Nistec.Data.Sqlite
             try
             {
                 var newValue = ToPersistItem(key, newItem);
+                var cmdText = DbUpdateCommand();
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
                         using (var db = new DbLite(ConnectionString, DBProvider.SQLite))
                         {
-                            var cmdText = DbUpdateCommand();
                             db.ExecuteTransCommandNonQuery(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", newValue.body, "name", newValue.name), (result) =>
                              {
                                  if (result > 0)
@@ -497,7 +493,6 @@ namespace Nistec.Data.Sqlite
                         {
                             if (dictionary.TryUpdate(key, newItem, comparisonValue))
                             {
-                                var cmdText = DbUpdateCommand();
                                 ExecuteTask(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", newValue.body, "name", newValue.name));
                                 iscommited = true;
                             }

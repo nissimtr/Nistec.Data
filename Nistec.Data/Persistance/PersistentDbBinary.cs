@@ -76,7 +76,10 @@ namespace Nistec.Data.Persistance
         {
             return string.Format(sqlinsert, TableName);
         }
-
+        protected override string DbAddJournalCommand()
+        {
+            return string.Format(sqlinsert, JournalName);
+        }
         protected override string DbDeleteCommand()
         {
 
@@ -177,13 +180,13 @@ namespace Nistec.Data.Persistance
             try
             {
                 var body = GetDataBinary(item);
+                var cmdText = DbUpsertCommand();
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
                         using (var db = Settings.Connect())
                         {
-                            var cmdText = DbUpsertCommand();
                             res = db.ExecuteTransCommandNonQuery(cmdText, DataParameter.GetDbParam<TP>("key", key, "body", body, "name", name), (result) =>
                             {
                                 if (result > 0)
@@ -202,7 +205,6 @@ namespace Nistec.Data.Persistance
                             {
                                 return item;
                             });
-                            var cmdText = DbUpsertCommand();
                             ExecuteTask(cmdText, DataParameter.GetDbParam<TP>("key", key, "body", body, "name", name));
                             res = 1;
                             iscommited = true;
@@ -247,13 +249,13 @@ namespace Nistec.Data.Persistance
             try
             {
                 var body = GetDataBinary(item);
+                var cmdText = DbUpdateCommand();
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
                         using (var db = Settings.Connect())
                         {
-                            var cmdText = DbUpdateCommand();
                             res = db.ExecuteTransCommandNonQuery(cmdText, DataParameter.GetDbParam<TP>("key", key, "body", body), (result) =>
                             {
                                 if (result > 0)
@@ -270,7 +272,6 @@ namespace Nistec.Data.Persistance
                     case CommitMode.OnMemory:
                         {
                             dictionary[key] = item;
-                            var cmdText = DbUpdateCommand();
                             ExecuteTask(cmdText, DataParameter.GetDbParam<TP>("key", key, "body", body));
                             res = 1;
                             iscommited = true;
@@ -317,13 +318,13 @@ namespace Nistec.Data.Persistance
             {
 
                 var body = GetDataBinary(item);
+                var cmdText = DbAddCommand();
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
                         using (var db = Settings.Connect())
                         {
-                            var cmdText = DbAddCommand();
 
                             //db.ExecuteNonQueryTrans(cmdText, DataParameter.GetDbParam<TP>("key", key, "body", value.body, "name", value.name), (result) =>
                             //{
@@ -358,7 +359,6 @@ namespace Nistec.Data.Persistance
                         {
                             if (dictionary.TryAdd(key, item))
                             {
-                                var cmdText = DbAddCommand();
                                 ExecuteTask(cmdText, DataParameter.GetDbParam<TP>("key", key, "body", body, "name", name));
                                 iscommited = true;
                             }
@@ -409,13 +409,13 @@ namespace Nistec.Data.Persistance
             try
             {
                 //var value = GetPersistItem(key, item);
+                var cmdText = DbDeleteCommand();
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
                         using (var db = Settings.Connect())
                         {
-                            var cmdText = DbDeleteCommand();
                             db.ExecuteTransCommandNonQuery(cmdText, DataParameter.GetDbParam<TP>("key", key), (result) =>
                             {
                                 if (result > 0)
@@ -434,7 +434,6 @@ namespace Nistec.Data.Persistance
                         {
                             if (dictionary.TryRemove(key, out outval))
                             {
-                                var cmdText = DbDeleteCommand();
                                 ExecuteTask(cmdText, DataParameter.GetDbParam<TP>("key", key));
                                 iscommited = true;
                             }
@@ -492,13 +491,13 @@ namespace Nistec.Data.Persistance
             try
             {
                 var newValue = GetDataBinary(newItem);
+                var cmdText = DbUpdateCommand();
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
                         using (var db = Settings.Connect())
                         {
-                            var cmdText = DbUpdateCommand();
                             db.ExecuteTransCommandNonQuery(cmdText, DataParameter.GetDbParam<SqlParameter>("key", key, "body", newValue), (result) =>
                             {
                                 if (result > 0)
@@ -517,7 +516,6 @@ namespace Nistec.Data.Persistance
                         {
                             if (dictionary.TryUpdate(key, newItem, comparisonValue))
                             {
-                                var cmdText = DbUpdateCommand();
                                 ExecuteTask(cmdText, DataParameter.GetDbParam<TP>("key", key, "body", newValue, "name"));
                                 iscommited = true;
                             }

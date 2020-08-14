@@ -141,12 +141,13 @@ namespace Nistec.Data.Sqlite
             BagItem val = null;
             try
             {
+                var cmdText = DbUpdateStateCommand();
+
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
                         using (var db = new DbLite(ConnectionString, DBProvider.SQLite))
                         {
-                            var cmdText = DbUpdateStateCommand();
                             res = db.ExecuteTransCommandNonQuery(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "state", state), (result) =>
                             {
                                 if (result > 0)
@@ -179,7 +180,7 @@ namespace Nistec.Data.Sqlite
                             var task = new PersistentTask()
                             {
                                 DdProvider = DBProvider.SQLite,
-                                CommandText = DbUpdateStateCommand(),
+                                CommandText = cmdText,
                                 CommandType = "DbUpdateState",
                                 ConnectionString = ConnectionString,
                                 Parameters = DataParameter.Get<SQLiteParameter>("key", key, "state", state)

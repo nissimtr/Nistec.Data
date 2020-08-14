@@ -88,7 +88,7 @@ namespace Nistec.Data.Persistance
                         var task = new PersistentDbTask()
                         {
                             DdProvider = DbProvider,
-                            CommandText = DbUpsertCommand(),//key, value),
+                            CommandText = cmdText,
                             CommandType = "DbUpsert",
                             ConnectionString = Settings.ConnectionString,
                             Parameters = DataParameter.GetDbParam<SqlParameter>("key", key, "body", value.body, "name", value.name)
@@ -128,13 +128,13 @@ namespace Nistec.Data.Persistance
             try
             {
                 var body = GetDataBinary(value);
+                var cmdText = DbUpdateCommand();
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
                         using (var db = Settings.Connect())
                         {
-                            var cmdText = DbUpdateCommand();//key, value);
                             res = db.ExecuteCommandNonQuery(cmdText, DataParameter.GetDbParam<SqlParameter>("key", key, "body", body));
                             iscommited = true;
                         }
@@ -144,7 +144,7 @@ namespace Nistec.Data.Persistance
                         var task = new PersistentDbTask()
                         {
                             DdProvider = DbProvider,
-                            CommandText = DbUpdateCommand(),//key, value),
+                            CommandText = cmdText,
                             CommandType = "DbUpdate",
                             ConnectionString = Settings.ConnectionString,
                             Parameters = DataParameter.GetDbParam<SqlParameter>("key", key, "body", body)
@@ -187,13 +187,13 @@ namespace Nistec.Data.Persistance
             try
             {
                 var body = GetDataBinary(value);
+                var cmdText = DbAddCommand();
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
                         using (var db = Settings.Connect())
                         {
-                            var cmdText = DbAddCommand();//key, value);
                             int res = db.ExecuteCommandNonQuery(cmdText, DataParameter.GetDbParam<SqlParameter>("key", key, "body", body, "name", name));
                             iscommited = res > 0;
                         }
@@ -202,7 +202,7 @@ namespace Nistec.Data.Persistance
                         var task = new PersistentDbTask()
                         {
                             DdProvider = DbProvider,
-                            CommandText = DbAddCommand(),//(key, value),
+                            CommandText = cmdText,
                             CommandType = "DbAdd",
                             ConnectionString = Settings.ConnectionString,
                             Parameters = DataParameter.GetDbParam<SqlParameter>("key", key, "body", body, "name", name)
@@ -252,13 +252,13 @@ namespace Nistec.Data.Persistance
             T outval = value = default(T);
             try
             {
+                var cmdText = DbDeleteCommand();
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
                         using (var db = Settings.Connect())
                         {
-                            var cmdText = DbDeleteCommand();//key);
                             int res = db.ExecuteCommandNonQuery(cmdText, DataParameter.GetDbParam<SqlParameter>("key", key));
                             iscommited = res > 0;
                         }
@@ -267,7 +267,7 @@ namespace Nistec.Data.Persistance
                         var task = new PersistentDbTask()
                         {
                             DdProvider = DbProvider,
-                            CommandText = DbDeleteCommand(),//key),
+                            CommandText = cmdText,
                             CommandType = "DbDelete",
                             ConnectionString = Settings.ConnectionString,
                             Parameters = DataParameter.GetDbParam<SqlParameter>("key", key)
@@ -324,13 +324,13 @@ namespace Nistec.Data.Persistance
             try
             {
                 var body = GetDataBinary(newValue);
+                var cmdText = DbUpdateCommand();
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
                         using (var db = Settings.Connect())
                         {
-                            var cmdText = DbUpdateCommand();//key, newValue);
                             int res = db.ExecuteCommandNonQuery(cmdText, DataParameter.GetDbParam<SqlParameter>("key", key, "body", body));
                             iscommited = res > 0;
 
@@ -340,7 +340,7 @@ namespace Nistec.Data.Persistance
 
                         var task = new PersistentDbTask()
                         {
-                            CommandText = DbUpdateCommand(),//key, newValue),
+                            CommandText = cmdText,
                             CommandType = "DbUpdate",
                             ConnectionString = Settings.ConnectionString,
                             Parameters = DataParameter.GetDbParam<SqlParameter>("key", key, "body", body)
@@ -457,7 +457,53 @@ namespace Nistec.Data.Persistance
         }
 
         #endregion
-   
+
+        public bool TryAddJournal(string key, string name, T value)
+        {
+
+            bool iscommited = false;
+            try
+            {
+                var body = GetDataBinary(value);
+                var cmdText = DbAddJournalCommand();
+
+                switch (_CommitMode)
+                {
+                    case CommitMode.OnDisk:
+                        using (var db = Settings.Connect())
+                        {
+                            int res = db.ExecuteCommandNonQuery(cmdText, DataParameter.GetDbParam<SqlParameter>("key", key, "body", body, "name", name));
+                            iscommited = res > 0;
+                        }
+                        break;
+                    default:
+                        var task = new PersistentDbTask()
+                        {
+                            DdProvider = DbProvider,
+                            CommandText = cmdText,
+                            CommandType = "DbAddJournal",
+                            ConnectionString = Settings.ConnectionString,
+                            Parameters = DataParameter.GetDbParam<SqlParameter>("key", key, "body", body, "name", name)
+                        };
+                        task.ExecuteTask(_EnableTasker);
+                        iscommited = true;
+                        break;
+                }
+
+                if (iscommited)
+                {
+                    OnItemChanged("TryAddJournal", key, value);
+                }
+            }
+            catch (Exception ex)
+            {
+                string err = ex.Message;
+                OnErrorOcurred("TryAddJournal", ex.Message);
+            }
+            return iscommited;
+
+        }
+
     }
 
 

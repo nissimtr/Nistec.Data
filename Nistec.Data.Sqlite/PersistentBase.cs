@@ -480,13 +480,13 @@ namespace Nistec.Data.Sqlite
             try
             {
                 var body=GetDataValue(value);
+                var cmdText = DbUpsertCommand();
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
                         using (var db = new DbLite(ConnectionString, DBProvider.SQLite))
                         {
-                            var cmdText = DbUpsertCommand();//key, value);
                             res = db.ExecuteTransCommandNonQuery(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", body), (result) =>
                             {
                                 if (result > 0)
@@ -509,7 +509,7 @@ namespace Nistec.Data.Sqlite
                             var task = new PersistentTask()
                             {
                                 DdProvider = DBProvider.SQLite,
-                                CommandText = DbUpsertCommand(),//key, value),
+                                CommandText = cmdText,
                                 CommandType = "DbUpsert",
                                 ConnectionString = ConnectionString,
                                 Parameters = DataParameter.Get<SQLiteParameter>("key", key, "body", body)
@@ -549,13 +549,13 @@ namespace Nistec.Data.Sqlite
             try
             {
                 var body = GetDataValue(value);
+                var cmdText = DbUpdateCommand();
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
                         using (var db = new DbLite(ConnectionString, DBProvider.SQLite))
                         {
-                            var cmdText = DbUpdateCommand();//key, value);
                             res = db.ExecuteTransCommandNonQuery(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", body), (result) =>
                             {
                                 if (result > 0)
@@ -576,7 +576,7 @@ namespace Nistec.Data.Sqlite
                             var task = new PersistentTask()
                             {
                                 DdProvider = DBProvider.SQLite,
-                                CommandText = DbUpdateCommand(),//key, value),
+                                CommandText = cmdText,
                                 CommandType = "DbUpdate",
                                 ConnectionString = ConnectionString,
                                 Parameters = DataParameter.Get<SQLiteParameter>("key", key, "body", body)
@@ -620,13 +620,13 @@ namespace Nistec.Data.Sqlite
             try
             {
                 var body = GetDataValue(value);
+                var cmdText = DbAddCommand();
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
                         using (var db = new DbLite(ConnectionString, DBProvider.SQLite))
                         {
-                            var cmdText = DbAddCommand();//key, value);
                             db.ExecuteTransCommandNonQuery(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", body), (result) =>
                             {
                                 if (result > 0)
@@ -649,7 +649,7 @@ namespace Nistec.Data.Sqlite
                                 var task = new PersistentTask()
                                 {
                                     DdProvider = DBProvider.SQLite,
-                                    CommandText = DbAddCommand(),//(key, value),
+                                    CommandText = cmdText,
                                     CommandType = "DbAdd",
                                     ConnectionString = ConnectionString,
                                     Parameters = DataParameter.Get<SQLiteParameter>("key", key, "body", body)
@@ -701,13 +701,13 @@ namespace Nistec.Data.Sqlite
             T outval = value = default(T);
             try
             {
+                var cmdText = DbDeleteCommand();
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
                         using (var db = new DbLite(ConnectionString, DBProvider.SQLite))
                         {
-                            var cmdText = DbDeleteCommand();//key);
                             db.ExecuteTransCommandNonQuery(cmdText, DataParameter.Get<SQLiteParameter>("key", key), (result) =>
                             {
                                 if (result > 0)
@@ -730,7 +730,7 @@ namespace Nistec.Data.Sqlite
                                 var task = new PersistentTask()
                                 {
                                     DdProvider = DBProvider.SQLite,
-                                    CommandText = DbDeleteCommand(),//key),
+                                    CommandText = cmdText,
                                     CommandType = "DbDelete",
                                     ConnectionString = ConnectionString,
                                     Parameters = DataParameter.Get<SQLiteParameter>("key", key)
@@ -789,13 +789,13 @@ namespace Nistec.Data.Sqlite
             try
             {
                 var body = GetDataValue(newValue);
+                var cmdText = DbUpdateCommand();
 
                 switch (_CommitMode)
                 {
                     case CommitMode.OnDisk:
                         using (var db = new DbLite(ConnectionString, DBProvider.SQLite))
                         {
-                            var cmdText = DbUpdateCommand();//key, newValue);
                             db.ExecuteTransCommandNonQuery(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", body), (result) =>
                             {
                                 if (result > 0)
@@ -819,7 +819,7 @@ namespace Nistec.Data.Sqlite
                                 var task = new PersistentTask()
                                 {
                                     DdProvider = DBProvider.SQLite,
-                                    CommandText = DbUpdateCommand(),//key, newValue),
+                                    CommandText = cmdText,
                                     CommandType = "DbUpdate",
                                     ConnectionString = ConnectionString,
                                     Parameters = DataParameter.Get<SQLiteParameter>("key", key, "body", body)

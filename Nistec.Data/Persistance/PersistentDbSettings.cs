@@ -30,6 +30,7 @@ namespace Nistec.Data.Persistance
             ConnectionString = connectionString;
             DbProvider = provider;
             TableName = tableName;
+            JournalName = TableName + "_Journal";
         }
 
         public int ConnectionTimeout { get; set; }
@@ -53,6 +54,11 @@ namespace Nistec.Data.Persistance
         /// Default is 'xPersistent';
         /// </summary>
         public string TableName { get; set; }
+        /// <summary>
+        /// Get or Set The Persistent Name.
+        /// Default is 'xPersistent';
+        /// </summary>
+        public string JournalName { get; set; }
         /// <summary>
         /// Use commit mode.
         /// Default is OnDisk;

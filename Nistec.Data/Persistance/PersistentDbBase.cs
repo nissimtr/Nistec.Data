@@ -41,6 +41,7 @@ namespace Nistec.Data.Persistance
         public PersistentDbSettings Settings { get; protected set; }
         //public string ConnectionString { get; protected set; }
         public string TableName { get; protected set; }
+        public string JournalName { get; protected set; }
 
         //public bool EnableCompress { get; protected set; }
         //public int CompressLevel { get; protected set; }
@@ -168,6 +169,7 @@ namespace Nistec.Data.Persistance
             this.Settings = new PersistentDbSettings(connectionString, provider, tableName);
             _CommitMode = Settings.CommitMode;
             TableName = Settings.TableName;
+            JournalName = Settings.JournalName;
             Init();
         }
 
@@ -181,6 +183,7 @@ namespace Nistec.Data.Persistance
             dictionary = new ConcurrentDictionary<string, T>();
             this.Settings = settings;
             TableName = Settings.TableName;
+            JournalName = Settings.JournalName;
             _CommitMode = Settings.CommitMode;
             Init();
             //if (loadPersistItems)
@@ -272,6 +275,7 @@ namespace Nistec.Data.Persistance
         protected abstract string DbCreateCommand();// DbLite db);
         protected abstract string DbUpsertCommand();// string key, T value);
         protected abstract string DbAddCommand();//string key, T value);
+        protected abstract string DbAddJournalCommand();
         protected abstract string DbUpdateCommand();//string key, T value);
         protected abstract string DbDeleteCommand();//string key);
         protected abstract string DbSelectCommand(string select, string where);
