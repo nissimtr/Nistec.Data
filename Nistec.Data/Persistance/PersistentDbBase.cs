@@ -149,7 +149,7 @@ namespace Nistec.Data.Persistance
                 ItemChanged(this, e);
         }
 
-
+        
         #endregion
 
         #region ctor

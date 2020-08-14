@@ -504,6 +504,52 @@ namespace Nistec.Data.Persistance
 
         }
 
+        public bool TryAddJournal(string name, IPersistBinaryItem item)
+        {
+
+            bool iscommited = false;
+            try
+            {
+                var cmdText = DbAddJournalCommand();
+
+                switch (_CommitMode)
+                {
+                    case CommitMode.OnDisk:
+                        using (var db = Settings.Connect())
+                        {
+                            int res = db.ExecuteCommandNonQuery(cmdText, DataParameter.GetDbParam<SqlParameter>("key", item.key, "body", item.body, "name", name));
+                            iscommited = res > 0;
+                        }
+                        break;
+                    default:
+                        var task = new PersistentDbTask()
+                        {
+                            DdProvider = DbProvider,
+                            CommandText = cmdText,
+                            CommandType = "DbAddJournal",
+                            ConnectionString = Settings.ConnectionString,
+                            Parameters = DataParameter.GetDbParam<SqlParameter>("key", item.key, "body", item.body, "name", name)
+                        };
+                        task.ExecuteTask(_EnableTasker);
+                        iscommited = true;
+                        break;
+                }
+
+                //if (iscommited)
+                //{
+                //    OnItemChanged("TryAddJournal", item.key, value);
+                //}
+            }
+            catch (Exception ex)
+            {
+                string err = ex.Message;
+                OnErrorOcurred("TryAddJournal", ex.Message);
+            }
+            return iscommited;
+
+        }
+        
+
     }
 
 
