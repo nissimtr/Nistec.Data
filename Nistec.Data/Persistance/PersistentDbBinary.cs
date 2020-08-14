@@ -54,7 +54,7 @@ namespace Nistec.Data.Persistance
                         create table {0} (
                         	[key] [varchar](50) NOT NULL PRIMARY KEY CLUSTERED ,
 	                        [body] [varbinary](max) NULL,
-	                        [name] [varchar](50) NOT NULL,
+	                        [name] [varchar](250) NOT NULL,
 	                        [timestamp] [datetime] NOT NULL DEFAULT (GETDATE())
                         );";
         const string sqlinsert = "insert into {0} (key, body, name) values (@key, @body, @name)";
