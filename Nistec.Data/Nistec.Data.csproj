@@ -108,6 +108,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Entities\Cache\EntityItemsBag.cs" />
+    <Compile Include="Entities\DbSqlContext.cs" />
     <Compile Include="Entities\DbContextCommand.cs" />
     <Compile Include="Entities\EntityDbArgs.cs" />
     <Compile Include="Entities\EntityRecord.cs" />

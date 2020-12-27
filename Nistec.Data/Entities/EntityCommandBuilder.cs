@@ -124,6 +124,10 @@ namespace Nistec.Data.Entities
             return action + " " + supix;
         }
 
+        public bool HasOutputValues
+        {
+            get { return (OutputValues != null && OutputValues.Count > 0); }
+        }
 
         public string ToJson()
         {
@@ -132,25 +136,25 @@ namespace Nistec.Data.Entities
 
         public int GetReturnValue()
         {
-            if (OutputValues == null || IdentityField == null)
+            if (!HasOutputValues || IdentityField == null)
                 return -1;
             return OutputValues.Get<int>(IdentityField);
         }
         public T GetIdentityValue<T>()
         {
-            if (OutputValues == null || IdentityField == null)
+            if (!HasOutputValues || IdentityField == null)
                 return default(T);
             return OutputValues.Get<T>(IdentityField);
         }
         public T GetValue<T>(string key)
         {
-            if (OutputValues==null)
+            if (!HasOutputValues)
                 return default(T);
             return OutputValues.Get<T>(key);
         }
         public T GetValue<T>(string key, T defaultValue)
         {
-            if (OutputValues == null)
+            if (!HasOutputValues)
                 return default(T);
             return OutputValues.Get<T>(key, defaultValue);
         }
