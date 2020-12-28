@@ -9,7 +9,7 @@ using System.Text;
 namespace Nistec.Data.Entities
 {
     /// <summary>
-    /// DbSqlContext
+    /// DbSqlContext is a DbContext of SqlServer with the ability to pass DataTable to Procedure
     /// </summary>
     public class DbSqlContext
     {
@@ -31,6 +31,7 @@ namespace Nistec.Data.Entities
         protected DbSqlContext(DbContextAttribute attr)
         {
             ConnectionString = attr.ConnectionString;
+            ConnectionKey = attr.ConnectionKey;
         }
         /// <summary>
         /// ConnectionString
@@ -40,15 +41,21 @@ namespace Nistec.Data.Entities
         /// ConnectionKey
         /// </summary>
         public string ConnectionKey { get; private set; }
+        /// <summary>
+        /// Gets or sets the wait time before terminating the attempt to execute a command,
+        /// The time in seconds to wait for the command to execute. The default is 30 seconds.
+        /// </summary>
+        public int CommandTimeout { get; set; }
+
 
         /// <summary>
         /// ctor
         /// </summary>
-        /// <param name="cnnName"></param>
-        public DbSqlContext(string cnnName)
+        /// <param name="connectionKey"></param>
+        public DbSqlContext(string connectionKey)
         {
-            ConnectionKey = cnnName;
-            ConnectionString = NetConfig.AppSettings[cnnName];
+            SetCnn(connectionKey);
+            //ConnectionString = NetConfig.AppSettings[connectionKey];
         }
 
         /// <summary>
@@ -82,14 +89,25 @@ namespace Nistec.Data.Entities
                 throw new ArgumentNullException("DbSqlContext.ValidateArgumets.ConnectionString");
             if (string.IsNullOrEmpty(procName))
                 throw new ArgumentNullException("DbSqlContext.ValidateArgumets.procName");
+            if (CommandTimeout <= 0)
+                CommandTimeout = 30;
         }
-        /// <summary>
-        /// GetCnn
-        /// </summary>
-        /// <returns></returns>
-        protected string GetCnn()
+
+       /// <summary>
+       /// Set connection string
+       /// </summary>
+       /// <param name="connectionKey"></param>
+        protected void SetCnn(string connectionKey)
         {
-            return NetConfig.AppSettings[ConnectionKey];
+            //Max Pool Size=100;
+            this.ConnectionKey = connectionKey;
+            var connectionSettings=NetConfig.ConnectionContext(ConnectionKey);
+            if (connectionSettings == null)
+            {
+                throw new InvalidOperationException("Invalid connection settings for key:" + ConnectionKey);
+            }
+            this.ConnectionString = connectionSettings.ConnectionString;
+            //return NetConfig.AppSettings[ConnectionKey];
         }
         /// <summary>
         /// ExecProcReturnValue
@@ -108,6 +126,7 @@ namespace Nistec.Data.Entities
             {
                 using (SqlCommand command = new SqlCommand(procName, connection))
                 {
+                    command.CommandTimeout = CommandTimeout;
                     command.CommandType = System.Data.CommandType.StoredProcedure;
                     command.Parameters.AddRange(parameters.ToArray());
                     var returnParameter = command.Parameters.Add("@ReturnVal", System.Data.SqlDbType.Int);
@@ -137,6 +156,7 @@ namespace Nistec.Data.Entities
             {
                 using (SqlCommand command = new SqlCommand(procName, connection))
                 {
+                    command.CommandTimeout = CommandTimeout;
                     command.CommandType = System.Data.CommandType.StoredProcedure;
                     command.Parameters.AddRange(parameters.ToArray());
                     connection.Open();
@@ -240,6 +260,7 @@ namespace Nistec.Data.Entities
             {
                 using (SqlCommand command = new SqlCommand(procName, connection))
                 {
+                    command.CommandTimeout = CommandTimeout;
                     command.CommandType = System.Data.CommandType.StoredProcedure;
                     command.Parameters.AddRange(parameters.ToArray());
                     using (SqlDataAdapter adp = new SqlDataAdapter(command))
@@ -265,6 +286,7 @@ namespace Nistec.Data.Entities
             {
                 using (SqlCommand command = new SqlCommand(procName, connection))
                 {
+                    command.CommandTimeout = CommandTimeout;
                     command.CommandType = System.Data.CommandType.StoredProcedure;
                     command.Parameters.AddRange(parameters.ToArray());
                     using (SqlDataAdapter adp = new SqlDataAdapter(command))
