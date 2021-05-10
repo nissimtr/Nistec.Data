@@ -358,8 +358,8 @@ namespace Nistec.Data
                 //sb.Append(" WHERE ");
                 for (int i = 0; i < count; i++)
                 {
-                    i++;
                     sb.AppendFormat("@{0}", keyValueParameters[i]);
+                    i++;
                     if (i < count - 1)
                         sb.Append(", ");
 
