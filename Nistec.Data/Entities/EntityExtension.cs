@@ -424,6 +424,54 @@ namespace Nistec.Data.Entities
         }
         #endregion
 
+        /// <summary>
+        /// EntityToNameValue
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="instance"></param>
+        /// <param name="Exclude"></param>
+        /// <returns></returns>
+        /*
+        var entity = EntityExtension.Create<QreminderRegistry>(Request.Form);
+        entity.AccountId = su.AccountId; 
+          
+         * */
+        public static object[] EntityToNameValue<T>(this T instance, params string[] Exclude) where T : IEntityItem
+        {
+            List<object> keyValues = new List<object>();
+
+            var props = DataProperties.GetEntityProperties(typeof(T));
+            //props = props.Where(p => p.Attribute.Order > 0).OrderBy(p => p.Attribute.Order);
+
+            foreach (var pa in props)
+            {
+                PropertyInfo property = pa.Property;
+                EntityPropertyAttribute attr = pa.Attribute;
+                if (!Exclude.Contains(property.Name))
+                {
+                    if (attr != null)
+                    {
+                        if (attr.ParameterType == EntityPropertyType.NA || attr.ParameterType == EntityPropertyType.View)
+                            continue;
+
+
+                        string key = attr.GetParamName(pa.Property.Name);//attr.IsColumnDefined ? attr.Column : pa.Property.Name;
+                        object val = property.GetValue(instance, null);
+
+                        keyValues.Add(key);
+                        keyValues.Add(val);
+
+                    }
+                    else
+                    {
+                        keyValues.Add(property.Name);
+                        keyValues.Add(property.GetValue(instance, null));
+                    }
+                }
+            }
+            return keyValues.ToArray();
+        }
+
         public static T ToEntity<T>(string commaString, char splitterList = '|', char spliterKeyValue = '=')
         {
             var collection= KeyValueUtil.ParseCommaString(commaString, splitterList, spliterKeyValue);

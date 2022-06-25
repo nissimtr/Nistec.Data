@@ -31,6 +31,42 @@ using System.ComponentModel;
 
 namespace Nistec.Data.Entities
 {
+    /// <summary>
+    /// DbConnector
+    /// </summary>
+    /// <typeparam name="Dbc"></typeparam>
+    public abstract class DbConnector<Dbc> : IDisposable where Dbc : IDbContext
+    {
+        protected DbContext db;
+
+        public DbConnector()
+        {
+            db = DbContext.Get<Dbc>();
+        }
+
+        public bool OwnConnection
+        {
+            get { return db.OwnsConnection; }
+            set { db.OwnsConnection = value; }
+        }
+
+        public bool HasConnection
+        {
+            get { return db.HasConnection; }
+        }
+
+        public void Dispose()
+        {
+            if (db != null)
+            {
+                db.Dispose();
+                db = null;
+            }
+        }
+    }
+    /// <summary>
+    /// DbContextExtension
+    /// </summary>
     public static class DbContextExtension
     {
 
