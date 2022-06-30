@@ -684,7 +684,7 @@ namespace Nistec.Data.Entities
             }
             return keyValues.ToArray();
         }
-        public static object[] GetEntityKeyValue<T>(T instance, bool keyTypesOnly = false, bool useOrder = false) where T : IEntityItem
+        public static object[] GetEntityKeyValue<T>(T instance, bool keyTypesOnly = false, bool useOrder = false, bool isUpsert=false) where T : IEntityItem
         {
             List<object> keyValues = new List<object>();
 
@@ -698,22 +698,24 @@ namespace Nistec.Data.Entities
                 EntityPropertyAttribute attr = pa.Attribute;
                 if (attr != null)
                 {
+                    string key = attr.GetParamName(pa.Property.Name);// attr.IsColumnDefined ? attr.Column : pa.Property.Name;
+                    object val = property.GetValue(instance, null);
+
                     if (keyTypesOnly)
                     {
                         if (attr.ParameterType == EntityPropertyType.Key || attr.ParameterType == EntityPropertyType.Identity)
                         {
-                            string key = attr.GetParamName(pa.Property.Name);// attr.IsColumnDefined ? attr.Column : pa.Property.Name;
-                            object val = property.GetValue(instance, null);
-
                             keyValues.Add(key);
                             keyValues.Add(val);
                         }
                     }
+                    if (!(attr.ParameterType == EntityPropertyType.View || attr.ParameterType == EntityPropertyType.NA || attr.ParameterType == EntityPropertyType.Optional))
+                    {
+                        keyValues.Add(key);
+                        keyValues.Add(val);
+                    }
                     else
                     {
-                        string key = attr.GetParamName(pa.Property.Name);//attr.IsColumnDefined ? attr.Column : pa.Property.Name;
-                        object val = property.GetValue(instance, null);
-
                         keyValues.Add(key);
                         keyValues.Add(val);
                     }

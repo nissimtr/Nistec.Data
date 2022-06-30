@@ -130,10 +130,10 @@ namespace Nistec.Data.Entities
         //{
         //    return EntityPropertyBuilder.GetEntityKeyValueParameters<T>(Current, useOrder);
         //}
-        protected object[] GetKeyValueFields(bool useKeyTypesOnly = false, bool enableOrder=false)
+        protected object[] GetKeyValueFields(bool useKeyTypesOnly = false, bool enableOrder=false, bool isUpsert = false)
         {
             //return EntityPropertyBuilder.GetEntityKeyValueByOrder(Current, useKeyTypesOnly);
-            return EntityPropertyBuilder.GetEntityKeyValue(Current, useKeyTypesOnly,enableOrder);
+            return EntityPropertyBuilder.GetEntityKeyValue(Current, useKeyTypesOnly,enableOrder, isUpsert);
         }
         #endregion
 
@@ -373,7 +373,7 @@ namespace Nistec.Data.Entities
                 if (keyvalueParameters == null || keyvalueParameters.Length==0)
                 {
                     Validate(updateCommandType);
-                    keyvalueParameters = GetKeyValueFields(false);
+                    keyvalueParameters = GetKeyValueFields(false,false,true);
                 }
 
                 if (returnType == ReturnValueType.OutputParameters)
@@ -472,7 +472,7 @@ namespace Nistec.Data.Entities
                 if (keyvalueParameters == null || keyvalueParameters.Length == 0)
                 {
                     Validate(ProcedureType.Upsert);
-                    keyvalueParameters = GetKeyValueFields(false);
+                    keyvalueParameters = GetKeyValueFields(false,false,true);
                 }
                 var result = ExecuteReturnValue(ProcedureType.Upsert, proc, -1, keyvalueParameters);
                 var p = DataProperties.GetEntityProperty(Current.GetType(), EntityPropertyType.Identity);
@@ -500,7 +500,7 @@ namespace Nistec.Data.Entities
                 if (keyvalueParameters == null || keyvalueParameters.Length == 0)
                 {
                     Validate(ProcedureType.Upsert);
-                    keyvalueParameters = GetKeyValueFields(false);
+                    keyvalueParameters = GetKeyValueFields(false,false, true);
                 }
                 res = ExecuteOutput(ProcedureType.Upsert, proc, keyvalueParameters);
             }
@@ -525,7 +525,7 @@ namespace Nistec.Data.Entities
                 if (keyvalueParameters == null || keyvalueParameters.Length == 0)
                 {
                     Validate(ProcedureType.Insert);
-                    keyvalueParameters = GetKeyValueFields(false);
+                    keyvalueParameters = GetKeyValueFields(false,false,true);
                 }
                 res = ExecuteOutput(ProcedureType.Insert, proc, keyvalueParameters);
             }
@@ -550,7 +550,7 @@ namespace Nistec.Data.Entities
                 if (keyvalueParameters == null || keyvalueParameters.Length == 0)
                 {
                     Validate(ProcedureType.Insert);
-                    keyvalueParameters = GetKeyValueFields(false);
+                    keyvalueParameters = GetKeyValueFields(false,false,true);
                 }
                 var result = ExecuteReturnValue(ProcedureType.Insert, proc, -1, keyvalueParameters);
                 var p = DataProperties.GetEntityProperty(Current.GetType(), EntityPropertyType.Identity);
@@ -578,7 +578,7 @@ namespace Nistec.Data.Entities
                 if (keyvalueParameters == null || keyvalueParameters.Length == 0)
                 {
                     Validate(ProcedureType.Update);
-                    keyvalueParameters = GetKeyValueFields(false);
+                    keyvalueParameters = GetKeyValueFields(false,false,true);
                 }
                 res = ExecuteOutput(ProcedureType.Update, proc, keyvalueParameters);
             }
@@ -603,7 +603,7 @@ namespace Nistec.Data.Entities
                 if (keyvalueParameters == null || keyvalueParameters.Length == 0)
                 {
                     Validate(ProcedureType.Update);
-                    keyvalueParameters = GetKeyValueFields(false);
+                    keyvalueParameters = GetKeyValueFields(false,false,true);
                 }
                 var result = ExecuteReturnValue(ProcedureType.Update, proc, -1, keyvalueParameters);
                 //var p = DataProperties.GetEntityProperty(Current.GetType(), EntityPropertyType.Identity);
