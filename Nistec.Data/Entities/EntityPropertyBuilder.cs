@@ -684,6 +684,45 @@ namespace Nistec.Data.Entities
             }
             return keyValues.ToArray();
         }
+        public static object[] GetEntityKeyValue<T>(T instance, bool keyTypesOnly = false, bool useOrder = false) where T : IEntityItem
+        {
+            List<object> keyValues = new List<object>();
+
+            var props = DataProperties.GetEntityProperties(typeof(T));
+            if (useOrder)
+                props = props.Where(p => p.Attribute.Order > 0).OrderBy(p => p.Attribute.Order);
+
+            foreach (var pa in props)
+            {
+                PropertyInfo property = pa.Property;
+                EntityPropertyAttribute attr = pa.Attribute;
+                if (attr != null)
+                {
+                    if (keyTypesOnly)
+                    {
+                        if (attr.ParameterType == EntityPropertyType.Key || attr.ParameterType == EntityPropertyType.Identity)
+                        {
+                            string key = attr.GetParamName(pa.Property.Name);// attr.IsColumnDefined ? attr.Column : pa.Property.Name;
+                            object val = property.GetValue(instance, null);
+
+                            keyValues.Add(key);
+                            keyValues.Add(val);
+                        }
+                    }
+                    else
+                    {
+                        string key = attr.GetParamName(pa.Property.Name);//attr.IsColumnDefined ? attr.Column : pa.Property.Name;
+                        object val = property.GetValue(instance, null);
+
+                        keyValues.Add(key);
+                        keyValues.Add(val);
+                    }
+                }
+
+            }
+            return keyValues.ToArray();
+        }
+
         public static object[] GetEntityKeyValueParameters<T>(T instance, bool useOrder = false) where T : IEntityItem
         {
             List<object> keyValues = new List<object>();

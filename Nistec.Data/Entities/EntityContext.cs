@@ -130,9 +130,10 @@ namespace Nistec.Data.Entities
         //{
         //    return EntityPropertyBuilder.GetEntityKeyValueParameters<T>(Current, useOrder);
         //}
-        protected object[] GetKeyValueFields(bool useKeyTypesOnly)
+        protected object[] GetKeyValueFields(bool useKeyTypesOnly = false, bool enableOrder=false)
         {
-            return EntityPropertyBuilder.GetEntityKeyValueByOrder(Current, useKeyTypesOnly);
+            //return EntityPropertyBuilder.GetEntityKeyValueByOrder(Current, useKeyTypesOnly);
+            return EntityPropertyBuilder.GetEntityKeyValue(Current, useKeyTypesOnly,enableOrder);
         }
         #endregion
 
