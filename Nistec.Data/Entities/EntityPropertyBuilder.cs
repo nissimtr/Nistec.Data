@@ -709,10 +709,13 @@ namespace Nistec.Data.Entities
                             keyValues.Add(val);
                         }
                     }
-                    if (!(attr.ParameterType == EntityPropertyType.View || attr.ParameterType == EntityPropertyType.NA || attr.ParameterType == EntityPropertyType.Optional))
+                    else if (isUpsert)
                     {
-                        keyValues.Add(key);
-                        keyValues.Add(val);
+                        if (!(attr.ParameterType == EntityPropertyType.View || attr.ParameterType == EntityPropertyType.NA || attr.ParameterType == EntityPropertyType.Optional))
+                        {
+                            keyValues.Add(key);
+                            keyValues.Add(val);
+                        }
                     }
                     else
                     {
