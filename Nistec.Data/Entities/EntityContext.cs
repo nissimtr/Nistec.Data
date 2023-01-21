@@ -806,6 +806,18 @@ namespace Nistec.Data.Entities
 
         }
 
+        public EntityContext(GenericRecord gr)
+            : base()
+        {
+            if (gr == null)
+            {
+                throw new ArgumentNullException("EntityContext<>.gr");
+            }
+
+            Set(gr);
+
+        }
+
         /// <summary>
         /// Initialize a new instance of <see cref="EntityContext"/> using entity instance
         /// </summary>
