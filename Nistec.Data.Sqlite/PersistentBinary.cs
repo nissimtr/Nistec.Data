@@ -47,11 +47,11 @@ namespace Nistec.Data.Sqlite
                           name TEXT,
                           timestamp DATETIME DEFAULT CURRENT_TIMESTAMP     
                         ) WITHOUT ROWID;";
-        const string sqlinsert = "insert into {0} (key, body, name) values (@key, @body, @name)";
+        //const string sqlinsert = "insert into {0} (key, body, name) values (@key, @body, @name)";
         const string sqldelete = "delete from {0} where key=@key";
         const string sqlupdate = "update {0} set body=@body, timestamp=CURRENT_TIMESTAMP where key=@key";
-        const string sqlinsertOrIgnore = "insert or ignore into {0}(key, body, name) values(@key, @body, @name)";
-        const string sqlinsertOrReplace = "insert or replace into {0}(key, body, name) values(@key, @body, @name)";
+        const string sqlinsertOrIgnore = "insert or IGNORE into {0}(key, body, name) values(@key, @body, @name)";
+        const string sqlinsertOrReplace = "insert or REPLACE into {0}(key, body, name) values(@key, @body, @name)";
         const string sqlselect = "select {1} from {0} where key=@key";
         const string sqlselectall = "select {1} from {0}";
 
@@ -61,7 +61,7 @@ namespace Nistec.Data.Sqlite
         }
         protected override string DbAddCommand()
         {
-            return string.Format(sqlinsert, Name);
+            return string.Format(sqlinsertOrIgnore, Name);
         }
 
         protected override string DbDeleteCommand()

@@ -398,14 +398,24 @@ namespace Nistec.Data.Sqlite
         //        }
         //    }
         //}
+        public void LoadDbAsync()
+        {
+            Task.Factory.StartNew(() => LoadDb());
+            //Task task=new Task(() => LoadDb());
+            //task.Start();
+            //task.Wait();
+
+        }
+
 
         public virtual void LoadDb()
         {
             IList<PI> list;
             OnBeginLoading();
-            using (TransactionScope tran = new TransactionScope())
+
+            try
             {
-                try
+                using (TransactionScope tran = new TransactionScope(TransactionScopeOption.Required, TimeSpan.FromMinutes(5)))
                 {
                     using (var db = new DbLite(ConnectionString, DBProvider.SQLite))
                     {
@@ -429,13 +439,14 @@ namespace Nistec.Data.Sqlite
                     }
 
                     tran.Complete();
-                    OnLoadCompleted(this.Name,this.Count);
                 }
-                catch (Exception ex)
-                {
-                    OnErrorOcurred("LoadDb", ex.Message);
-                }
+                OnLoadCompleted(this.Name, this.Count);
             }
+            catch (Exception ex)
+            {
+                OnErrorOcurred("LoadDb", ex.Message);
+            }
+
         }
 
 
@@ -1569,7 +1580,7 @@ namespace Nistec.Data.Sqlite
             var sql = DbLookupCommand();
             using (var db = new DbLite(ConnectionString, DBProvider.SQLite))
             {
-                var res = db.QuerySingle<PI>(sql, null);
+                var res = db.QuerySingle<PI>(sql, "key", key);
                 
                 if (EnableCompress)
                 {
@@ -1671,7 +1682,7 @@ namespace Nistec.Data.Sqlite
             if (loadPersistItems)
             {
                 dictionary.Clear();
-                LoadDb();
+                LoadDbAsync();
             }
             else
                 Clear();
