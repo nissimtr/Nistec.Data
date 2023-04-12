@@ -140,6 +140,7 @@ namespace Nistec.Data.Entities
             SourceType = attr.EntitySourceType;
             Keys = attr.EntityKey;
             Columns = attr.Columns;
+            //_Db = Context();
         }
         /// <summary>
         ///  Crate a new instance of <see cref="EntityDbContext"/>
@@ -155,6 +156,7 @@ namespace Nistec.Data.Entities
             ConnectionKey = connectionKey;
             Keys = null;
             Columns = columns;
+            //_Db = Context();
         }
         /// <summary>
         ///  Crate a new instance of <see cref="EntityDbContext"/>
@@ -173,6 +175,7 @@ namespace Nistec.Data.Entities
             SourceType = sourceType;
             Keys = keys.ToArray();
             Columns = columns;
+            //_Db = Context();
         }
         /// <summary>
         ///  Crate a new instance of <see cref="EntityDbContext"/>
@@ -527,6 +530,19 @@ namespace Nistec.Data.Entities
             }
             return SqlFormatter.SelectString("*", MappingName, where);
         }
+        internal string GetCommandText(string where, CommandType CmdType= CommandType.Text)
+        {
+            if (string.IsNullOrEmpty(MappingName))
+            {
+                throw new EntityException("Invalid MappingName");
+            }
+            if (CmdType == CommandType.StoredProcedure)
+            {
+                return MappingName;
+            }
+            return SqlFormatter.SelectString("*", MappingName, where);
+        }
+
         internal object[] EntityKeysToParam(object[] keys)
         {
             if (string.IsNullOrEmpty(MappingName))
@@ -798,6 +814,28 @@ namespace Nistec.Data.Entities
                     dt = cmd.ExecuteCommand<DataTable>(commandText, prm, CmdType(), 0, true);
                 }
 
+                return dt;
+            }
+            catch (Exception ex)
+            {
+                throw new EntityException(ex.Message);
+            }
+        }
+
+        internal DataTable ExecuteDataTable(DataFilter filter, CommandType commandType = CommandType.Text)
+        {
+            DataTable dt = null;
+            ValidateContext();
+            try
+            {
+                string strWhere = filter == null ? null : filter.Filter;
+                IDbDataParameter[] parameters = filter == null ? null : filter.Parameters;
+                string commandText = GetCommandText(strWhere);
+                var context = Context();
+                using (var cmd = context.NewCmd())
+                {
+                    dt = cmd.ExecuteCommand<DataTable>(commandText, parameters, commandType, 0, true);
+                }
                 return dt;
             }
             catch (Exception ex)

@@ -18,6 +18,7 @@
 // 10/01/2006  Nissim   Created the code
 //===============================================================================================================
 //licHeader|
+using Nistec.Data.Entities;
 using Nistec.Generic;
 using Nistec.Serialization;
 using System;

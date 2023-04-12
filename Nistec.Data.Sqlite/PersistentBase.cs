@@ -415,30 +415,55 @@ namespace Nistec.Data.Sqlite
 
             try
             {
-                using (TransactionScope tran = new TransactionScope(TransactionScopeOption.Required, TimeSpan.FromMinutes(5)))
+                //using (TransactionScope tran = new TransactionScope(TransactionScopeOption.Required, TimeSpan.FromMinutes(25)))
+                //{
+                //    using (var db = new DbLite(ConnectionString, DBProvider.SQLite))
+                //    {
+                //        var sql = "select * from " + Name;
+                //        list = db.Query<PI>(sql, null);
+                //        if (list != null && list.Count > 0)
+                //        {
+                //            foreach (var entry in list)
+                //            {
+                //                var val = FromPersistItem(entry);
+                //                if (val != null)
+                //                {
+                //                    dictionary[entry.key] = val;
+                //                    OnItemLoaded(val);
+                //                    //if (onTake != null)
+                //                    //    onTake(val);
+                //                }
+                //            }
+                //        }
+
+                //    }
+
+                //    tran.Complete();
+                //}
+
+                using (TransactionScope tran = new TransactionScope(TransactionScopeOption.Required, TimeSpan.FromMinutes(25)))
                 {
                     using (var db = new DbLite(ConnectionString, DBProvider.SQLite))
                     {
                         var sql = "select * from " + Name;
                         list = db.Query<PI>(sql, null);
-                        if (list != null && list.Count > 0)
-                        {
-                            foreach (var entry in list)
-                            {
-                                var val = FromPersistItem(entry);
-                                if (val != null)
-                                {
-                                    dictionary[entry.key] = val;
-                                    OnItemLoaded(val);
-                                    //if (onTake != null)
-                                    //    onTake(val);
-                                }
-                            }
-                        }
-
                     }
 
                     tran.Complete();
+                }
+                if (list != null && list.Count > 0)
+                {
+                    foreach (var entry in list)
+                    {
+                        var val = FromPersistItem(entry);
+                        if (val != null)
+                        {
+                            dictionary[entry.key] = val;
+                            OnItemLoaded(val);
+                            //if (onTake != null)
+                            //    onTake(val);
+                        }
+                    }
                 }
                 OnLoadCompleted(this.Name, this.Count);
             }

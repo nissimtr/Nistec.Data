@@ -1142,11 +1142,28 @@ namespace Nistec.Data.Entities
                 Set(new GenericRecord((IDictionary)o));
             }
         }
-       
+
+        public Dictionary<string, T> EntityDictionary(DataFilter filter)
+        {
+            if (!EntityDb.HasConnection)
+                return null;
+            try
+            {
+                DataTable dt = EntityDb.ExecuteDataTable(filter);//.GetEntityTable(filter);
+
+                return this.ToEntityDictionary<T>(dt);
+
+            }
+            catch (Exception)
+            {
+            }
+            return null;
+        }
+
         #endregion
 
         #region List
-        
+
 
         /// <summary>
         /// Create Entity collection using Entity Keys
@@ -1737,10 +1754,14 @@ namespace Nistec.Data.Entities
             return m_EntityDb.HasConnection;
         }
 
- 
+
         #endregion
 
         #region IEntityDictionary
+        public IDictionary<string,object> ToDictionary()
+        {
+            return _Data == null ? null : _Data.ToDictionary();
+        }
 
         public IDictionary EntityDictionary()
         {

@@ -413,9 +413,9 @@ namespace Nistec.Data
 
         #region ISerialJson
 
-        public string ToJson(bool pritty = false)
+        public string ToJson(bool pretty = false)
         {
-            return EntityWrite(new JsonSerializer(JsonSerializerMode.Write, null), pritty);
+            return EntityWrite(new JsonSerializer(JsonSerializerMode.Write, null), pretty);
         }
 
         public string EntityWrite(IJsonSerializer serializer, bool pretty = false)

@@ -374,6 +374,70 @@ namespace Nistec.Data.Entities
         }
 
         #endregion
+        
+        public static Dictionary<string, T> ToEntityDictionary<T>(this IEntity context, DataTable dt)
+        {
+            if (dt == null)
+            {
+                return null;// throw new ArgumentNullException("EntityDictionary.dt");
+            }
+
+            Dictionary<string, T> list = new Dictionary<string, T>();
+
+            var records = GenericRecord.ParseList(dt);
+
+            EntityAttribute keyattr = AttributeProvider.GetCustomAttribute<EntityAttribute>(context.GetType());
+
+            if (keyattr == null)
+            {
+                keyattr = new EntityAttribute(context.EntityDb);
+            }
+
+            if (records != null)
+            {
+
+                Type type = typeof(T);
+
+                if (type == typeof(GenericRecord))
+                {
+                    string[] fieldsKey = context.EntityDb.EntityKeys.ToArray();
+
+                    foreach (GenericRecord gr in records)
+                    {
+                        string key = new EntityKeys(fieldsKey).ToString();//.Get(gr.GetRecordKey(fieldsKey)).ToString();
+                        list[key] = GenericTypes.Cast<T>(gr);// TConvert<T>(gr);
+                    }
+                }
+                else if (typeof(IGenericEntity).IsAssignableFrom(type))
+                {
+                    string[] fieldsKey = context.EntityDb.EntityKeys.ToArray();
+
+                    foreach (GenericRecord gr in records)
+                    {
+                        IGenericEntity rcd = (IGenericEntity)System.Activator.CreateInstance<T>();
+                        //GenericEntity ge = new GenericEntity(gr);
+
+                        string key = new EntityKeys(fieldsKey).ToString();//EntityKeys.Get(gr.GetRecordKey(fieldsKey)).ToString();
+                        rcd.Load(gr);
+
+                        list[key] = GenericTypes.Cast<T>(rcd as IGenericEntity);// TConvert<T>(rcd as IGenericEntity);
+                    }
+                }
+                else if (typeof(IEntityItem).IsAssignableFrom(type))
+                {
+                    foreach (GenericRecord gr in records)
+                    {
+                        T item = System.Activator.CreateInstance<T>();
+                        //EntityKeys entityKey = EntityPropertyBuilder.SetEntityContextWithKey(keyattr, item, gr);
+                        KeySet entityKey = EntityPropertyBuilder.SetEntityContextWithKey(keyattr, item, gr);
+                        string key = entityKey.ToString();
+                        list[key] = item;
+                    }
+                }
+            }
+
+            return list;
+        }
 
     }
 }

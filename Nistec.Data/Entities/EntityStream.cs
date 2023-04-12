@@ -75,9 +75,9 @@ namespace Nistec.Data.Entities
         /// </summary>
         public string Label { get; set; }
         /// <summary>
-        /// Get or Set entity GroupId.
+        /// Get or Set entity SessionId.
         /// </summary>
-        public string GroupId { get; set; }
+        public string SessionId { get; set; }
         /// <summary>
         /// Get or Set The result type name.
         /// </summary>
@@ -166,7 +166,7 @@ namespace Nistec.Data.Entities
             streamer.WriteString(TypeName);
             streamer.WriteValue((int)Formatter);
             streamer.WriteString(Label);
-            streamer.WriteString(GroupId);
+            streamer.WriteString(SessionId);
             streamer.WriteValue(Expiration);
             streamer.WriteValue(Modified);
             streamer.WriteValue((byte)TransformType);
@@ -189,7 +189,7 @@ namespace Nistec.Data.Entities
             TypeName = streamer.ReadString();
             Formatter = (Formatters)streamer.ReadValue<int>();
             Label = streamer.ReadString();
-            GroupId = streamer.ReadString();
+            SessionId = streamer.ReadString();
             Expiration = streamer.ReadValue<int>();
             Modified = streamer.ReadValue<DateTime>();
             TransformType = (TransformType)streamer.ReadValue<byte>();
@@ -216,7 +216,7 @@ namespace Nistec.Data.Entities
             serializer.WriteToken("TypeName", TypeName);
             serializer.WriteToken("Formatter", Formatter);
             serializer.WriteToken("Label", Label, null);
-            serializer.WriteToken("GroupId", GroupId, null);
+            serializer.WriteToken("SessionId", SessionId, null);
             serializer.WriteToken("Expiration", Expiration);
             serializer.WriteToken("Modified", Modified);
             serializer.WriteToken("TransformType", TransformType);
@@ -240,7 +240,7 @@ namespace Nistec.Data.Entities
                 TypeName = dic.Get<string>("TypeName");
                 Formatter = dic.Get<Formatters>("Formatter");
                 Label = dic.Get<string>("Label");
-                GroupId = dic.Get<string>("GroupId");
+                SessionId = dic.Get<string>("SessionId");
                 Expiration = dic.Get<int>("Expiration");
                 Modified = dic.Get<DateTime>("Modified");
                 TransformType = (TransformType)dic.Get<byte>("TransformType");
@@ -263,7 +263,7 @@ namespace Nistec.Data.Entities
                 TypeName = queryString.Get<string>("TypeName");
                 Formatter = queryString.GetEnum<Formatters>("Formatter", Formatters.Json);
                 Label = queryString.Get<string>("Label");
-                GroupId = queryString.Get<string>("GroupId");
+                SessionId = queryString.Get<string>("SessionId");
                 Expiration = queryString.Get<int>("Expiration");
                 Modified = queryString.Get<DateTime>("Modified", DateTime.Now);
                 TransformType = (TransformType)queryString.GetEnum<TransformType>("TransformType", TransformType.Object);
@@ -430,7 +430,7 @@ namespace Nistec.Data.Entities
                 BodyStream = GetCopy(),
                 Expiration = this.Expiration,
                 Label = this.Label,
-                GroupId = this.GroupId,
+                SessionId = this.SessionId,
                 Formatter = this.Formatter,
                 Id = this.Id,
                 Modified = this.Modified,
@@ -451,7 +451,7 @@ namespace Nistec.Data.Entities
                 //BodyStream = GetCopy(),
                 Expiration = this.Expiration,
                 Label = this.Label,
-                GroupId = this.GroupId,
+                SessionId = this.SessionId,
                 Formatter = this.Formatter,
                 Id = this.Id,
                 Modified = this.Modified,
@@ -1255,7 +1255,7 @@ namespace Nistec.Data.Entities
             entity.Expiration = this.Expiration;
             entity.Formatter = this.Formatter;
             entity.Label = this.Label;
-            entity.GroupId = this.GroupId;
+            entity.SessionId = this.SessionId;
             entity.Id = this.Id;
             entity.Modified = this.Modified;
             //entity.IsEmpty = this.IsEmpty;

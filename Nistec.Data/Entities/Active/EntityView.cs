@@ -232,7 +232,7 @@ namespace Nistec.Data.Entities
         /// </summary>
         /// <param name="values"></param>
         /// <returns></returns>
-        public int Find(object[] values)
+        public int Find(params object[] values)
         {
             if (IsEmpty)
                 return -1;

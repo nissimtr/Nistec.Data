@@ -376,6 +376,54 @@ namespace Nistec.Data.Entities
             return null;
         }
 
+        public static ConcurrentDictionary<string, T> CreateConcurrentEntityList<T>(IEntity<T> entity, DataTable dt, Action<Exception> onError)
+        {
+
+            try
+            {
+                if (entity == null)
+                    return null;
+                //if (!entity.EntityDb.HasConnection)
+                //    return null;
+                //DataTable dt = entity.EntityDb.DoCommand<DataTable>(filter);
+
+                return CreateConcurrentEntityList<T>(entity, dt);
+
+            }
+            catch (Exception ex)
+            {
+                if (onError != null)
+                {
+                    onError(ex);
+                }
+            }
+            return null;
+        }
+
+        public static DataTable CreateEntityData<T>(IEntity<T> entity, DataFilter filter, Action<Exception> onError)
+        {
+
+            try
+            {
+                if (entity == null)
+                    return null;
+                if (!entity.EntityDb.HasConnection)
+                    return null;
+                DataTable dt = entity.EntityDb.DoCommand<DataTable>(filter);
+
+                return dt;
+
+            }
+            catch (Exception ex)
+            {
+                if (onError != null)
+                {
+                    onError(ex);
+                }
+            }
+            return null;
+        }
+
         #endregion
 
         #region ReadStream/WriteStream

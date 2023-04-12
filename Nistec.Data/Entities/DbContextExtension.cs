@@ -154,6 +154,51 @@ namespace Nistec.Data.Entities
             }
         }
 
+        /// <summary>
+        /// Load entity from DataRow
+        /// </summary>
+        /// <param name="dr"></param>
+        /// <param name="instance"></param>
+        /// <param name="allowNull"></param>
+        public static void LoadEntity(DataRow dr, object instance, bool allowNull = true)
+        {
+            if (dr == null)
+            {
+                throw new ArgumentNullException("LoadEntity.dr");
+            }
+
+            //T instance = ActivatorUtil.CreateInstance<T>();
+
+            var props = DataProperties.GetEntityProperties(instance.GetType());
+            foreach (var pa in props)
+            {
+                PropertyInfo property = pa.Property;
+                if (!property.CanWrite)
+                {
+                    continue;
+                }
+
+                EntityPropertyAttribute attr = pa.Attribute;
+                string field = property.Name;
+
+                if (attr != null)
+                {
+                    if (attr.ParameterType == EntityPropertyType.NA)
+                        continue;
+                    field = attr.IsColumnDefined ? attr.Column : property.Name;
+                }
+
+                //object fieldValue = GenericTypes.Convert(values[field], property.PropertyType);
+
+                object fieldValue = dr.Get(field, property.PropertyType, attr.ParameterType == EntityPropertyType.Optional);
+
+                if (fieldValue == null && property.PropertyType == typeof(string))
+                    fieldValue = allowNull ? null : "";
+
+                property.SetValue(instance, fieldValue, null);
+            }
+        }
+
         static void SetEntityContext<T>(T item, DataRow values, IEnumerable<PropertyAttributeInfo<EntityPropertyAttribute>> props, bool allowNull = true)
         {
             foreach (var pa in props)

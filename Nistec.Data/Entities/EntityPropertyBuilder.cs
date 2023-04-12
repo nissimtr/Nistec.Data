@@ -58,7 +58,7 @@ namespace Nistec.Data.Entities
          }
 
 
-         public static GenericRecord CreateGenericRecord<T>(NameValueCollection collection, bool EnablePropertyTypeView)//, bool setValue)// = true)//IEntity
+        public static GenericRecord CreateGenericRecord<T>(NameValueCollection collection, bool EnablePropertyTypeView)//, bool setValue)// = true)//IEntity
          {
              if (collection == null)
              {
