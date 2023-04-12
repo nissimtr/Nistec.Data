@@ -306,10 +306,10 @@ namespace Nistec.Data.Entities
         }
         public static EntityMappingAttribute Get<T>()
         {
-            EntityMappingAttribute[] attributes = typeof(T).GetCustomAttributes<EntityMappingAttribute>();
-            if (attributes == null || attributes.Length == 0)
+            IEnumerable<EntityMappingAttribute> attributes = typeof(T).GetCustomAttributes<EntityMappingAttribute>();
+            if (attributes == null || attributes.Count() == 0)
                 return null;
-            return attributes[0];
+            return attributes.FirstOrDefault();//[0];
             //foreach (var attribute in attributes)
             //{
             //    return attribute;
@@ -386,10 +386,10 @@ namespace Nistec.Data.Entities
 
         public static EntityMappingAttribute Get(IEntityItem instance)
         {
-            EntityMappingAttribute[] attributes = instance.GetType().GetCustomAttributes<EntityMappingAttribute>();
-            if (attributes == null || attributes.Length == 0)
+            IEnumerable<EntityMappingAttribute> attributes = instance.GetType().GetCustomAttributes<EntityMappingAttribute>();
+            if (attributes == null || attributes.Count() == 0)
                 return null;
-            return attributes[0];
+            return attributes.FirstOrDefault();//[0];
             //foreach (var attribute in attributes)
             //{
             //    return attribute;

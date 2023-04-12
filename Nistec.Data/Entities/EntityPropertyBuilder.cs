@@ -41,10 +41,10 @@ namespace Nistec.Data.Entities
          public static EntityMode BuildEntityDb(IEntity instance, CultureInfo culture)
          {
              EntityMode mode = EntityMode.NA;
-             EntityAttribute[] attributes = instance.GetType().GetCustomAttributes<EntityAttribute>();
-             if (attributes == null || attributes.Length == 0)
+            IEnumerable<EntityAttribute> attributes = instance.GetType().GetCustomAttributes<EntityAttribute>();
+             if (attributes == null || attributes.Count() == 0)
                  return EntityMode.NA;
-             var attribute = attributes[0];
+            var attribute = attributes.FirstOrDefault();//[0];
              EntityDbContext db = new EntityDbContext(attribute);//.ConnectionKey, attribute.EntityName, attribute.MappingName, attribute.EntitySourceType, EntityKeys.Get(attribute.EntityKey));
              if (attribute.IsLangResourcesDefined)
              {

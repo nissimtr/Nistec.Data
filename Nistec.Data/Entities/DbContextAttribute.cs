@@ -156,10 +156,10 @@ namespace Nistec.Data.Entities
         }
         public static DbContextAttribute Get<Dbc>() where Dbc : IDbContext
         {
-            DbContextAttribute[] attributes = typeof(Dbc).GetCustomAttributes<DbContextAttribute>();
-            if (attributes == null || attributes.Length == 0)
+            IEnumerable<DbContextAttribute> attributes = typeof(Dbc).GetCustomAttributes<DbContextAttribute>();
+            if (attributes == null || attributes.Count() == 0)
                 return null;
-            return attributes[0];
+            return attributes.FirstOrDefault();//[0];
         }
         public static DbContext Create<Dbc>() where Dbc : IDbContext
         {
@@ -175,15 +175,15 @@ namespace Nistec.Data.Entities
 
         public static void BuildDbContext(DbContext instance, bool forceSettings=false)
         {
-            DbContextAttribute[] attributes = instance.GetType().GetCustomAttributes<DbContextAttribute>();
-            if (attributes == null || attributes.Length == 0)
+            IEnumerable<DbContextAttribute> attributes = instance.GetType().GetCustomAttributes<DbContextAttribute>();
+            if (attributes == null || attributes.Count() == 0)
             {
                 if (forceSettings)
                     throw new EntityException("DbContextAttribute not defined");
                 else
                     return;
             }
-            var attribute=attributes[0];
+            var attribute = attributes.FirstOrDefault();//[0];
 
             instance.SetConnectionInternal(attribute.ConnectionKey, attribute.ConnectionString, attribute.Provider, false);
 
