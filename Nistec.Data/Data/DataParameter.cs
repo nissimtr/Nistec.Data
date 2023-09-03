@@ -32,6 +32,8 @@ using System.Xml;
 using System.Reflection;
 using Nistec.Generic;
 using Nistec.Runtime;
+using Nistec.Data.Entities;
+using System.Collections.Specialized;
 
 namespace Nistec.Data
 {
@@ -625,6 +627,32 @@ namespace Nistec.Data
             return keyValueParameters;
         }
 
+        public static object[] ToNameValue(NameValueCollection args)
+        {
+            List<object> o = new  List<object>();
+           
+            foreach (string key in args)
+            {
+                o.Add(key);
+                o.Add(args[key]);
+            }
+            return o.ToArray();
+        }
+
+        public static object[] ToNameValue(object instance)
+        {
+            if (instance == null)
+                return null;
+            List<object> o = new List<object>();
+            Type type = instance.GetType();
+            PropertyInfo[] pr = type.GetProperties(BindingFlags.Public | BindingFlags.Instance, false);
+            foreach (PropertyInfo p in pr)
+            {
+                o.Add(p.Name);
+                o.Add(p.GetValue(instance));
+            }
+            return o.ToArray();
+        }
 
         ///// <summary>
         ///// Create IDbCmd
@@ -818,6 +846,55 @@ namespace Nistec.Data
 
         //    return list.ToArray();
         //}
+
+        public static List<SqlParameter> GetSqlParameters<T>(T instance) where T : IEntityItem
+        {
+            bool enableAttributeColumn = false;
+            List<SqlParameter> list = new List<SqlParameter>();
+            //T instance = ActivatorUtil.CreateInstance<T>();
+
+            var props = Nistec.Data.DataProperties.GetEntityProperties(typeof(T), true);
+            foreach (var pa in props)
+            {
+                PropertyInfo property = pa.Property;
+                EntityPropertyAttribute attr = pa.Attribute;
+
+                if (!property.CanRead)
+                {
+                    continue;
+                }
+
+                if (attr != null)
+                {
+                    if (attr.ParameterType == EntityPropertyType.NA)
+                    {
+                        continue;
+                    }
+                    if (attr.ParameterType == EntityPropertyType.View)
+                    {
+                        continue;
+                    }
+                    if (property.CanWrite)
+                    {
+
+                        string field = attr.GetColumn(property.Name, enableAttributeColumn);
+                        object value = property.GetValue(instance, null);
+
+                        if (value == null)
+                        {
+                            if (attr.ParameterType == EntityPropertyType.Optional)
+                                continue;
+                            value = attr.AsNull;
+                        }
+
+                        //var val = Types.ChangeType(value, property.PropertyType);
+
+                        list.Add(new SqlParameter(field, value));
+                    }
+                }
+            }
+            return list;
+        }
 
         /// <summary>
         /// Create sql parameter from <see cref="GenericRecord"/>

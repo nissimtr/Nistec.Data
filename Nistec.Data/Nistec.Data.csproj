@@ -87,6 +87,7 @@
     <Compile Include="Advanced\LookupView.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Data\DefaultValAttribute.cs" />
     <Compile Include="Data\CommandContext.cs" />
     <Compile Include="Data\DataExtension.cs" />
     <Compile Include="Data\DataProperties.cs" />

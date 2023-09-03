@@ -404,7 +404,67 @@ namespace Nistec.Data.Entities
 
             return res ?? EntityCommandResult.Empty;
         }
-       
+
+        /// <summary>
+        /// UpsertEx with current entity and added parameters
+        /// </summary>
+        /// <param name="commandType"></param>
+        /// <param name="returnType"></param>
+        /// <param name="keyvalueArgs"></param>
+        /// <returns></returns>
+        public EntityCommandResult UpsertEx(UpsertType commandType = UpsertType.Upsert, ReturnValueType returnType = ReturnValueType.ReturnValue, params object[] keyvalueArgs)
+        {
+            ProcedureType updateCommandType = (ProcedureType)(int)commandType;
+
+            EntityCommandResult res = null;
+            var proc = EntityMappingAttribute.Proc<T>(updateCommandType);
+            if (proc != null)
+            {
+                Validate(updateCommandType);
+
+                object[] keyvalueParameters = null;
+
+                if (keyvalueArgs != null || keyvalueArgs.Length > 0)
+                {
+                    List<object> args = new List<object>();
+                    args.AddRange(GetKeyValueFields(false, false, true));
+                    args.AddRange(keyvalueArgs);
+                    keyvalueParameters = args.ToArray();
+                }
+                else
+                {
+                    keyvalueParameters = GetKeyValueFields(false, false, true);
+                }
+
+                if (returnType == ReturnValueType.OutputParameters)
+                {
+                    res = ExecuteOutput(ProcedureType.Upsert, proc, keyvalueParameters);
+                }
+                else
+                {
+                    //if(Current==null)
+                    //{
+                    //    throw new Exception("Current entity not set");
+                    //}
+                    var result = ExecuteReturnValue(ProcedureType.Upsert, proc, -1, keyvalueParameters);
+                    var p = DataProperties.GetEntityProperty(typeof(T), EntityPropertyType.Identity);
+                    string entityField = (p == null) ? "ReturnValue" : p.Attribute.Column;
+                    res = new EntityCommandResult(1, result, entityField);
+                }
+            }
+            else
+            {
+                Validate(updateCommandType);
+                using (IDbContext Db = DbContext.Create<Dbc>())
+                {
+                    res = Db.EntitySaveChanges<T>(Current, commandType == UpsertType.Upsert);
+                }
+            }
+            OnChanged(updateCommandType);
+
+            return res ?? EntityCommandResult.Empty;
+        }
+
         #endregion
 
         #region Exec proc  virtual

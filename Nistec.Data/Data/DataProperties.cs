@@ -164,6 +164,40 @@ namespace Nistec.Data
             }
         }
 
+        public static IEnumerable<PropertyAttributeInfo<DefaultValAttribute>> GetEntityDefaultVal(Type type, bool ignorePropertyAttribute = true)
+        {
+            string typename = type.FullName;
+
+            Dictionary<string, PropertyAttributeInfo<DefaultValAttribute>> td = null;
+            //if (_validatorEntityCache.TryGetValue(typename, out td))
+            //{
+            //    return td.Values.ToArray();
+            //}
+            //else
+            //{
+                IEnumerable<PropertyAttributeInfo<DefaultValAttribute>> props = null;
+                if (ignorePropertyAttribute)
+                    props = from p in type.GetProperties(BindingFlags.Public | BindingFlags.Instance, false)
+                            let attr = p.GetCustomAttributes(typeof(DefaultValAttribute), true)
+                            //where attr.Length == 1
+                            select new PropertyAttributeInfo<DefaultValAttribute>() { Property = p, Attribute = attr == null ? default(DefaultValAttribute) : (DefaultValAttribute)attr.FirstOrDefault() };
+                else
+                    props = from p in type.GetProperties(BindingFlags.Public | BindingFlags.Instance, false)
+                            let attr = p.GetCustomAttributes(typeof(DefaultValAttribute), true)
+                            where attr.Length == 1
+                            select new PropertyAttributeInfo<DefaultValAttribute>() { Property = p, Attribute = (DefaultValAttribute)attr.First() };
+
+                //td = new Dictionary<string, PropertyAttributeInfo<DefaultValAttribute>>();
+                foreach (var p in props)
+                {
+                    td.Add(p.Property.Name, p);
+                }
+                //if (td.Count > 0)
+                //    _validatorEntityCache.TryAdd(typename, td);
+                return td.Values.ToArray();
+            //}
+        }
+
         public static PropertyInfo[] GetProperties(Type type)
         {
             string typename = type.FullName;

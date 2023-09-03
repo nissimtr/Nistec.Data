@@ -604,6 +604,70 @@ namespace Nistec.Data.Entities
                 throw new EntityException(ex.Message);
             }
         }
+        public IList<Dictionary<string,object>> QueryDictionary(params object[] keyValueParameters)
+        {
+            ValidateContext();
+            try
+            {
+                var cmd = Context();
+                if (SourceType == EntitySourceType.Procedure)
+                {
+                    return cmd.ExecuteDictionary(MappingName, keyValueParameters);
+                }
+                else
+                {
+                    string commandText = GetCommandText(keyValueParameters);
+                    return cmd.ExecuteDictionary(commandText, keyValueParameters);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new EntityException(ex.Message);
+            }
+        }
+        public IDictionary<string, object> QueryDictionaryRecord(params object[] keyValueParameters)
+        {
+            ValidateContext();
+            try
+            {
+                var cmd = Context();
+                if (SourceType == EntitySourceType.Procedure)
+                {
+                    return cmd.ExecuteDictionaryRecord(MappingName, keyValueParameters);
+                }
+                else
+                {
+                    string commandText = GetCommandText(keyValueParameters);
+                    return cmd.ExecuteDictionaryRecord(commandText, keyValueParameters);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new EntityException(ex.Message);
+            }
+        }
+        public T QueryScalar<T>(params object[] keyValueParameters)
+        {
+            ValidateContext();
+            try
+            {
+                T defaultValue = default(T);
+                var cmd = Context();
+                if (SourceType == EntitySourceType.Procedure)
+                {
+                    return cmd.ExecuteScalar<T>(MappingName, defaultValue, keyValueParameters);
+                }
+                else
+                {
+                    string commandText = GetCommandText(keyValueParameters);
+                    return cmd.QueryScalar<T>(commandText, defaultValue, keyValueParameters);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new EntityException(ex.Message);
+            }
+        }
         public T QuerySingle<T>(params object[] keyValueParameters)
         {
             ValidateContext();

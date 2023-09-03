@@ -22,6 +22,7 @@ namespace Nistec.Data.Sqlite
             conString.CacheSize = 16777216;
             conString.FailIfMissing = false;
             conString.ReadOnly = false;
+            conString.Add("auto_vacuum",1);
             return conString.ConnectionString;
         }
         public static SQLiteConnection CreateConnection(string ConnectionString)

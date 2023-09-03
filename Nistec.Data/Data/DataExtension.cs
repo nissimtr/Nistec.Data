@@ -20,11 +20,14 @@
 //licHeader|
 using Nistec.Data.Entities;
 using Nistec.Generic;
+using Nistec.Runtime;
 using Nistec.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlClient;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace Nistec.Data
@@ -56,6 +59,12 @@ namespace Nistec.Data
                 return row.Table.Columns.Contains(field) ? GenericTypes.Convert(row[field], type) : null;
             return GenericTypes.Convert(row[field], type);
         }
+
+        public static void EnsureProperties(this IEntityItem Instance)
+        {
+            DefaultValAttribute.EnsureProperties(Instance);
+        }
+
 
         public static Dictionary<K, V> ToDictionary<K, V>(this DataTable dt, string keyName, string valueName)
         {
@@ -158,5 +167,146 @@ namespace Nistec.Data
             return JsonSerializer.Serialize(row);
         }
 
+        // DataQuery Extension
+
+        public static List<SqlParameter> ToSqlParametersWithRef<T>(this System.Collections.Specialized.NameValueCollection form, List<string> refList, params object[] keyValueParameters)
+        {
+            List<SqlParameter> list = new List<SqlParameter>();
+            Dictionary<string, object> args = ToDictionary<T>(form, keyValueParameters);
+
+            SqlParameter p;
+            foreach (var item in args)
+            {
+                p = new SqlParameter(item.Key, item.Value);
+                if (refList.Contains(item.Key))
+                {
+                    p.Direction = ParameterDirection.InputOutput;
+                }
+                else
+                {
+                    list.Add(p);
+                }
+            }
+
+            return list;
+        }
+
+        public static List<SqlParameter> ToSqlParametersWithReturn<T>(this System.Collections.Specialized.NameValueCollection form, params object[] keyValueParameters)
+        {
+            List<SqlParameter> list = new List<SqlParameter>();
+            Dictionary<string, object> args = ToDictionary<T>(form, keyValueParameters);
+
+            foreach (var item in args)
+            {
+                list.Add(new SqlParameter(item.Key, item.Value));
+            }
+            SqlParameter p = new SqlParameter("ReturnVal", SqlDbType.Int);
+            p.Direction = ParameterDirection.ReturnValue;
+            list.Add(p);
+
+            return list;
+        }
+        public static List<SqlParameter> ToSqlParametersWithReturn<T>(this System.Collections.Specialized.NameValueCollection form, string[] exclude, params object[] keyValueParameters)
+        {
+            List<SqlParameter> list = new List<SqlParameter>();
+            Dictionary<string, object> args = ToDictionary<T>(form, keyValueParameters);
+
+            foreach (var item in args)
+            {
+                if (!exclude.Contains(item.Key))
+                    list.Add(new SqlParameter(item.Key, item.Value));
+            }
+            SqlParameter p = new SqlParameter("ReturnVal", SqlDbType.Int);
+            p.Direction = ParameterDirection.ReturnValue;
+            list.Add(p);
+
+            return list;
+        }
+        public static List<SqlParameter> ToSqlParameters<T>(this System.Collections.Specialized.NameValueCollection form, params object[] keyValueParameters)
+        {
+            List<SqlParameter> list = new List<SqlParameter>();
+            Dictionary<string, object> args = ToDictionary<T>(form, keyValueParameters);
+
+            foreach (var item in args)
+            {
+                list.Add(new SqlParameter(item.Key, item.Value));
+            }
+            return list;
+        }
+
+        public static Dictionary<string, object> ToDictionary<T>(this System.Collections.Specialized.NameValueCollection form, params object[] keyValueParameters)
+        {
+            bool enableAttributeColumn = false;
+            Dictionary<string, object> args = new Dictionary<string, object>();
+            T instance = ActivatorUtil.CreateInstance<T>();
+
+            var props = Nistec.Data.DataProperties.GetEntityProperties(typeof(T), true);
+            foreach (var pa in props)
+            {
+                PropertyInfo property = pa.Property;
+                EntityPropertyAttribute attr = pa.Attribute;
+
+                if (!property.CanRead)
+                {
+                    continue;
+                }
+
+                if (attr != null)
+                {
+                    if (attr.ParameterType == EntityPropertyType.NA)
+                    {
+                        continue;
+                    }
+                    if (attr.ParameterType == EntityPropertyType.View)
+                    {
+                        continue;
+                    }
+                    if (property.CanWrite)
+                    {
+
+                        string field = attr.GetColumn(property.Name, enableAttributeColumn);
+                        //if (attr.ParameterType == EntityPropertyType.Optional)
+                        //{
+                        //    Console.WriteLine("Optional");
+                        //}
+
+                        object value = form[field];
+                        if (value == null)
+                        {
+                            if (attr.ParameterType == EntityPropertyType.Optional)
+                                continue;
+                            value = attr.AsNull;
+                        }
+                        //GenericTypes.Convert(value, property.PropertyType);
+                        var val = Types.ChangeType(value, property.PropertyType);
+                        args[field] = val;
+
+                        //property.SetValue(instance, Types.ChangeType(value, property.PropertyType), null);
+                        //list.Add(new SqlParameter(field, value));
+
+                        //args[field] = value;
+                    }
+                }
+            }
+
+
+            int count = keyValueParameters.Length;
+            if (count > 0)
+            {
+                if (count % 2 != 0)
+                {
+                    throw new ArgumentException("values parameter not correct, Not match key value arguments");
+                }
+
+                for (int i = 0; i < count; i++)
+                {
+                    string key = keyValueParameters[i].ToString();
+                    object value = keyValueParameters[++i];
+                    args[key] = value;
+                }
+            }
+
+            return args;
+        }
     }
 }
