@@ -30,7 +30,7 @@ using System.Reflection;
 using System.Text;
 using System.Data;
 using Nistec.IO;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Entities
 {
 
@@ -283,6 +283,7 @@ namespace Nistec.Data.Entities
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="field">the column name in data row</param>
+        /// <param name="defaultValue">defaultValue</param>
         /// <returns>if null or error return defaultValue</returns>
         /// <returns>T</returns>
         public T Get<T>(string field, T defaultValue)
@@ -342,7 +343,7 @@ namespace Nistec.Data.Entities
         ///     contains an element with the specified key; otherwise, false.
         ///</returns>
         ///<exception cref="System.ArgumentNullException">key is null.</exception>
-        public new bool TryGetValue(string field, out object value)
+        public bool TryGetValue(string field, out object value)
         {
             return properties.TryGetValue(field, out value);
         }

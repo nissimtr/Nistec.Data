@@ -27,7 +27,7 @@ using System.Collections;
 using System.Globalization;
 using Nistec.Generic;
 using System.Data;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Entities
 {
 

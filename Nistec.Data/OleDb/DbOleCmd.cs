@@ -27,7 +27,7 @@ using System.Linq;
 using Nistec.Data.Factory;
 //using Nistec.Printing.Sections;
 
-
+#pragma warning disable CS1591
 namespace Nistec.Data.OleDb
 {
   

@@ -29,7 +29,7 @@ using StackTrace = System.Diagnostics.StackTrace;
 using Nistec.Data.Entities;
 using Nistec.Data.Factory;
 using System.Text;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.SqlClient
 {
 
@@ -39,11 +39,10 @@ namespace Nistec.Data.SqlClient
     /// <summary>
     /// Represent an object that execute sql commands and implements <see cref="IAutoDb"/>.
     /// </summary>
-    /// <example >
-    /// <code >
-    /// 
-    ///public class AdventureWorksCommand : Nistec.Data.SqlClient.DbCommand<AdventureWorks>
-    ///{
+    /// <example> AdventureWorksCommand:
+    /// <code>
+    /// public class AdventureWorksCommand : Nistec.Data.SqlClient.DbCommand<AdventureWorks>
+    /// {
     ///
     ///    public static AdventureWorksCommand Instance
     ///    {
@@ -85,10 +84,11 @@ namespace Nistec.Data.SqlClient
     ///        return (int)base.Execute(ContactID, ModifiedDate, Phone);
     ///
     ///    }
-    ///}
-    ///
+    /// }
+    ///</AdventureWorks>
     /// </code>
     /// </example>
+
     #endregion
 
     public class DbCommand<T> : DbCommand where T : IDbContext

@@ -27,7 +27,7 @@ using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using Nistec.Data.Entities;
 using Nistec.Data;
-
+#pragma warning disable CS1591
 namespace Nistec.Data
 {
 

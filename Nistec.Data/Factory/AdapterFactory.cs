@@ -30,7 +30,7 @@ using Nistec.Data.Entities;
 using Nistec.Generic;
 using Nistec.Serialization;
 using Nistec.Runtime;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Factory
 {
    

@@ -25,7 +25,7 @@ using System.Text;
 using System.Data.SqlClient;
 using System.Data;
 using Nistec.Data.Factory;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.SqlClient
 {
     public class DbAdapter : AdapterFactory

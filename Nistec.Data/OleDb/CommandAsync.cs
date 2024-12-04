@@ -24,7 +24,7 @@ using System.Data.OleDb;
 using System.Threading;
 using Nistec.Data;
 using Nistec.Generic;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.OleDb
 {
 

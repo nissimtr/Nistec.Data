@@ -13,7 +13,7 @@ using System.Data.OleDb;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Entities
 {
     public abstract class DbContextCommand 
@@ -378,7 +378,6 @@ namespace Nistec.Data.Entities
         /// Create Command
         /// </summary>
         /// <param name="cmdText"></param>
-        /// <param name="cnn"></param>
         /// <returns></returns>
         protected virtual IDbCommand CreateCommand(string cmdText)
         {
@@ -932,6 +931,7 @@ namespace Nistec.Data.Entities
         /// Executes a command NonQuery and returns the number of rows affected.
         /// </summary>
         /// <param name="cmdText">Sql command.</param>
+        /// <param name="transAction"></param>
         /// <returns></returns> 
         public int ExecuteTransCommandNonQuery(string cmdText, Func<int, bool> transAction)
         {
@@ -946,6 +946,7 @@ namespace Nistec.Data.Entities
         /// <param name="transAction">trnsaction function.</param>
         /// <param name="commandType">Specifies how a command string is interpreted.</param>
         /// <param name="commandTimeOut">Set the command time out, default =0</param>
+        /// <param name="level"></param>
         /// <returns></returns> 
         public int ExecuteTransCommandNonQuery(string cmdText, IDbDataParameter[] parameters, Func<int, bool> transAction, CommandType commandType = CommandType.Text, int commandTimeOut = 0, IsolationLevel level = IsolationLevel.Serializable)
         {
@@ -993,8 +994,10 @@ namespace Nistec.Data.Entities
         /// </summary>
         /// <param name="cmdText">Sql command.</param>
         /// <param name="parameters">SqlParameter array key value.</param>
+        /// <param name="transAction"></param>
         /// <param name="commandType">Specifies how a command string is interpreted.</param>
         /// <param name="commandTimeOut">Set the command time out, default =0</param>
+        /// <param name="level"></param>
         /// <returns></returns> 
         public EntityCommandResult ExecuteTransCommandOutput(string cmdText, IDbDataParameter[] parameters, Action<int, IDbTransaction> transAction, CommandType commandType = CommandType.Text, int commandTimeOut = 0, IsolationLevel level = IsolationLevel.Serializable)
         {
@@ -1030,8 +1033,10 @@ namespace Nistec.Data.Entities
         /// </summary>
         /// <param name="cmdText">Sql command.</param>
         /// <param name="parameters">SqlParameter array key value.</param>
+        /// <param name="transAction"></param>
         /// <param name="returnIfNull">Specifies default value to return if null.</param>
         /// <param name="commandTimeOut">Set the command time out, default =0</param>
+        /// <param name="level"></param>
         /// <returns></returns> 
         public int ExecuteTransCommandReturnValue(string cmdText, IDbDataParameter[] parameters, Action<int, IDbTransaction> transAction, int returnIfNull, int commandTimeOut = 0, IsolationLevel level = IsolationLevel.Serializable)
         {

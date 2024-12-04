@@ -28,7 +28,7 @@ using System.Data;
 using System.Reflection;
 using Nistec.Runtime;
 using System.ComponentModel;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Entities
 {
     /// <summary>
@@ -201,8 +201,18 @@ namespace Nistec.Data.Entities
 
         static void SetEntityContext<T>(T item, DataRow values, IEnumerable<PropertyAttributeInfo<EntityPropertyAttribute>> props, bool allowNull = true)
         {
-            foreach (var pa in props)
+            if (props == null)
+                return;
+
+            int length = props.Count();
+
+            for (int i=0; i< length; i++)
             {
+                var pa = props.ElementAt(i);
+
+                //foreach (var pa in props)
+                //{
+
                 PropertyInfo property = pa.Property;
                 if (!property.CanWrite)
                 {

@@ -38,7 +38,7 @@ using Nistec.Runtime;
 using Nistec.IO;
 using Nistec.Xml;
 using Nistec.Serialization;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Entities
 {
  
@@ -849,6 +849,7 @@ namespace Nistec.Data.Entities
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="field">the column name in data row</param>
+        /// <param name="defaultValue">defaultValue</param>
         /// <returns>if null or error return defaultValue</returns>
         /// <returns>T</returns>
         public T GetValue<T>(string field, T defaultValue)
@@ -877,7 +878,7 @@ namespace Nistec.Data.Entities
         ///</param>
         /// <returns></returns>
         /// <returns>
-        ///     true if the object that implements System.Collections.Generic.IDictionary<TKey,TValue>
+        ///     true if the object that implements System.Collections.Generic.IDictionary TKey,TValue
         ///     contains an element with the specified key; otherwise, false.
         ///</returns>
         ///<exception cref="System.ArgumentNullException">key is null.</exception>

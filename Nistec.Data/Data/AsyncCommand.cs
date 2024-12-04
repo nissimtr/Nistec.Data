@@ -28,7 +28,7 @@ using System.Runtime.Remoting.Messaging;
 
 using Nistec.Threading;
 using Nistec.Data.Factory;
-
+#pragma warning disable CS1591
 namespace Nistec.Data
 {
 

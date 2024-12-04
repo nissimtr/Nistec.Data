@@ -26,7 +26,7 @@ using System.Reflection;
 using System.Diagnostics;
 using Nistec.Data.Entities;
 using System.Collections.Generic;
-
+#pragma warning disable CS1591
 
 namespace Nistec.Data.Factory
 {

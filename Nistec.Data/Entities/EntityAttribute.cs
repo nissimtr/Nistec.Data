@@ -26,7 +26,7 @@ using System.Diagnostics;
 using Nistec.Generic;
 
 using Debug = System.Diagnostics.Debug;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Entities
 {
     #region EntityMode

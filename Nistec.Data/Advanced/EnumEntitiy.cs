@@ -22,7 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Data;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Advanced
 {
     [Serializable]

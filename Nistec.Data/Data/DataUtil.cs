@@ -31,7 +31,7 @@ using Nistec.Generic;
 using System.Reflection;
 using System.Linq;
 using System.Data.SqlClient;
-
+#pragma warning disable CS1591
 
 namespace Nistec.Data
 {
@@ -493,7 +493,7 @@ namespace Nistec.Data
         /// </summary>
         /// <param name="a"></param>
         /// <param name="b"></param>
-        /// <param name="forceColumnName"></param>
+        /// <param name="matchColumnName"></param>
         /// <returns></returns>
         public static bool EqualsSchema(DataTable a, DataTable b, bool matchColumnName)
         {

@@ -29,7 +29,7 @@ using System.Collections.Generic;
 using Nistec.Data;
 using Nistec.Data.Advanced;
 using Nistec.Runtime;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Factory
 {
 
@@ -307,7 +307,6 @@ namespace Nistec.Data.Factory
         /// <summary>
         /// Count function if no record found return 0
         /// </summary>
-        /// <typeparam name="T"></typeparam>
         /// <param name="Field">field name for return value</param>
         /// <param name="Table">Table name or View name</param>
         /// <param name="Where">Sql Where string </param>

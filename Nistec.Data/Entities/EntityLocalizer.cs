@@ -26,7 +26,7 @@ using System.Globalization;
 using System.Resources;
 using Nistec.Generic;
 using Nistec.Runtime;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Entities
 {
    

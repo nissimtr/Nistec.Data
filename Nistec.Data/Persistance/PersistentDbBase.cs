@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Transactions;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Persistance
 {
     /// <summary>
@@ -870,22 +870,22 @@ namespace Nistec.Data.Persistance
 
         /// <summary>
         /// Summary:
-        ///     Gets an System.Collections.Generic.ICollection<T> containing the keys of
+        ///     Gets an System.Collections.Generic.ICollection T containing the keys of
         ///     the System.Collections.Generic.IDictionary.
         ///
         /// Returns:
-        ///     An System.Collections.Generic.ICollection<T> containing the keys of the object
+        ///     An System.Collections.Generic.ICollection T containing the keys of the object
         ///     that implements System.Collections.Generic.IDictionary.
         /// </summary>
         public ICollection<string> Keys { get { return dictionary.Keys; } }
 
         /// <summary>
         /// Summary:
-        ///     Gets an System.Collections.Generic.ICollection<T> containing the values in
+        ///     Gets an System.Collections.Generic.ICollection T containing the values in
         ///     the System.Collections.Generic.IDictionary.
         ///
         /// Returns:
-        ///     An System.Collections.Generic.ICollection<T> containing the values in the
+        ///     An System.Collections.Generic.ICollection T containing the values in the
         ///     object that implements System.Collections.Generic.IDictionary
         /// </summary>
         public ICollection<T> Values { get { return dictionary.Values; } }

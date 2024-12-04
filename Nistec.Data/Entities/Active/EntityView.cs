@@ -27,7 +27,7 @@ using System.Text;
 using System.Diagnostics;
 using System.Collections.Generic;
 using Nistec.Generic;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Entities
 {
   
@@ -255,7 +255,7 @@ namespace Nistec.Data.Entities
         /// MoveTo
         /// </summary>
         /// <param name="columnName"></param>
-        /// <param name="key"></param>
+        /// <param name="value"></param>
         /// <returns></returns>
         public bool MoveTo(string columnName, object value)
         {
@@ -271,7 +271,7 @@ namespace Nistec.Data.Entities
         /// MoveTo
         /// </summary>
         /// <param name="columns"></param>
-        /// <param name="keys"></param>
+        /// <param name="values"></param>
         /// <returns></returns>
         public bool MoveTo(string columns, object[] values)
         {

@@ -29,7 +29,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
-
+#pragma warning disable CS1591
 namespace Nistec.Data
 {
     public class CommandContext : ISerialEntity

@@ -31,7 +31,7 @@ using System.Linq;
 using System.Globalization;
 using Nistec.Serialization;
 using Nistec.Generic;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Entities
 {
 

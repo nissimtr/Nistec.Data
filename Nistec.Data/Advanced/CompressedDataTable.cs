@@ -29,7 +29,7 @@ using System.Runtime;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Reflection;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Advanced
 {
     [Serializable]

@@ -30,7 +30,7 @@ using Nistec.Threading;
 using Nistec.Data.Factory;
 using Nistec.Generic;
 
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Advanced
 {
 

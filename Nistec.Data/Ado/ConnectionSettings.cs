@@ -29,7 +29,7 @@ using System.Xml;
 using System.Linq;
 using Nistec.Config;
 using System.IO;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Ado
 {
 

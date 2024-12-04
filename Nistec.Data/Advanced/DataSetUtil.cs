@@ -23,7 +23,7 @@ using System.Data;
 using System.IO;
 using Nistec.IO;
 
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Advanced
 {
 	public  class DataSetUtil

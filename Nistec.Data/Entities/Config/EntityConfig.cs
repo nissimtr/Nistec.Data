@@ -25,14 +25,14 @@ using System.Text;
 using System.Configuration;
 using Nistec.Generic;
 //using Nistec.Channels.Config;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Entities.Config
 {
     /// <summary>
     /// Entities configuration
     /// </summary>
     /// <example>
-    ///<section name="EntitySettings" type="Nistec.Data.Entities.Config.EntityConfig, Nistec.Data, Version=4.0.2.0, Culture=neutral, PublicKeyToken=734a739868a76423" requirePermission="false"/>
+    ///<section name="EntitySettings" type="Nistec.Data.Entities.Config.EntityConfig, Nistec.Data, Version=4.6.1.0, Culture=neutral, PublicKeyToken=734a739868a76423" requirePermission="false"/>
     ///<EntitySettings>
     ///   <Entities>
     ///     <Entity Name="UserProfile" MappingName="UserProfile" ConnectionKey="Default" Mode="Config" SourceType="Table" EntityKey="UserId" LangResources=""/>

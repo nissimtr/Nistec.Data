@@ -28,7 +28,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-
+#pragma warning disable CS1591
 namespace Nistec.Data
 {
     public class DataProperties

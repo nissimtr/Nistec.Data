@@ -30,7 +30,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Entities
 {
 
@@ -330,6 +330,10 @@ namespace Nistec.Data.Entities
             {
                 if(_EnableConnectionProvider!=value)
                 {
+                    if(ConnectionKey!=null && ConnectionKey.StartsWith("cnn_"))
+                    {
+                        _EnableConnectionProvider = value = false;
+                    }
                     if (_Db != null)
                     {
                         _Db = DbContext.Create(ConnectionKey, EnableConnectionProvider);

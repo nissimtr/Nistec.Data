@@ -27,7 +27,7 @@ using Nistec.Data;
 using System.Threading;
 using Nistec.Threading;
 
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Entities
 {
 

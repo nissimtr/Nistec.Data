@@ -35,7 +35,7 @@ using System.IO;
 using Nistec.Serialization;
 using System.Collections.Concurrent;
 using System.Collections.Specialized;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Entities
 {
 

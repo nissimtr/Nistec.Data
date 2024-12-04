@@ -34,7 +34,7 @@ using Nistec.Data.Entities;
 using System.Collections.Generic;
 using Nistec.Generic;
 using Nistec.Runtime;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Factory
 {
 	#region summary

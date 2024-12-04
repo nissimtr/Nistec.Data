@@ -5,7 +5,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
-
+#pragma warning disable CS1591
 namespace Nistec.Data
 {
     [Serializable]
@@ -302,7 +302,7 @@ namespace Nistec.Data
         //}
 
         /// <summary>
-        /// Get this as sorted <see cref="IOrderedEnumerable<KeyValuePair<string, T>>"./>
+        /// Get this as sorted see IOrderedEnumerable<KeyValuePair./>
         /// </summary>
         /// <returns></returns>
         public IOrderedEnumerable<KeyValuePair<string, object>> Sorted()

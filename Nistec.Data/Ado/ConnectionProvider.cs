@@ -27,7 +27,7 @@ using System.Data;
 using System.Collections.Concurrent;
 using System.Linq;
 using Nistec.Config;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Ado
 {
 

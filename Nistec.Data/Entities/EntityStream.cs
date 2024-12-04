@@ -33,7 +33,7 @@ using Nistec.Serialization;
 using System.Collections.Concurrent;
 using System.Dynamic;
 using System.Collections.Specialized;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Entities
 {
     /// <summary>
@@ -658,6 +658,7 @@ namespace Nistec.Data.Entities
         /// <typeparam name="T"></typeparam>
         /// <param name="context"></param>
         /// <param name="filter"></param>
+        /// <param name="fieldsKey">fieldsKey</param>
         /// <param name="totalSize"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
@@ -761,6 +762,7 @@ namespace Nistec.Data.Entities
         /// <param name="context"></param>
         /// <param name="filter"></param>
         /// <param name="totalSize"></param>
+        /// <param name="fieldsKey">fieldsKey</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="Exception"></exception>

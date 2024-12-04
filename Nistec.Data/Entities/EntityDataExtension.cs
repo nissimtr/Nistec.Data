@@ -32,7 +32,7 @@ using System.Xml.Serialization;
 using Nistec.Data.Entities.Cache;
 using Nistec.Serialization;
 using Nistec.Runtime;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Entities
 {
 

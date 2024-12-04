@@ -26,7 +26,7 @@ using System.Data;
 using System.Data.OleDb;
 using System.Data.Common;
 using Nistec.Data.Factory;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.OleDb
 {
     public class DbAdapter : AdapterFactory

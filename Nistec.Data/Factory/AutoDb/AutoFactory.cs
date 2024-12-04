@@ -25,7 +25,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Collections;
 using Nistec.Runtime;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Factory
 {
 
@@ -394,9 +394,6 @@ namespace Nistec.Data.Factory
 
         #endregion
 
-        /// <summary>
-        /// DalMethods
-        /// </summary>
         #region DalMethods
 
         /// <summary>

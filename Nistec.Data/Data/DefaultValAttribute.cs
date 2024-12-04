@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
-
+#pragma warning disable CS1591
 namespace Nistec.Data
 {
     /// <summary>
@@ -59,7 +59,6 @@ namespace Nistec.Data
         /// <summary>
         /// Initializes a new instance of the <see cref="DefaultValAttribute"/> class
         /// </summary>
-        /// <param name="type"></param>
         /// <param name="allowNull"></param>
         /// <param name="defaultValue"></param>
         /// <param name="exceptionIfNull"></param>

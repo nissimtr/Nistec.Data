@@ -27,7 +27,7 @@ using System.Linq;
 using Debug = System.Diagnostics.Debug;
 using Nistec.Generic;
 using System.Collections.Generic;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Entities
 {
 

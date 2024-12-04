@@ -26,7 +26,7 @@ using System.Data.SqlClient;
 
 using Debug = System.Diagnostics.Debug;
 using StackTrace = System.Diagnostics.StackTrace;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Factory
 {
 

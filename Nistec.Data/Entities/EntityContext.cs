@@ -32,7 +32,7 @@ using Nistec.IO;
 using Nistec.Generic;
 using Nistec.Serialization;
 using System.Collections.Specialized;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Entities
 {
 
@@ -1075,7 +1075,7 @@ namespace Nistec.Data.Entities
 
         /// <summary>
         /// Save all Changes to DB and return number of AffectedRecords
-        /// If not <see cref="IsDirty"/> which mean no changed has been made return 0
+        /// If not "IsDirty" which mean no changed has been made return 0
         /// </summary>
         /// <param name="instance"></param>
         /// <param name="cmdType"></param>
@@ -1088,7 +1088,7 @@ namespace Nistec.Data.Entities
 
         /// <summary>
         /// Save all Changes by <see cref="UpdateCommandType"/> specific command to DB and return number of AffectedRecords
-        /// If not <see cref="IsDirty"/> which mean no changed has been made return 0
+        /// If not "IsDirty" which mean no changed has been made return 0
         /// </summary>
         /// <param name="commandType"></param>
         /// <returns></returns>
@@ -1934,7 +1934,6 @@ namespace Nistec.Data.Entities
         /// <summary>
         /// Get Fields Changes
         /// </summary>
-        /// <param name="isInsert"></param>
         /// <returns></returns>
         public EntityFieldsChanges GetFieldsChanged()
         {
@@ -1954,7 +1953,7 @@ namespace Nistec.Data.Entities
 
         /// <summary>
         /// Save all Changes to DB and return number of AffectedRecords
-        /// If not <see cref="IsDirty"/> which mean no changed has been made return 0
+        /// If not "IsDirty" which mean no changed has been made return 0
         /// </summary>
         /// <returns></returns>
         public virtual int SaveChanges()
@@ -1974,7 +1973,7 @@ namespace Nistec.Data.Entities
 
         /// <summary>
         /// Save all Changes by <see cref="UpdateCommandType"/> specific command to DB and return number of AffectedRecords
-        /// If not <see cref="IsDirty"/> which mean no changed has been made return 0
+        /// If not "IsDirty which mean no changed has been made return 0
         /// </summary>
         /// <param name="commandType"></param>
         /// <returns></returns>

@@ -20,7 +20,7 @@
 //licHeader|
 using System;
 using System.Data;
- 
+#pragma warning disable CS1591
 namespace Nistec.Data
 {
 

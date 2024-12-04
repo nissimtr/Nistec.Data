@@ -28,7 +28,7 @@ using Debug = System.Diagnostics.Debug;
 using StackTrace = System.Diagnostics.StackTrace;
 using Nistec.Data.Entities;
 using Nistec.Data.Factory;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.OleDb
 {
     #region generic DbCommand

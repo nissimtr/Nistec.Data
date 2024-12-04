@@ -29,7 +29,7 @@ using System.Linq;
 using Nistec.Generic;
 
 using Debug = System.Diagnostics.Debug;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Entities
 {
 
@@ -87,6 +87,7 @@ namespace Nistec.Data.Entities
         /// <param name="mappingName"></param>
         /// <param name="viewName"></param>
         /// <param name="entityName"></param>
+        /// <param name="cacheTtl"></param>
         public EntityMappingAttribute(string mappingName, string viewName, string entityName, int cacheTtl = DefaultCacheTtlMinutes)
         {
             m_MappingName = mappingName;
@@ -129,6 +130,7 @@ namespace Nistec.Data.Entities
         /// Initializes a new instance of the <see cref="EntityMappingAttribute"/> class
         /// </summary>
         /// <param name="mappingName"></param>
+        /// <param name="cacheTtl"></param>
         public EntityMappingAttribute(string mappingName, int cacheTtl = DefaultCacheTtlMinutes)
         {
             m_MappingName = mappingName;

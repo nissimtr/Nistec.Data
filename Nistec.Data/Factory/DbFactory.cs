@@ -29,7 +29,7 @@ using System.Configuration;
 using Nistec.Generic;
 using Nistec.Data.Advanced;
 using Nistec.Runtime;
-
+#pragma warning disable CS1591
 
 
 namespace Nistec.Data.Factory

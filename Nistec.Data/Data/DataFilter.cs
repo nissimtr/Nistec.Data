@@ -25,7 +25,7 @@ using System.Text;
 using System.Data;
 using Nistec.Data.Entities;
 using System.Data.SqlClient;
-
+#pragma warning disable CS1591
 namespace Nistec.Data
 {
     public class DataFilter

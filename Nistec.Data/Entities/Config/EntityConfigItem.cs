@@ -23,7 +23,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Configuration;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Entities.Config
 {
 
@@ -87,7 +87,7 @@ namespace Nistec.Data.Entities.Config
     /// Represents a entity section  settings within a configuration file.
     /// </summary>
     /// <example>
-    ///<section name="EntitySettings" type="Nistec.Data.Entities.Config.EntityConfig, Nistec.Data, Version=4.0.2.0, Culture=neutral, PublicKeyToken=734a739868a76423" requirePermission="false"/>
+    ///<section name="EntitySettings" type="Nistec.Data.Entities.Config.EntityConfig, Nistec.Data, Version=4.6.1.0, Culture=neutral, PublicKeyToken=734a739868a76423" requirePermission="false"/>
     ///<EntitySettings>
     ///   <Entities>
     ///     <Entity Name="UserProfile" MappingName="UserProfile" ConnectionKey="Default" Mode="Config" SourceType="Table" EntityKey="UserId" LangResources=""/>

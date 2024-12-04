@@ -27,7 +27,7 @@ using Nistec.Collections;
 using System.Collections;
 using System.Threading;
 using System.Runtime.Remoting.Contexts;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Advanced
 {
     /// <summary>

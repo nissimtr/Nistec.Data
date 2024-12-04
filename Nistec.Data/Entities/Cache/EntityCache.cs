@@ -24,7 +24,7 @@ using System.Collections;
 using System.Text;
 using System.Data;
 using Nistec.Generic;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Entities.Cache
 {
    

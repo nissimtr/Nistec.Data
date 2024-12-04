@@ -34,7 +34,7 @@ using Nistec.Generic;
 using Nistec.Runtime;
 using Nistec.Data.Entities;
 using System.Collections.Specialized;
-
+#pragma warning disable CS1591
 namespace Nistec.Data
 {
 
@@ -169,7 +169,7 @@ namespace Nistec.Data
         //     The maximum number of digits used to represent the Value property of a data
         //     provider Parameter object. The default value is 0, which indicates that a
         //     data provider sets the precision for Value.
-        byte Precision { get; set; }
+        new byte Precision { get; set; }
         //
         // Summary:
         //     Indicates the scale of numeric parameters.
@@ -177,7 +177,7 @@ namespace Nistec.Data
         // Returns:
         //     The number of decimal places to which System.Data.OleDb.OleDbParameter.Value
         //     is resolved. The default is 0.
-        byte Scale { get; set; }
+        new byte Scale { get; set; }
 
         // Summary:
         //     Resets the DbType property to its original settings.
@@ -958,7 +958,42 @@ namespace Nistec.Data
 
             return list.ToArray();
         }
-              
+        public static int GetMaxSize(SqlDbType dbType)
+        {
+            switch (dbType)
+            {
+                case SqlDbType.NVarChar:
+                case SqlDbType.NChar:
+                    return 4000;
+                case SqlDbType.VarChar:
+                case SqlDbType.Char:
+                case SqlDbType.VarBinary:
+                case SqlDbType.Binary:
+                    return 8000;
+                case SqlDbType.NText:
+                case SqlDbType.Text:
+                    return 8000;
+                case SqlDbType.Xml:
+                    return 8000;
+                default:
+                    return 50;
+            }
+        }
+        public static int GetMaxSize(DbType dbType)
+        {
+            switch (dbType)
+            {
+                case DbType.String:
+                    return 4000;
+                case DbType.AnsiString:
+                case DbType.Binary:
+                    return 8000;
+                case DbType.Xml:
+                    return 8000;
+                default:
+                    return 50;
+            }
+        }
 
         public static SqlParameter[] GetSqlWithDirection(params object[] keyValueDirectionParameters) 
         {
@@ -977,9 +1012,12 @@ namespace Nistec.Data
                  {
                      case 2://Output
                          p.Direction = System.Data.ParameterDirection.Output;
-                         break;
+                        p.Size = GetMaxSize(p.SqlDbType);
+                        break;
                      case 3://InputOutput
-                         p.Direction = System.Data.ParameterDirection.InputOutput;break;
+                         p.Direction = System.Data.ParameterDirection.InputOutput;
+                         p.Size = GetMaxSize(p.SqlDbType);
+                        break;
                      case 6://ReturnValue
                          p.Direction = System.Data.ParameterDirection.ReturnValue;
                          break;
@@ -1016,9 +1054,12 @@ namespace Nistec.Data
                 {
                     case 2://Output
                         p.Direction = System.Data.ParameterDirection.Output;
+                        p.Size = GetMaxSize(p.DbType);
                         break;
                     case 3://InputOutput
-                        p.Direction = System.Data.ParameterDirection.InputOutput; break;
+                        p.Direction = System.Data.ParameterDirection.InputOutput;
+                        p.Size = GetMaxSize(p.DbType);
+                        break;
                     case 6://ReturnValue
                         p.Direction = System.Data.ParameterDirection.ReturnValue;
                         break;

@@ -30,7 +30,7 @@ using System.Text;
 using System.Linq;
 using System.Globalization;
 using System.Collections.Specialized;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Entities
 {
 

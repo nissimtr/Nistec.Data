@@ -24,7 +24,7 @@ using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
 using Nistec.Data.Factory;
-
+#pragma warning disable CS1591
 
 namespace Nistec.Data.SqlClient
 {

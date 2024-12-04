@@ -24,7 +24,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 
 using Debug = System.Diagnostics.Debug;
-
+#pragma warning disable CS1591
 namespace Nistec.Data
 {
     	

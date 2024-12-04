@@ -26,7 +26,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using Nistec.Generic;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Entities
 {
     public enum RequiredOperation
@@ -297,7 +297,6 @@ namespace Nistec.Data.Entities
         /// Is MinValue Defined
         /// </summary>
         public bool IsMinValueDefined
-        /// </summary>ameDefined
         {
             get { return m_MinValue != null; }
         }
@@ -824,6 +823,7 @@ namespace Nistec.Data.Entities
         /// <param name="Entity"></param>
         /// <param name="title"></param>
         /// <param name="lang"></param>
+        /// <param name="args"></param>
         /// <exception cref="EntityException"></exception>
         public static void Validate(object Entity, string title, string lang, object[] args=null)
         {

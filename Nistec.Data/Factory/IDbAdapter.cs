@@ -23,7 +23,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Data;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Factory
 {
     public interface IDbAdapter : IDisposable

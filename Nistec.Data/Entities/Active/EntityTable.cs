@@ -31,7 +31,7 @@ using System.IO;
 using Nistec.IO;
 using Nistec.Serialization;
 using Nistec.Generic;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Entities
 {
 
@@ -126,7 +126,6 @@ namespace Nistec.Data.Entities
         /// </summary>
         /// <param name="table"></param>
         /// <param name="isCopy"></param>
-        /// <param name="readOnly"></param>
         protected virtual void Init(DataTable table, bool isCopy)//, bool readOnly)
         {
             SyncTable(table, isCopy);
@@ -177,6 +176,7 @@ namespace Nistec.Data.Entities
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="field">the column name in data row</param>
+        /// <param name="defaultValue">defaultValue</param>
         /// <returns>if null or error return defaultValue</returns>
         /// <returns>T</returns>
         public override T GetValue<T>(string field, T defaultValue)
@@ -203,9 +203,8 @@ namespace Nistec.Data.Entities
         ///     the key is found; otherwise, the default value for the type of the value
         ///     parameter. This parameter is passed uninitialized.
         ///</param>
-        /// <returns></returns>
         /// <returns>
-        ///     true if the object that implements System.Collections.Generic.IDictionary<TKey,TValue>
+        ///     true if the object that implements System.Collections.Generic.IDictionary TKey,TValue
         ///     contains an element with the specified key; otherwise, false.
         ///</returns>
         ///<exception cref="System.ArgumentNullException">key is null.</exception>
@@ -367,7 +366,7 @@ namespace Nistec.Data.Entities
   
         /// <summary>
         /// Save all Changes to DB and return number of AffectedRecords
-        /// If not <see cref="IsDirty"/> which mean no changed has been made return 0
+        /// If not "IsDirty" which mean no changed has been made return 0
         /// </summary>
         /// <returns></returns>
         public override int SaveChanges()

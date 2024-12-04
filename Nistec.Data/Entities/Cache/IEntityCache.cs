@@ -24,7 +24,7 @@ using System.Collections;
 using System.Text;
 using System.Data;
 using Nistec.Generic;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Entities.Cache
 {
     public interface IEntityCache
@@ -49,7 +49,6 @@ namespace Nistec.Data.Entities.Cache
         /// <summary>
         /// Get Item by key with number of options
         /// </summary>
-        /// <param name="options"></param>
         /// <param name="key"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
@@ -57,7 +56,6 @@ namespace Nistec.Data.Entities.Cache
         /// <summary>
         /// Get Item by key with number of options
         /// </summary>
-        /// <param name="options"></param>
         /// <param name="key"></param>
         /// <returns>return null or empty if not exists</returns>
         T FindItem(params string[] key);

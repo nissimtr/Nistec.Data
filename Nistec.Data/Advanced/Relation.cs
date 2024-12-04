@@ -22,7 +22,7 @@ using System;
 using System.Data;
 using System.Collections;
 
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Advanced
 {
     /// <summary>

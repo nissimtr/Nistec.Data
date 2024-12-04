@@ -21,7 +21,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-
+#pragma warning disable CS1591
 namespace Nistec.Data
 {
 
@@ -207,8 +207,8 @@ namespace Nistec.Data
     }
 
     /// <summary>
-    /// Parameter type enumeration for <see cref="Sql.DbFieldAttribute.ParameterType"/> property
-    /// of <see cref="Sql.DbFieldAttribute"/> attribute.
+    /// Parameter type enumeration for see cref="Sql.DbFieldAttribute.ParameterType" property
+    /// of see Sql.DbFieldAttribute attribute.
     /// </summary>
     public enum DalParamType
     {

@@ -29,7 +29,7 @@ using StackTrace = System.Diagnostics.StackTrace;
 using System.Data.OleDb;
 using Nistec.Data;
 using Nistec.Data.Entities;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Factory
 {
 	#region summary

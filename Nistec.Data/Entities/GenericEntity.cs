@@ -36,7 +36,7 @@ using Nistec.Xml;
 using Nistec.Serialization;
 using System.Collections.Specialized;
 using System.Diagnostics;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Entities
 {
 
@@ -604,6 +604,7 @@ namespace Nistec.Data.Entities
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="field">the column name in data row</param>
+        /// <param name="defaultValue">defaultValue</param>
         /// <returns>if null or error return defaultValue</returns>
         /// <returns>T</returns>
         public T GetValue<T>(string field, T defaultValue)

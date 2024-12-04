@@ -23,7 +23,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Linq;
 using System.Threading.Tasks;
-
+#pragma warning disable CS1591
 
 namespace Nistec.Data.Advanced
 {

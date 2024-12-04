@@ -26,7 +26,7 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using Nistec.Data;
 using Nistec.Data.Factory;
-
+#pragma warning disable CS1591
 namespace Nistec.Data
 {
      #region IAutoBase
@@ -99,7 +99,7 @@ namespace Nistec.Data
 
      /// <summary>
      /// Interface that every dal class must inherit. When DBLayer creates 
-     /// a dal class it uses <see cref="Common.DalDB">DalDB</see> class as its base class
+     /// a dal class it uses see cref="Common.DalDB class as its base class
      /// </summary>
      public interface IAutoDb
      {

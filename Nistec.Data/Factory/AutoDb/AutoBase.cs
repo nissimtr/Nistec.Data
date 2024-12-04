@@ -29,7 +29,7 @@ using Nistec.Data;
 using System.Data.OleDb;
 using Nistec.Data.Entities;
 using Nistec.Runtime;
-
+#pragma warning disable CS1591
 namespace Nistec.Data.Factory
 {
 
