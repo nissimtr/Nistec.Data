@@ -31,7 +31,7 @@ namespace Nistec.Data.Sqlite
         #endregion
 
         #region override
-
+        
         //const string sqlcreate = @"CREATE TABLE bookmarks(
         //    users_id INTEGER,
         //    lessoninfo_id INTEGER,
@@ -44,7 +44,8 @@ namespace Nistec.Data.Sqlite
                           state INTEGER DEFAULT 0,
                           timestamp DATETIME DEFAULT CURRENT_TIMESTAMP     
                         ) WITHOUT ROWID;";
-        //const string sqlinsert = "insert into {0} (key, body) values (@key, @body)";
+        /*
+        const string sqlinsert = "insert into {0} (key, body) values (@key, @body)";
         const string sqldelete = "delete from {0} where key=@key";
         const string sqlupdate = "update {0} set body=@body, timestamp=CURRENT_TIMESTAMP where key=@key";
         const string sqlinsertOrIgnore = "insert or IGNORE into {0}(key, body) values(@key, @body)";
@@ -52,45 +53,59 @@ namespace Nistec.Data.Sqlite
         const string sqlselect = "select {1} from {0} where key=@key";
 
         const string sqlupdatestate = "update {0} set state=@state,timestamp=CURRENT_TIMESTAMP where key=@key";
-
+        */
         protected override string DbCreateCommand()
         {
             return string.Format(sqlcreate, Name);
         }
-        protected override string DbAddCommand()
-        {
-            return string.Format(sqlinsertOrIgnore, Name);
-        }
+        //protected override string DbAddCommand(bool isTrans = false)
+        //{
+        //    if (isTrans)
+        //        return string.Format(sqlinsertTrans, Name);
+        //    return string.Format(sqlinsert, Name);
+        //}
+        //protected override string DbAddIgnoreCommand(bool isTrans = false)
+        //{
+        //    if (isTrans)
+        //        return string.Format(sqlinsertOrIgnoreTrans, Name);
+        //    return string.Format(sqlinsertOrIgnore, Name);
+        //}
+        //protected override string DbAddReplaceCommand(bool isTrans = false)
+        //{
+        //    if (isTrans)
+        //        return string.Format(sqlinsertOrReplaceTrans, Name);
+        //    return string.Format(sqlinsertOrReplace, Name);
+        //}
 
-        protected override string DbDeleteCommand()
-        {
-            return string.Format(sqldelete, Name);
-        }
+        //protected override string DbDeleteCommand()
+        //{
+        //    return string.Format(sqldelete, Name);
+        //}
 
-        protected override string DbUpdateCommand()
-        {
-            return string.Format(sqlupdate, Name);
-        }
+        //protected override string DbUpdateCommand()
+        //{
+        //    return string.Format(sqlupdate, Name);
+        //}
 
-        protected override string DbUpsertCommand()
-        {
-            return string.Format(sqlinsertOrReplace, Name);
-        }
+        //protected override string DbUpsertCommand()
+        //{
+        //    return string.Format(sqlinsertOrReplace, Name);
+        //}
 
-        protected override string DbSelectCommand(string select, string where)
-        {
-            return string.Format(sqlselect, Name, select, where);
-        }
+        //protected override string DbSelectCommand(string select, string where)
+        //{
+        //    return string.Format(sqlselect, Name, select, where);
+        //}
 
-        protected override string DbLookupCommand()
-        {
-            return string.Format(sqlselect, Name, "body");
-        }
+        //protected override string DbLookupCommand()
+        //{
+        //    return string.Format(sqlselect, Name, "body");
+        //}
 
-        protected override string DbUpdateStateCommand()
-        {
-            return string.Format(sqlupdatestate, Name);
-        }
+        //protected override string DbUpdateStateCommand()
+        //{
+        //    return string.Format(sqlupdatestate, Name);
+        //}
 
         protected override object GetDataValue(BagItem value)
         {

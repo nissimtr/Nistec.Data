@@ -39,6 +39,7 @@ namespace Nistec.Data.Sqlite
         //                  key TEXT PRIMARY KEY,
         //                  body TEXT
         //                ) WITHOUT ROWID;";
+
         //const string sqlinsert = "insert into {0} (key, body) values (@key, @body)";
         //const string sqldelete = "delete from {0} where key=@key";
         //const string sqlupdate = "update {0} set body=@body where key=@key";
@@ -53,45 +54,45 @@ namespace Nistec.Data.Sqlite
                           timestamp DATETIME DEFAULT CURRENT_TIMESTAMP     
                         ) WITHOUT ROWID;";
         //const string sqlinsert = "insert into {0} (key, body, name) values (@key, @body, @name)";
-        const string sqldelete = "delete from {0} where key=@key";
-        const string sqlupdate = "update {0} set body=@body, timestamp=CURRENT_TIMESTAMP where key=@key";
-        const string sqlinsertOrIgnore = "insert or IGNORE into {0} (key, body, name) values(@key, @body, @name)";
-        const string sqlinsertOrReplace = "insert or REPLACE into {0}(key, body, name) values(@key, @body, @name)";
-        const string sqlselect = "select {1} from {0} where key=@key";
+        //const string sqldelete = "delete from {0} where key=@key";
+        //const string sqlupdate = "update {0} set body=@body, timestamp=CURRENT_TIMESTAMP where key=@key";
+        //const string sqlinsertOrIgnore = "insert or IGNORE into {0} (key, body, name) values(@key, @body, @name)";
+        //const string sqlinsertOrReplace = "insert or REPLACE into {0}(key, body, name) values(@key, @body, @name)";
+        //const string sqlselect = "select {1} from {0} where key=@key";
 
         protected override string DbCreateCommand()
         {
             return string.Format(sqlcreate, Name);
         }
-        protected override string DbAddCommand()
-        {
-            return string.Format(sqlinsertOrIgnore, Name);
-        }
+        //protected override string DbAddCommand()
+        //{
+        //    return string.Format(sqlinsertOrIgnore, Name);
+        //}
 
-        protected override string DbDeleteCommand()
-        {
-            return string.Format(sqldelete, Name);
-        }
+        //protected override string DbDeleteCommand()
+        //{
+        //    return string.Format(sqldelete, Name);
+        //}
 
-        protected override string DbUpdateCommand()
-        {
-            return string.Format(sqlupdate, Name);
-        }
+        //protected override string DbUpdateCommand()
+        //{
+        //    return string.Format(sqlupdate, Name);
+        //}
 
-        protected override string DbUpsertCommand()
-        {
-            return string.Format(sqlinsertOrReplace, Name);
-        }
+        //protected override string DbUpsertCommand()
+        //{
+        //    return string.Format(sqlinsertOrReplace, Name);
+        //}
 
-        protected override string DbSelectCommand(string select, string where)
-        {
-            return string.Format(sqlselect, Name, select, where);
-        }
+        //protected override string DbSelectCommand(string select, string where)
+        //{
+        //    return string.Format(sqlselect, Name, select, where);
+        //}
 
-        protected override string DbLookupCommand()
-        {
-            return string.Format(sqlselect, Name, "body");
-        }
+        //protected override string DbLookupCommand()
+        //{
+        //    return string.Format(sqlselect, Name, "body");
+        //}
 
         protected override string DbUpdateStateCommand()
         {

@@ -12,6 +12,9 @@ namespace Nistec.Data.Sqlite
     {
         public const string DefaultPassword = "giykse876435365&%$^#%@$#@)_(),kxa;l bttsklf12[]}{}{)(*XCJHG^%%";
         public const string InMemoryFilename = ":memory:";
+        
+        public const int DefaultCommandTimeout = 5000;
+        public const int DefaultConnectionTimeout = 5000;
 
         public DbLiteSettings()
         {
@@ -25,10 +28,10 @@ namespace Nistec.Data.Sqlite
             InMemory = false;
 
             //PRAGMA main.locking_mode = EXCLUSIVE;
-            SyncMode = SynchronizationModes.Normal;
-            JournalMode = SQLiteJournalModeEnum.Wal;
-            PageSize = 4096;
-            CacheSize = 100000;
+            SyncMode = SynchronizationModes.Normal;//.Normal;
+            JournalMode = SQLiteJournalModeEnum.Delete;
+            PageSize = 65536;// 4096;
+            CacheSize = 16777216;// 100000;
 
 
             Name = "xPersistent";

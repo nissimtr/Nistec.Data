@@ -38,6 +38,7 @@ using System.Data;
 using Nistec.Serialization;
 using Nistec.IO;
 using Nistec.Data.Persistance;
+using System.Threading;
 
 namespace Nistec.Data.Sqlite
 {
@@ -54,8 +55,53 @@ namespace Nistec.Data.Sqlite
     [System.Security.Permissions.PermissionSet(System.Security.Permissions.SecurityAction.Demand, Name = "FullTrust")]
     public abstract class PersistentBase<T,PI> where PI : IPersistItem //:IDictionary<string,T>
     {
+        #region g
+        internal long _ProcCounter = 0;
+
+        public long Increment_ProcCounter()
+        {
+            return Interlocked.Increment(ref _ProcCounter);
+        }
+        public long Decrement_ProcCounter()
+        {
+            return Interlocked.Decrement(ref _ProcCounter);
+        }
+        public long Read_ProcCounter()
+        {
+            return Interlocked.Read(ref _ProcCounter);
+        }
+        #endregion
+
+        #region sql comannds
+
+        //protected const string sqlcreate = @"CREATE TABLE IF NOT EXISTS {0} (
+        //                  key TEXT PRIMARY KEY,
+        //                  body BLOB,
+        //                  name TEXT,
+        //                  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP     
+        //                ) WITHOUT ROWID;";
+
+        protected const string sqlinsert = "insert into {0} (key, body, name) values (@key, @body, @name)";
+        protected const string sqldelete = "delete from {0} where key=@key";
+        protected const string sqlupdate = "update {0} set body=@body, timestamp=CURRENT_TIMESTAMP where key=@key";
+        protected const string sqlinsertOrIgnore = "insert or IGNORE into {0}(key, body, name) values(@key, @body, @name)";
+        protected const string sqlinsertOrReplace = "insert or REPLACE into {0}(key, body, name) values(@key, @body, @name)";
+
+        //const string sqldeleteTrans = "PRAGMA busy_timeout = 5000;  BEGIN TRANSACTION; PRAGMA read_uncommitted = true; delete from {0} where key=@key; COMMIT TRANSACTION;";
+        protected const string sqldeleteTrans = "BEGIN TRANSACTION; PRAGMA read_uncommitted = true; delete from {0} where key=@key; COMMIT TRANSACTION;";
+        protected const string sqlupdateTrans = "BEGIN TRANSACTION; PRAGMA read_uncommitted = true; update {0} set body=@body, timestamp=CURRENT_TIMESTAMP where key=@key; COMMIT TRANSACTION;";
+        protected const string sqlinsertOrIgnoreTrans = "BEGIN TRANSACTION; PRAGMA read_uncommitted = true; insert or IGNORE into {0}(key, body, name) values(@key, @body, @name); COMMIT TRANSACTION;";
+        protected const string sqlinsertOrReplaceTrans = "BEGIN TRANSACTION; PRAGMA read_uncommitted = true; insert or REPLACE into {0}(key, body, name) values(@key, @body, @name); COMMIT TRANSACTION;";
+        protected const string sqlinsertTrans = "BEGIN TRANSACTION; insert into {0}(key, body, name) values(@key, @body, @name); COMMIT TRANSACTION;";
+        protected const string sqlrollback = "ROLLBACK;";
+        const string sqlupdatestate = "update {0} set state=@state,timestamp=CURRENT_TIMESTAMP where key=@key";
+        protected const string sqlselect = "select {1} from {0} where key=@key";
+        protected const string sqlselectall = "select {1} from {0}";
+
+        #endregion
 
         protected readonly ConcurrentDictionary<string, T> dictionary;
+        //protected readonly ConcurrentDictionary<string, DbLite> databases=new ConcurrentDictionary<string, DbLite>();
 
         //XDictionaryettings settings;
         //string connectionString;
@@ -474,17 +520,115 @@ namespace Nistec.Data.Sqlite
 
         }
 
+        protected bool IsConnectionState(DbLite db, ConnectionState state )
+        {
+            return (db.SQLiteConnection != null && db.SQLiteConnection.State == state);
+        }
+        protected bool IsConnectionState(SQLiteConnection connection, ConnectionState state)
+        {
+            return (connection != null && connection.State == state);
+        }
+
+        protected void CloseConnection(DbLite db)
+        {
+            if (db.SQLiteConnection != null && db.SQLiteConnection.State != System.Data.ConnectionState.Closed)
+                db.SQLiteConnection.Close();
+        }
+
+        //protected DbLite GetDb()
+        //{
+        //    DbLite db;
+        //    if(!databases.TryGetValue(ConnectionString, out db))
+        //    {
+        //        db = new DbLite(ConnectionString, DBProvider.SQLite);
+        //        databases.TryAdd(ConnectionString, db);
+        //    }
+        //    return db;
+        //}
+
+        //protected SQLiteConnection GetConnection()
+        //{
+        //    DbLite db= GetDb();
+        //    if(IsConnectionState(db, ConnectionState.Open))
+        //    {
+        //        return new SQLiteConnection(db.SQLiteConnection);
+        //    }
+        //    return db.SQLiteConnection;
+        //}
 
         //string sqlCreateTable = "create table demo_score (name varchar(20), score int)";
 
+        //protected virtual string DbCreateCommand()
+        //{
+        //    return string.Format(sqlcreate, Name);
+        //}
+        protected virtual string DbAddCommand(bool isTrans = false)
+        {
+            if (isTrans)
+                return string.Format(sqlinsertTrans, Name);
+            return string.Format(sqlinsert, Name);
+        }
+        protected virtual string DbAddIgnoreCommand(bool isTrans = false)
+        {
+            if (isTrans)
+                return string.Format(sqlinsertOrIgnoreTrans, Name);
+            return string.Format(sqlinsertOrIgnore, Name);
+        }
+        protected virtual string DbAddReplaceCommand(bool isTrans = false)
+        {
+            if (isTrans)
+                return string.Format(sqlinsertOrReplaceTrans, Name);
+            return string.Format(sqlinsertOrReplace, Name);
+        }
+        protected virtual string DbDeleteCommand(bool isTrans = false)
+        {
+            if (isTrans)
+                return string.Format(sqldeleteTrans, Name);
+            return string.Format(sqldelete, Name);
+        }
+
+        protected virtual string DbUpdateCommand(bool isTrans = false)
+        {
+            if (isTrans)
+                return string.Format(sqlupdateTrans, Name);
+            return string.Format(sqlupdate, Name);
+        }
+
+        protected virtual string DbUpsertCommand(bool isTrans = false)
+        {
+            if (isTrans)
+                return string.Format(sqlinsertOrReplaceTrans, Name);
+            return string.Format(sqlinsertOrReplace, Name);
+        }
+
+        protected virtual string DbSelectCommand(string select, string where)
+        {
+            if (where == null)
+                return string.Format(sqlselectall, Name, select);
+
+            return string.Format(sqlselect, Name, select, where);
+        }
+
+        protected virtual string DbLookupCommand()
+        {
+            return string.Format(sqlselect, Name, "body");
+        }
+
+        protected virtual string DbUpdateStateCommand()
+        {
+            return string.Format(sqlupdatestate, Name);
+        }
+
         protected abstract string DbCreateCommand();// DbLite db);
-        protected abstract string DbUpsertCommand();// string key, T value);
-        protected abstract string DbAddCommand();//string key, T value);
-        protected abstract string DbUpdateCommand();//string key, T value);
-        protected abstract string DbDeleteCommand();//string key);
-        protected abstract string DbSelectCommand(string select, string where);
-        protected abstract string DbLookupCommand();//string key);
-        protected abstract string DbUpdateStateCommand();//string key, int state);
+        //protected abstract string DbUpsertCommand();// string key, T value);
+        //protected abstract string DbAddCommand(bool isTrans=false);//string key, T value);
+        //protected abstract string DbAddIgnoreCommand(bool isTrans = false);
+        //protected abstract string DbAddReplaceCommand(bool isTrans = false);
+        //protected abstract string DbUpdateCommand();//string key, T value);
+        //protected abstract string DbDeleteCommand();//string key);
+        //protected abstract string DbSelectCommand(string select, string where);
+        //protected abstract string DbLookupCommand();//string key);
+        //protected abstract string DbUpdateStateCommand();//string key, int state);
         protected abstract string GetItemKey(PI value);
         protected abstract object GetDataValue(T item);
         protected abstract T DecompressValue(PI value);
@@ -1762,16 +1906,25 @@ namespace Nistec.Data.Sqlite
             return Nistec.Generic.NetZipp.UnZip(compressed);
         }
 
-
-        public Task ExecuteTask(string cmdText, IDbDataParameter[] parameters)
+        public Task<int> ExecuteTask(string cmdText, IDbDataParameter[] parameters)
         {
-            return Task.Factory.StartNew<int>(() => Execute(cmdText, parameters));
+            return Task.Run(() =>
+            {
+                return Execute(cmdText, parameters);
+            });
+            //return task.Result;
+            //return Task.Factory.StartNew<int>(() => Execute(cmdText, parameters));
         }
 
-        public int ExecuteAsync(string cmdText, IDbDataParameter[] parameters)
+        public void ExecuteAsync(string cmdText, IDbDataParameter[] parameters, Action<int> action)
         {
-            var result = Task.Factory.StartNew<int>(() => Execute(cmdText, parameters));
-            return (result == null) ? 0 : result.Result;
+            Task.Run(() =>
+            {
+                var result = Execute(cmdText, parameters);
+                action(result);
+            });// ..ConfigureAwait(false).GetAwaiter().GetResult();//.Result;
+            //var result = Task.Factory.StartNew<int>(() => Execute(cmdText, parameters));
+            //return (result == null) ? 0 : result.Result;
         }
 
         public int Execute(string cmdText, IDbDataParameter[] parameters)

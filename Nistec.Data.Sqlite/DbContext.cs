@@ -10,6 +10,7 @@ using System.IO;
 using Nistec.Data.Entities;
 using System.Reflection;
 using Nistec.Serialization;
+using System.Threading.Tasks;
 
 namespace Nistec.Data.Sqlite
 {
@@ -46,6 +47,8 @@ namespace Nistec.Data.Sqlite
     {
 
         public const string ProviderName = "SQLite";
+        //int CommandTimeout = 5000;
+        //int ConnectionTimeout = 5000;
 
         //string _connectionString;
         //public string CreateConnectionString(string filename)
@@ -64,6 +67,8 @@ namespace Nistec.Data.Sqlite
         /// </summary>
         public DbLite():base()
         {
+            CommandTimeout = DbLiteSettings.DefaultCommandTimeout;
+            ConnectionTimeout = DbLiteSettings.DefaultConnectionTimeout;
         }
 
 
@@ -186,6 +191,7 @@ namespace Nistec.Data.Sqlite
                         cmd.Parameters.AddRange(parameters);
                         cmd.Transaction = tr;
                         cmd.CommandText = cmdText;
+                        cmd.CommandTimeout = CommandTimeout;
                         result = cmd.ExecuteNonQuery();
 
                     }
@@ -199,6 +205,47 @@ namespace Nistec.Data.Sqlite
             return result;
         }
 
+        public void ExecuteNonQueryTrans(string cmdText, SQLiteParameter[] parameters, Action<int> transAction)
+        {
+            int result = 0;
+            using (SQLiteConnection con = new SQLiteConnection(this.ConnectionString))
+            {
+                con.Open();
+
+                using (SQLiteTransaction tr = con.BeginTransaction())
+                {
+                    using (SQLiteCommand cmd = con.CreateCommand())
+                    {
+                        cmd.Parameters.AddRange(parameters);
+                        cmd.Transaction = tr;
+                        cmd.CommandText = cmdText;
+                        cmd.CommandTimeout = CommandTimeout;
+                        result = cmd.ExecuteNonQuery();
+
+                    }
+                    tr.Commit();
+                    transAction.Invoke(result);
+                }
+
+                con.Close();
+            }
+        }
+
+        public int ExecuteNonQueryTransAsync(string cmdText, SQLiteParameter[] parameters, Func<int, bool> transAction)
+        {
+            return Task.Run(() =>
+            {
+                return ExecuteNonQueryTrans(cmdText, parameters, transAction);
+            }).Result;
+        }
+
+        public void ExecuteNonQueryTransAsync(string cmdText, SQLiteParameter[] parameters, Action<int> transAction)
+        {
+            Task.Run(() =>
+            {
+                ExecuteNonQueryTrans(cmdText, parameters, transAction);
+            });
+        }
         #region override
 
         protected override IDbConnection CreateConnection()

@@ -34,7 +34,7 @@ namespace Nistec.Data.Sqlite
         #endregion
 
         #region override
-
+        
         //const string sqlcreate = @"CREATE TABLE bookmarks(
         //    users_id INTEGER,
         //    lessoninfo_id INTEGER,
@@ -47,56 +47,80 @@ namespace Nistec.Data.Sqlite
                           name TEXT,
                           timestamp DATETIME DEFAULT CURRENT_TIMESTAMP     
                         ) WITHOUT ROWID;";
-        //const string sqlinsert = "insert into {0} (key, body, name) values (@key, @body, @name)";
+        /*
+        const string sqlinsert = "insert into {0} (key, body, name) values (@key, @body, @name)";
         const string sqldelete = "delete from {0} where key=@key";
         const string sqlupdate = "update {0} set body=@body, timestamp=CURRENT_TIMESTAMP where key=@key";
         const string sqlinsertOrIgnore = "insert or IGNORE into {0}(key, body, name) values(@key, @body, @name)";
         const string sqlinsertOrReplace = "insert or REPLACE into {0}(key, body, name) values(@key, @body, @name)";
+
+        //const string sqldeleteTrans = "PRAGMA busy_timeout = 5000;  BEGIN TRANSACTION; PRAGMA read_uncommitted = true; delete from {0} where key=@key; COMMIT TRANSACTION;";
+        const string sqldeleteTrans = "BEGIN TRANSACTION; PRAGMA read_uncommitted = true; delete from {0} where key=@key; COMMIT TRANSACTION;";
+        const string sqlupdateTrans = "BEGIN TRANSACTION; PRAGMA read_uncommitted = true; update {0} set body=@body, timestamp=CURRENT_TIMESTAMP where key=@key; COMMIT TRANSACTION;";
+        const string sqlinsertOrIgnoreTrans = "BEGIN TRANSACTION; PRAGMA read_uncommitted = true; insert or IGNORE into {0}(key, body, name) values(@key, @body, @name); COMMIT TRANSACTION;";
+        const string sqlinsertOrReplaceTrans = "BEGIN TRANSACTION; PRAGMA read_uncommitted = true; insert or REPLACE into {0}(key, body, name) values(@key, @body, @name); COMMIT TRANSACTION;";
+        const string sqlinsertTrans = "BEGIN TRANSACTION; insert into {0}(key, body, name) values(@key, @body, @name); COMMIT TRANSACTION;";
+        const string sqlrollback = "ROLLBACK;";
+
         const string sqlselect = "select {1} from {0} where key=@key";
         const string sqlselectall = "select {1} from {0}";
+        */
 
         protected override string DbCreateCommand()
         {
             return string.Format(sqlcreate, Name);
         }
-        protected override string DbAddCommand()
-        {
-            return string.Format(sqlinsertOrIgnore, Name);
-        }
+        //protected override string DbAddCommand(bool isTrans = false)
+        //{
+        //    if(isTrans)
+        //        return string.Format(sqlinsertTrans, Name);
+        //    return string.Format(sqlinsert, Name);
+        //}
+        //protected override string DbAddIgnoreCommand(bool isTrans=false)
+        //{
+        //    if (isTrans)
+        //        return string.Format(sqlinsertOrIgnoreTrans, Name);
+        //    return string.Format(sqlinsertOrIgnore, Name);
+        //}
+        //protected override string DbAddReplaceCommand(bool isTrans = false)
+        //{
+        //    if (isTrans)
+        //        return string.Format(sqlinsertOrReplaceTrans, Name);
+        //    return string.Format(sqlinsertOrReplace, Name);
+        //}
+        //protected override string DbDeleteCommand()
+        //{
 
-        protected override string DbDeleteCommand()
-        {
+        //    return string.Format(sqldeleteTrans, Name);
+        //}
 
-            return string.Format(sqldelete, Name);
-        }
+        //protected override string DbUpdateCommand()
+        //{
+        //    return string.Format(sqlupdateTrans, Name);
+        //}
 
-        protected override string DbUpdateCommand()
-        {
-            return string.Format(sqlupdate, Name);
-        }
+        //protected override string DbUpsertCommand()
+        //{
+        //    return string.Format(sqlinsertOrReplaceTrans, Name);
+        //}
 
-        protected override string DbUpsertCommand()
-        {
-            return string.Format(sqlinsertOrReplace, Name);
-        }
+        //protected override string DbSelectCommand(string select, string where)
+        //{
+        //    if(where==null)
+        //        return string.Format(sqlselectall, Name, select);
 
-        protected override string DbSelectCommand(string select, string where)
-        {
-            if(where==null)
-                return string.Format(sqlselectall, Name, select);
+        //    return string.Format(sqlselect, Name, select, where);
+        //}
 
-            return string.Format(sqlselect, Name, select, where);
-        }
+        //protected override string DbLookupCommand()
+        //{
+        //    return string.Format(sqlselect, Name, "body");
+        //}
 
-        protected override string DbLookupCommand()
-        {
-            return string.Format(sqlselect, Name, "body");
-        }
-
-        protected override string DbUpdateStateCommand()
-        {
-            return string.Format(sqlupdate, Name);
-        }
+        //protected override string DbUpdateStateCommand()
+        //{
+        //    return string.Format(sqlupdateTrans, Name);
+        //}
 
         protected override object GetDataValue(T item)
         {
@@ -128,6 +152,7 @@ namespace Nistec.Data.Sqlite
             return BinarySerializer.Deserialize<T>(value.body);
         }
 
+        
 
         #endregion
 
@@ -302,22 +327,7 @@ namespace Nistec.Data.Sqlite
                         using (var db = new DbLite(ConnectionString, DBProvider.SQLite))
                         {
 
-                            //db.ExecuteNonQueryTrans(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name), (result) =>
-                            //{
-
-                            //    if (result > 0)
-                            //    {
-                            //        if (dictionary.TryAdd(key, item))
-                            //        {
-                            //            //trans.Commit();
-                            //            iscommited = true;
-                            //        }
-                            //    }
-                            //    return iscommited;
-                            //});
-
-
-                            db.ExecuteTransCommandNonQuery(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name), (result) =>
+                            db.ExecuteNonQueryTrans(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name), (result) =>
                             {
                                 if (result > 0)
                                 {
@@ -329,14 +339,51 @@ namespace Nistec.Data.Sqlite
                                 }
                                 return iscommited;
                             });
+
+
+                            //db.ExecuteTransCommandNonQuery(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name), (result) =>
+                            //{
+                            //    if (result > 0)
+                            //    {
+                            //        if (dictionary.TryAdd(key, item))
+                            //        {
+                            //            //trans.Commit();
+                            //            iscommited = true;
+                            //        }
+                            //    }
+                            //    return iscommited;
+                            //});
+
+                            //if (db.ExecuteNonQuery(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name)) > 0)
+                            //{
+                            //    if (dictionary.TryAdd(key, item))
+                            //    {
+                            //        //trans.Commit();
+                            //        iscommited = true;
+                            //    }
+                            //    return iscommited;
+                            //}
                         }
                         break;
                     case CommitMode.OnMemory:
                         {
+                            //using (var db = new DbLite(ConnectionString, DBProvider.SQLite))
+                            //{
+                            //    db.ConnectionTimeout = 5000;
+                            //    if (dictionary.TryAdd(key, item))
+                            //    {
+                            //        iscommited = true;
+                            //        db.ExecuteCommandNonQuery(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name), System.Data.CommandType.Text,6000);
+                            //        //db.ExecuteTransCommandNonQuery(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name), (result) => { return result > 0; });
+                            //    }
+                            //    //CloseConnection(db);
+                            //}
+
                             if (dictionary.TryAdd(key, item))
                             {
+                                Execute(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name));
                                 //var res = ExecuteAsync(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name));
-                                ExecuteTask(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name));
+                                //ExecuteTask(cmdText, DataParameter.Get<SQLiteParameter>("key", key, "body", value.body, "name", value.name));
                                 iscommited = true;
                             }
                         }
